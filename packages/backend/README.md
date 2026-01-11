@@ -1,0 +1,123 @@
+# Tasche Backend API
+
+Tasche MVP のバックエンド API（FastAPI + PostgreSQL）
+
+## 技術スタック
+
+- **Framework**: FastAPI
+- **Package Manager**: uv
+- **Linter/Formatter**: ruff
+- **ORM**: SQLAlchemy (async)
+- **Database**: PostgreSQL (Neon for production, Docker for local)
+- **Authentication**: Auth0 (JWT)
+- **Migration**: Alembic
+- **Local Development**: Docker Compose
+
+## セットアップ
+
+### 前提条件
+
+- Docker & Docker Compose
+- Python 3.12+
+- uv (optional, Docker内で使用)
+
+### ローカル開発環境の起動
+
+```bash
+# 環境変数ファイルを作成
+cp .env.example .env
+
+# Docker Compose でコンテナ起動
+docker-compose up -d
+
+# ログ確認
+docker-compose logs -f api
+
+# ヘルスチェック
+curl http://localhost:8000/health
+
+# Swagger UI
+open http://localhost:8000/docs
+```
+
+### データベースマイグレーション
+
+```bash
+# マイグレーションファイル生成
+docker-compose exec api alembic revision --autogenerate -m "description"
+
+# マイグレーション実行
+docker-compose exec api alembic upgrade head
+
+# ロールバック
+docker-compose exec api alembic downgrade -1
+```
+
+### データシーディング（開発用）
+
+```bash
+# テストデータを投入
+docker-compose exec api python scripts/seed.py
+
+# データベースをリセット（全データ削除）
+docker-compose exec api python scripts/reset_db.py
+```
+
+## API仕様
+
+- Swagger UI: http://localhost:8000/docs
+- ReDoc: http://localhost:8000/redoc
+
+## 開発
+
+### コード変更
+
+`src/tasche/` 配下のファイルを編集すると、ホットリロードで自動的に反映されます。
+
+### コンテナ再起動
+
+```bash
+docker-compose restart api
+```
+
+### クリーンアップ
+
+```bash
+# コンテナ停止
+docker-compose down
+
+# データベースも含めて削除
+docker-compose down -v
+```
+
+## ディレクトリ構造
+
+```
+packages/backend/
+├── src/tasche/         # メインパッケージ
+│   ├── api/           # API レイヤー
+│   ├── core/          # コア設定
+│   ├── db/            # データベース
+│   ├── models/        # SQLAlchemy モデル
+│   ├── schemas/       # Pydantic スキーマ
+│   └── services/      # ビジネスロジック
+├── migrations/        # Alembic マイグレーション
+└── tests/            # テスト (future)
+```
+
+## MVP 範囲
+
+Phase 1〜3で以下を実装：
+
+1. **Phase 1**: Docker起動、ヘルスチェック
+2. **Phase 2**: DB接続、User モデル
+3. **Phase 3**: テスト用JWT認証、`/api/users/me`
+
+将来実装予定：
+
+- タスクAPI (`/api/tasks`)
+- 週API (`/api/weeks/current`)
+- 目標API (`/api/weeks/current/goals`)
+- 実績API (`/api/weeks/current/records`)
+- ダッシュボードAPI (`/api/dashboard`)
+- Auth0 本実装

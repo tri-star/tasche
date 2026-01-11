@@ -1,0 +1,45 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: tasche-db
+    environment:
+      POSTGRES_DB: tasche
+      POSTGRES_USER: tasche
+      POSTGRES_PASSWORD: tasche_dev_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tasche"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: tasche-api
+    environment:
+      DATABASE_URL: postgresql+asyncpg://tasche:tasche_dev_password@db:5432/tasche
+      AUTH0_DOMAIN: ${AUTH0_DOMAIN:-dummy.auth0.com}
+      AUTH0_AUDIENCE: ${AUTH0_AUDIENCE:-dummy-audience}
+      ENABLE_TEST_AUTH: "true"
+      LOG_LEVEL: debug
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./src:/app/src
+      - ./migrations:/app/migrations
+      - ./scripts:/app/scripts
+      - ./alembic.ini:/app/alembic.ini
+    depends_on:
+      db:
+        condition: service_healthy
+    command: uvicorn tasche.main:app --host 0.0.0.0 --port 8000 --reload
+
+volumes:
+  postgres_data:
