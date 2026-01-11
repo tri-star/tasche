@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(tree:*)",
+      "Bash(curl:*)",
+      "Bash(base64:*)",
+      "Bash(chmod:*)",
+      "Bash(find:*)"
+    ]
+  }
+}
