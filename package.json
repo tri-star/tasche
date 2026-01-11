@@ -1,0 +1,12 @@
+{
+  "name": "tasche",
+  "private": true,
+  "packageManager": "pnpm@9.12.3",
+  "scripts": {
+    "dev": "pnpm -C packages/frontend dev",
+    "build": "pnpm -C packages/frontend build",
+    "lint": "pnpm -C packages/frontend lint",
+    "format": "pnpm -C packages/frontend format",
+    "typecheck": "pnpm -C packages/frontend typecheck"
+  }
+}
