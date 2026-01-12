@@ -1,0 +1,15 @@
+{
+  "name": "tasche",
+  "private": true,
+  "devDependencies": {
+    "@biomejs/biome": "^2.3.11"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @tasche/frontend dev",
+    "build": "pnpm --filter @tasche/frontend build",
+    "test": "pnpm -r test",
+    "lint": "pnpm -r lint",
+    "format": "pnpm -r format",
+    "openapi:update": "pnpm --filter @tasche/frontend openapi:update"
+  }
+}

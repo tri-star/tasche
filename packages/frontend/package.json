@@ -1,0 +1,46 @@
+{
+  "name": "@tasche/frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "msw:prepare": "node scripts/msw-prepare.mjs",
+    "openapi:update": "orval --config orval.config.ts",
+    "dev": "node scripts/msw-prepare.mjs && vite",
+    "build": "node scripts/msw-prepare.mjs && tsc -b && vite build",
+    "lint": "biome check .",
+    "format": "biome check --write .",
+    "test": "vitest run --passWithNoTests",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "tailwind-merge": "^3.3.1",
+    "tailwindcss-animate": "^1.0.7"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.0.0",
+    "@faker-js/faker": "^9.7.0",
+    "@types/node": "^24.10.1",
+    "@types/react": "^19.2.5",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.1",
+    "autoprefixer": "^10.4.20",
+    "jsdom": "^26.1.0",
+    "msw": "^2.11.2",
+    "orval": "^7.11.2",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.17",
+    "typescript": "~5.9.3",
+    "vite": "^7.2.4",
+    "vitest": "^3.2.4"
+  },
+  "msw": {
+    "workerDirectory": [
+      "public"
+    ]
+  }
+}
