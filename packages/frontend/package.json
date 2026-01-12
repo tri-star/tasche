@@ -4,10 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "msw:prepare": "node scripts/msw-prepare.mjs",
     "openapi:update": "orval --config orval.config.ts",
-    "dev": "node scripts/msw-prepare.mjs && vite",
-    "build": "node scripts/msw-prepare.mjs && tsc -b && vite build",
+    "dev": "vite",
+    "build": "tsc -b && vite build",
     "lint": "biome check .",
     "format": "biome check --write .",
     "test": "vitest run --passWithNoTests",
