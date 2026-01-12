@@ -13,7 +13,11 @@
       "Bash(python3:*)",
       "Bash(uv run:*)",
       "Bash(./scripts/generate-openapi.sh:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(npx shadcn@latest add button card checkbox select table toggle-group -y)",
+      "Bash(cd:*)",
+      "Bash(pnpm add:*)",
+      "Bash(pnpm test:*)"
     ]
   }
 }
