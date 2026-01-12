@@ -1,0 +1,1663 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Tasche API",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/users/me": {
+      "get": {
+        "tags": [
+          "ユーザー"
+        ],
+        "summary": "Get Current User Info",
+        "description": "現在のユーザー情報を取得.",
+        "operationId": "get_current_user_info_api_users_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse_UserResponse_"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/tasks": {
+      "get": {
+        "tags": [
+          "タスク"
+        ],
+        "summary": "Get Tasks",
+        "description": "タスク一覧を取得する.",
+        "operationId": "get_tasks_api_tasks_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "include_archived",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "アーカイブ済みタスクを含める",
+              "default": false,
+              "title": "Include Archived"
+            },
+            "description": "アーカイブ済みタスクを含める"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse_TaskListResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "タスク"
+        ],
+        "summary": "Create Task",
+        "description": "新規タスクを作成する.",
+        "operationId": "create_task_api_tasks_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse_TaskResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks/{task_id}": {
+      "put": {
+        "tags": [
+          "タスク"
+        ],
+        "summary": "Update Task",
+        "description": "既存タスクを更新する.",
+        "operationId": "update_task_api_tasks__task_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse_TaskResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "タスク"
+        ],
+        "summary": "Delete Task",
+        "description": "タスクを削除（アーカイブ）する.",
+        "operationId": "delete_task_api_tasks__task_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse_TaskResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/weeks/current": {
+      "get": {
+        "tags": [
+          "週"
+        ],
+        "summary": "Get Current Week",
+        "description": "現在の週情報を取得する.",
+        "operationId": "get_current_week_api_weeks_current_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "timezone",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "タイムゾーン（デフォルト: ユーザー設定値）",
+              "title": "Timezone"
+            },
+            "description": "タイムゾーン（デフォルト: ユーザー設定値）"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse_WeekResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "週"
+        ],
+        "summary": "Update Current Week",
+        "description": "現在の週設定を更新する.",
+        "operationId": "update_current_week_api_weeks_current_put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WeekUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse_WeekResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/weeks/current/goals": {
+      "get": {
+        "tags": [
+          "目標"
+        ],
+        "summary": "Get Current Goals",
+        "description": "今週の目標一覧を取得する.",
+        "operationId": "get_current_goals_api_weeks_current_goals_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse_GoalsResponse_"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "目標"
+        ],
+        "summary": "Update Current Goals",
+        "description": "今週の目標を一括更新する.",
+        "operationId": "update_current_goals_api_weeks_current_goals_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GoalsUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse_GoalsUpdateResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/weeks/current/records": {
+      "get": {
+        "tags": [
+          "実績"
+        ],
+        "summary": "Get Current Records",
+        "description": "今週の実績一覧を取得する.",
+        "operationId": "get_current_records_api_weeks_current_records_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse_RecordsResponse_"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/weeks/current/records/{day}/{task_id}": {
+      "put": {
+        "tags": [
+          "実績"
+        ],
+        "summary": "Update Record",
+        "description": "特定の曜日・タスクの実績を記録・更新する.",
+        "operationId": "update_record_api_weeks_current_records__day___task_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "day",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "monday",
+                "tuesday",
+                "wednesday",
+                "thursday",
+                "friday",
+                "saturday",
+                "sunday"
+              ],
+              "type": "string",
+              "title": "Day"
+            }
+          },
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse_RecordResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dashboard": {
+      "get": {
+        "tags": [
+          "ダッシュボード"
+        ],
+        "summary": "Get Dashboard",
+        "description": "ダッシュボード表示用の集約データを取得する.",
+        "operationId": "get_dashboard_api_dashboard_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "timezone",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "タイムゾーン（デフォルト: ユーザー設定値）",
+              "title": "Timezone"
+            },
+            "description": "タイムゾーン（デフォルト: ユーザー設定値）"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse_DashboardResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/": {
+      "get": {
+        "summary": "Root",
+        "description": "ルートエンドポイント（ヘルスチェック）.",
+        "operationId": "root__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health",
+        "description": "ヘルスチェックエンドポイント.",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "APIResponse_DashboardResponse_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/DashboardResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "APIResponse[DashboardResponse]"
+      },
+      "APIResponse_GoalsResponse_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/GoalsResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "APIResponse[GoalsResponse]"
+      },
+      "APIResponse_GoalsUpdateResponse_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/GoalsUpdateResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "APIResponse[GoalsUpdateResponse]"
+      },
+      "APIResponse_RecordResponse_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/RecordResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "APIResponse[RecordResponse]"
+      },
+      "APIResponse_RecordsResponse_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/RecordsResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "APIResponse[RecordsResponse]"
+      },
+      "APIResponse_TaskListResponse_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/TaskListResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "APIResponse[TaskListResponse]"
+      },
+      "APIResponse_TaskResponse_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/TaskResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "APIResponse[TaskResponse]"
+      },
+      "APIResponse_UserResponse_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/UserResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "APIResponse[UserResponse]"
+      },
+      "APIResponse_WeekResponse_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/WeekResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "APIResponse[WeekResponse]"
+      },
+      "CreatedTask": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "タスクID"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "タスク名"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "CreatedTask",
+        "description": "作成されたタスク情報."
+      },
+      "DailyActuals": {
+        "properties": {
+          "monday": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Monday",
+            "description": "月曜日の実績ユニット数"
+          },
+          "tuesday": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Tuesday",
+            "description": "火曜日の実績ユニット数"
+          },
+          "wednesday": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Wednesday",
+            "description": "水曜日の実績ユニット数"
+          },
+          "thursday": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Thursday",
+            "description": "木曜日の実績ユニット数"
+          },
+          "friday": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Friday",
+            "description": "金曜日の実績ユニット数"
+          },
+          "saturday": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Saturday",
+            "description": "土曜日の実績ユニット数"
+          },
+          "sunday": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Sunday",
+            "description": "日曜日の実績ユニット数"
+          }
+        },
+        "type": "object",
+        "required": [
+          "monday",
+          "tuesday",
+          "wednesday",
+          "thursday",
+          "friday",
+          "saturday",
+          "sunday"
+        ],
+        "title": "DailyActuals",
+        "description": "曜日ごとの実績ユニット数."
+      },
+      "DailyData": {
+        "properties": {
+          "target_units": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Target Units",
+            "description": "目標ユニット数"
+          },
+          "actual_units": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Actual Units",
+            "description": "実績ユニット数"
+          },
+          "completion_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completion Rate",
+            "description": "達成率（%）。目標が0の場合はnull"
+          }
+        },
+        "type": "object",
+        "required": [
+          "target_units",
+          "actual_units"
+        ],
+        "title": "DailyData",
+        "description": "日次データ."
+      },
+      "DailyTargets": {
+        "properties": {
+          "monday": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Monday",
+            "description": "月曜日の目標ユニット数"
+          },
+          "tuesday": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Tuesday",
+            "description": "火曜日の目標ユニット数"
+          },
+          "wednesday": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Wednesday",
+            "description": "水曜日の目標ユニット数"
+          },
+          "thursday": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Thursday",
+            "description": "木曜日の目標ユニット数"
+          },
+          "friday": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Friday",
+            "description": "金曜日の目標ユニット数"
+          },
+          "saturday": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Saturday",
+            "description": "土曜日の目標ユニット数"
+          },
+          "sunday": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Sunday",
+            "description": "日曜日の目標ユニット数"
+          }
+        },
+        "type": "object",
+        "required": [
+          "monday",
+          "tuesday",
+          "wednesday",
+          "thursday",
+          "friday",
+          "saturday",
+          "sunday"
+        ],
+        "title": "DailyTargets",
+        "description": "曜日ごとの目標ユニット数."
+      },
+      "DashboardResponse": {
+        "properties": {
+          "current_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Current Date",
+            "description": "現在の日付"
+          },
+          "current_day_of_week": {
+            "type": "string",
+            "enum": [
+              "monday",
+              "tuesday",
+              "wednesday",
+              "thursday",
+              "friday",
+              "saturday",
+              "sunday"
+            ],
+            "title": "Current Day Of Week",
+            "description": "現在の曜日"
+          },
+          "week": {
+            "$ref": "#/components/schemas/WeekInfo",
+            "description": "週情報"
+          },
+          "today_goals": {
+            "items": {
+              "$ref": "#/components/schemas/TodayGoal"
+            },
+            "type": "array",
+            "title": "Today Goals",
+            "description": "今日の目標一覧"
+          },
+          "weekly_matrix": {
+            "items": {
+              "$ref": "#/components/schemas/WeeklyMatrixItem"
+            },
+            "type": "array",
+            "title": "Weekly Matrix",
+            "description": "週次マトリックス"
+          },
+          "has_goals_configured": {
+            "type": "boolean",
+            "title": "Has Goals Configured",
+            "description": "目標設定済みフラグ（false の場合は目標設定ウィザードへの誘導が必要）"
+          }
+        },
+        "type": "object",
+        "required": [
+          "current_date",
+          "current_day_of_week",
+          "week",
+          "today_goals",
+          "weekly_matrix",
+          "has_goals_configured"
+        ],
+        "title": "DashboardResponse",
+        "description": "ダッシュボードレスポンス."
+      },
+      "GoalResponse": {
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "title": "Task Id",
+            "description": "タスクID"
+          },
+          "task_name": {
+            "type": "string",
+            "title": "Task Name",
+            "description": "タスク名"
+          },
+          "daily_targets": {
+            "$ref": "#/components/schemas/DailyTargets",
+            "description": "曜日ごとの目標ユニット数"
+          }
+        },
+        "type": "object",
+        "required": [
+          "task_id",
+          "task_name",
+          "daily_targets"
+        ],
+        "title": "GoalResponse",
+        "description": "目標レスポンス."
+      },
+      "GoalUpdateItem": {
+        "properties": {
+          "task_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Task Id",
+            "description": "タスクID（nullの場合は新規タスク作成）"
+          },
+          "new_task_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Task Name",
+            "description": "新規タスク名（task_idがnullの場合に必須）"
+          },
+          "daily_targets": {
+            "$ref": "#/components/schemas/DailyTargets",
+            "description": "曜日ごとの目標ユニット数"
+          }
+        },
+        "type": "object",
+        "required": [
+          "daily_targets"
+        ],
+        "title": "GoalUpdateItem",
+        "description": "目標更新アイテム."
+      },
+      "GoalsResponse": {
+        "properties": {
+          "week_id": {
+            "type": "string",
+            "title": "Week Id",
+            "description": "週ID"
+          },
+          "unit_duration_minutes": {
+            "type": "integer",
+            "title": "Unit Duration Minutes",
+            "description": "1ユニットの時間（分）"
+          },
+          "goals": {
+            "items": {
+              "$ref": "#/components/schemas/GoalResponse"
+            },
+            "type": "array",
+            "title": "Goals",
+            "description": "目標一覧"
+          }
+        },
+        "type": "object",
+        "required": [
+          "week_id",
+          "unit_duration_minutes",
+          "goals"
+        ],
+        "title": "GoalsResponse",
+        "description": "目標一覧レスポンス."
+      },
+      "GoalsUpdate": {
+        "properties": {
+          "unit_duration_minutes": {
+            "type": "integer",
+            "title": "Unit Duration Minutes",
+            "description": "1ユニットの時間（分）"
+          },
+          "goals": {
+            "items": {
+              "$ref": "#/components/schemas/GoalUpdateItem"
+            },
+            "type": "array",
+            "title": "Goals",
+            "description": "目標一覧"
+          }
+        },
+        "type": "object",
+        "required": [
+          "unit_duration_minutes",
+          "goals"
+        ],
+        "title": "GoalsUpdate",
+        "description": "目標一括更新リクエスト."
+      },
+      "GoalsUpdateResponse": {
+        "properties": {
+          "week_id": {
+            "type": "string",
+            "title": "Week Id",
+            "description": "週ID"
+          },
+          "unit_duration_minutes": {
+            "type": "integer",
+            "title": "Unit Duration Minutes",
+            "description": "1ユニットの時間（分）"
+          },
+          "goals": {
+            "items": {
+              "$ref": "#/components/schemas/GoalResponse"
+            },
+            "type": "array",
+            "title": "Goals",
+            "description": "更新後の目標一覧"
+          },
+          "created_tasks": {
+            "items": {
+              "$ref": "#/components/schemas/CreatedTask"
+            },
+            "type": "array",
+            "title": "Created Tasks",
+            "description": "作成されたタスク一覧"
+          }
+        },
+        "type": "object",
+        "required": [
+          "week_id",
+          "unit_duration_minutes",
+          "goals",
+          "created_tasks"
+        ],
+        "title": "GoalsUpdateResponse",
+        "description": "目標一括更新レスポンス."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "RecordItem": {
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "title": "Task Id",
+            "description": "タスクID"
+          },
+          "task_name": {
+            "type": "string",
+            "title": "Task Name",
+            "description": "タスク名"
+          },
+          "daily_actuals": {
+            "$ref": "#/components/schemas/DailyActuals",
+            "description": "曜日ごとの実績ユニット数"
+          }
+        },
+        "type": "object",
+        "required": [
+          "task_id",
+          "task_name",
+          "daily_actuals"
+        ],
+        "title": "RecordItem",
+        "description": "実績アイテム."
+      },
+      "RecordResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "実績ID（ULID形式、prefix: rec_）"
+          },
+          "week_id": {
+            "type": "string",
+            "title": "Week Id",
+            "description": "週ID"
+          },
+          "task_id": {
+            "type": "string",
+            "title": "Task Id",
+            "description": "タスクID"
+          },
+          "task_name": {
+            "type": "string",
+            "title": "Task Name",
+            "description": "タスク名"
+          },
+          "day_of_week": {
+            "type": "string",
+            "enum": [
+              "monday",
+              "tuesday",
+              "wednesday",
+              "thursday",
+              "friday",
+              "saturday",
+              "sunday"
+            ],
+            "title": "Day Of Week",
+            "description": "曜日"
+          },
+          "actual_units": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Actual Units",
+            "description": "実績ユニット数（0.1単位）"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At",
+            "description": "作成日時（ISO 8601）"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At",
+            "description": "更新日時（ISO 8601）"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "week_id",
+          "task_id",
+          "task_name",
+          "day_of_week",
+          "actual_units",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "RecordResponse",
+        "description": "実績レスポンス."
+      },
+      "RecordUpdate": {
+        "properties": {
+          "actual_units": {
+            "type": "number",
+            "multipleOf": 0.1,
+            "minimum": 0.0,
+            "title": "Actual Units",
+            "description": "実績ユニット数（0.1単位）"
+          }
+        },
+        "type": "object",
+        "required": [
+          "actual_units"
+        ],
+        "title": "RecordUpdate",
+        "description": "実績更新リクエスト."
+      },
+      "RecordsResponse": {
+        "properties": {
+          "week_id": {
+            "type": "string",
+            "title": "Week Id",
+            "description": "週ID"
+          },
+          "unit_duration_minutes": {
+            "type": "integer",
+            "title": "Unit Duration Minutes",
+            "description": "1ユニットの時間（分）"
+          },
+          "records": {
+            "items": {
+              "$ref": "#/components/schemas/RecordItem"
+            },
+            "type": "array",
+            "title": "Records",
+            "description": "実績一覧"
+          }
+        },
+        "type": "object",
+        "required": [
+          "week_id",
+          "unit_duration_minutes",
+          "records"
+        ],
+        "title": "RecordsResponse",
+        "description": "実績一覧レスポンス."
+      },
+      "TaskCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name",
+            "description": "タスク名"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "TaskCreate",
+        "description": "タスク作成リクエスト."
+      },
+      "TaskListResponse": {
+        "properties": {
+          "tasks": {
+            "items": {
+              "$ref": "#/components/schemas/TaskResponse"
+            },
+            "type": "array",
+            "title": "Tasks",
+            "description": "タスク一覧"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tasks"
+        ],
+        "title": "TaskListResponse",
+        "description": "タスク一覧レスポンス."
+      },
+      "TaskResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "タスクID（ULID形式、prefix: tsk_）"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "タスク名"
+          },
+          "is_archived": {
+            "type": "boolean",
+            "title": "Is Archived",
+            "description": "アーカイブフラグ"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At",
+            "description": "作成日時（ISO 8601）"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At",
+            "description": "更新日時（ISO 8601）"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "is_archived",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "TaskResponse",
+        "description": "タスクレスポンス."
+      },
+      "TaskUpdate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name",
+            "description": "タスク名"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "TaskUpdate",
+        "description": "タスク更新リクエスト."
+      },
+      "TodayGoal": {
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "title": "Task Id",
+            "description": "タスクID"
+          },
+          "task_name": {
+            "type": "string",
+            "title": "Task Name",
+            "description": "タスク名"
+          },
+          "target_units": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Target Units",
+            "description": "目標ユニット数"
+          },
+          "actual_units": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Actual Units",
+            "description": "実績ユニット数"
+          },
+          "completion_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completion Rate",
+            "description": "達成率（%）。目標が0の場合はnull"
+          }
+        },
+        "type": "object",
+        "required": [
+          "task_id",
+          "task_name",
+          "target_units",
+          "actual_units"
+        ],
+        "title": "TodayGoal",
+        "description": "今日の目標."
+      },
+      "UserResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "picture": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Picture"
+          },
+          "timezone": {
+            "type": "string",
+            "title": "Timezone"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "email",
+          "name",
+          "picture",
+          "timezone",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "UserResponse",
+        "description": "ユーザーレスポンス."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "WeekInfo": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "週ID"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Start Date",
+            "description": "週開始日"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date",
+            "title": "End Date",
+            "description": "週終了日"
+          },
+          "unit_duration_minutes": {
+            "type": "integer",
+            "title": "Unit Duration Minutes",
+            "description": "1ユニットの時間（分）"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "start_date",
+          "end_date",
+          "unit_duration_minutes"
+        ],
+        "title": "WeekInfo",
+        "description": "週情報."
+      },
+      "WeekResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "週ID（ULID形式、prefix: wk_）"
+          },
+          "user_id": {
+            "type": "string",
+            "title": "User Id",
+            "description": "ユーザーID"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Start Date",
+            "description": "週開始日（YYYY-MM-DD）"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date",
+            "title": "End Date",
+            "description": "週終了日（YYYY-MM-DD）"
+          },
+          "unit_duration_minutes": {
+            "type": "integer",
+            "title": "Unit Duration Minutes",
+            "description": "1ユニットの時間（分）: 10, 30, 60, 120"
+          },
+          "week_start_day": {
+            "type": "string",
+            "enum": [
+              "monday",
+              "sunday"
+            ],
+            "title": "Week Start Day",
+            "description": "週開始曜日: monday or sunday"
+          },
+          "week_start_hour": {
+            "type": "integer",
+            "maximum": 23.0,
+            "minimum": 0.0,
+            "title": "Week Start Hour",
+            "description": "週開始時刻（時）: 0-23"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At",
+            "description": "作成日時（ISO 8601）"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At",
+            "description": "更新日時（ISO 8601）"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "user_id",
+          "start_date",
+          "end_date",
+          "unit_duration_minutes",
+          "week_start_day",
+          "week_start_hour",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "WeekResponse",
+        "description": "週情報レスポンス."
+      },
+      "WeekUpdate": {
+        "properties": {
+          "unit_duration_minutes": {
+            "type": "integer",
+            "enum": [
+              10,
+              30,
+              60,
+              120
+            ],
+            "title": "Unit Duration Minutes",
+            "description": "1ユニットの時間（分）: 10, 30, 60, 120"
+          }
+        },
+        "type": "object",
+        "required": [
+          "unit_duration_minutes"
+        ],
+        "title": "WeekUpdate",
+        "description": "週設定更新リクエスト."
+      },
+      "WeeklyMatrixItem": {
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "title": "Task Id",
+            "description": "タスクID"
+          },
+          "task_name": {
+            "type": "string",
+            "title": "Task Name",
+            "description": "タスク名"
+          },
+          "daily_data": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/DailyData"
+            },
+            "propertyNames": {
+              "enum": [
+                "monday",
+                "tuesday",
+                "wednesday",
+                "thursday",
+                "friday",
+                "saturday",
+                "sunday"
+              ]
+            },
+            "type": "object",
+            "title": "Daily Data",
+            "description": "曜日ごとのデータ"
+          }
+        },
+        "type": "object",
+        "required": [
+          "task_id",
+          "task_name",
+          "daily_data"
+        ],
+        "title": "WeeklyMatrixItem",
+        "description": "週次マトリックスアイテム."
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

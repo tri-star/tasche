@@ -67,6 +67,21 @@ docker-compose exec api python scripts/reset_db.py
 
 - Swagger UI: http://localhost:8000/docs
 - ReDoc: http://localhost:8000/redoc
+- OpenAPI JSON: `openapi.json`
+
+### OpenAPI定義の生成
+
+フロントエンドとの連携用にOpenAPI定義をファイルに書き出します。
+
+```bash
+# シェルスクリプトで実行（推奨）
+./scripts/generate-openapi.sh
+
+# または直接Pythonスクリプトを実行
+docker-compose exec api python scripts/generate_openapi.py
+```
+
+生成されたファイルは `openapi.json` に保存されます（volumeマウントで自動的にホスト側にも反映）。
 
 ## 開発
 
