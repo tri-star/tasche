@@ -74,6 +74,35 @@ docker-compose exec api python scripts/reset_db.py
 
 `src/tasche/` 配下のファイルを編集すると、ホットリロードで自動的に反映されます。
 
+### テスト（pytest）
+
+```bash
+# 全テスト実行
+docker-compose exec api pytest
+
+# 失敗したテストから詳細表示
+docker-compose exec api pytest -x
+
+# 特定のテストだけ実行（例）
+docker-compose exec api pytest -k users
+```
+
+### Lint / Format（ruff）
+
+```bash
+# Lint（チェックのみ）
+docker-compose exec api ruff check .
+
+# Lint（自動修正あり）
+docker-compose exec api ruff check . --fix
+
+# Format（整形）
+docker-compose exec api ruff format .
+
+# Format（チェックのみ）
+docker-compose exec api ruff format . --check
+```
+
 ### コンテナ再起動
 
 ```bash
