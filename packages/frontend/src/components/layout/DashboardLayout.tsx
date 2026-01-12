@@ -11,13 +11,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       {/* ヘッダー */}
       <header className="flex items-center justify-between px-6 py-4 bg-white border-b">
         <div className="flex items-center gap-2">
-          <img
-            src="/images/dashboard/logo.png"
-            alt="Tasche"
-            className="h-8"
-          />
+          <img src="/images/dashboard/logo.png" alt="Tasche" className="h-8" />
         </div>
-        <button className="rounded-full p-2 hover:bg-green-50 transition-colors">
+        <button
+          type="button"
+          className="rounded-full p-2 hover:bg-green-50 transition-colors"
+        >
           <Bell className="h-6 w-6 text-muted-foreground" />
         </button>
       </header>
@@ -25,9 +24,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       {/* サイドバー + メインコンテンツ */}
       <div className="flex flex-1">
         <Sidebar />
-        <main className="flex-1 px-6 py-6">
-          {children}
-        </main>
+        <div className="flex-1 flex justify-center">
+          <main className="flex-1 px-6 py-6 max-w-6xl ">{children}</main>
+        </div>
       </div>
     </div>
   );
