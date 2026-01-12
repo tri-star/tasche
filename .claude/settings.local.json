@@ -10,7 +10,10 @@
       "mcp__context7__query-docs",
       "Bash(docker-compose:*)",
       "Bash(docker logs:*)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Bash(uv run:*)",
+      "Bash(./scripts/generate-openapi.sh:*)",
+      "Bash(git commit:*)"
     ]
   }
 }
