@@ -7,16 +7,25 @@ type DashboardLayoutProps = {
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
-    <div className="flex min-h-screen bg-background">
-      <Sidebar />
-      <div className="flex-1 flex flex-col">
-        {/* ヘッダー（通知アイコン） */}
-        <header className="flex justify-end p-4">
-          <button className="rounded-full p-2 hover:bg-muted transition-colors">
-            <Bell className="h-6 w-6 text-muted-foreground" />
-          </button>
-        </header>
-        <main className="flex-1 px-6 pb-6">
+    <div className="flex flex-col min-h-screen bg-background">
+      {/* ヘッダー */}
+      <header className="flex items-center justify-between px-6 py-4 bg-white border-b">
+        <div className="flex items-center gap-2">
+          <img
+            src="/images/dashboard/logo.png"
+            alt="Tasche"
+            className="h-8"
+          />
+        </div>
+        <button className="rounded-full p-2 hover:bg-green-50 transition-colors">
+          <Bell className="h-6 w-6 text-muted-foreground" />
+        </button>
+      </header>
+
+      {/* サイドバー + メインコンテンツ */}
+      <div className="flex flex-1">
+        <Sidebar />
+        <main className="flex-1 px-6 py-6">
           {children}
         </main>
       </div>

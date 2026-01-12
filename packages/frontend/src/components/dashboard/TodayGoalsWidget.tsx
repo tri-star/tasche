@@ -31,8 +31,8 @@ export function TodayGoalsWidget({ date, goals, onToggleGoal }: TodayGoalsWidget
         </div>
       </CardHeader>
 
-      <CardContent className="relative pb-16">
-        <ul className="space-y-3">
+      <CardContent>
+        <ul className="relative z-10 space-y-3">
           {goals.map((goal) => (
             <li key={goal.task_id} className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -57,16 +57,15 @@ export function TodayGoalsWidget({ date, goals, onToggleGoal }: TodayGoalsWidget
             </li>
           ))}
         </ul>
-
-        {/* 右下の植物イラスト */}
-        <div className="absolute bottom-2 right-2">
-          <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-            <path d="M20 35V20" stroke="hsl(122 39% 49%)" strokeWidth="2" />
-            <path d="M20 20C15 15 10 18 10 25" stroke="hsl(122 39% 49%)" strokeWidth="2" fill="none" />
-            <path d="M20 20C25 15 30 18 30 25" stroke="hsl(122 39% 49%)" strokeWidth="2" fill="none" />
-          </svg>
-        </div>
       </CardContent>
+
+      {/* 右下の植物イラスト（背景） */}
+      <img
+        src="/images/dashboard/widget-background.png"
+        alt=""
+        className="absolute bottom-0 right-4 h-12 w-12 object-contain opacity-80"
+        aria-hidden="true"
+      />
     </Card>
   );
 }

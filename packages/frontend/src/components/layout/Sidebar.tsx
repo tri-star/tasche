@@ -25,18 +25,9 @@ export function Sidebar({ className }: SidebarProps) {
   ];
 
   return (
-    <aside className={cn("flex h-screen w-60 flex-col bg-white border-r", className)}>
-      {/* ロゴ */}
-      <div className="flex items-center gap-2 px-4 py-6">
-        <img
-          src="/images/dashboard/logo.png"
-          alt="Tasche"
-          className="h-8"
-        />
-      </div>
-
+    <aside className={cn("flex w-60 flex-col bg-white border-r", className)}>
       {/* メインナビゲーション */}
-      <nav className="flex-1 px-3">
+      <nav className="flex-1 px-3 pt-6">
         <ul className="space-y-1">
           {mainNavItems.map((item) => (
             <li key={item.href}>
