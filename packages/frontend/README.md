@@ -1,73 +1,52 @@
-# React + TypeScript + Vite
+# Tasche Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Tascheのフロントエンドアプリケーションです。React + TypeScript + Viteで構築されています。
 
-Currently, two official plugins are available:
+## 開発環境のセットアップ
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### 1. 環境変数の設定
 
-## React Compiler
+`.env.example`を`.env`にコピーして、必要に応じて値を調整してください。
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+cp .env.example .env
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+デフォルトでは、MSW (Mock Service Worker) が有効になっています。実際のバックエンドAPIを使用する場合は、`.env`ファイルで`VITE_USE_MSW=false`に設定してください。
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### 2. 依存関係のインストール
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+プロジェクトルートから以下のコマンドを実行してください。
+
+```bash
+pnpm install
 ```
+
+### 3. 開発サーバーの起動
+
+```bash
+pnpm --filter frontend dev
+```
+
+ブラウザで http://localhost:5173 にアクセスしてください。
+
+## 利用可能なスクリプト
+
+- `pnpm dev` - 開発サーバーを起動
+- `pnpm build` - プロダクションビルドを作成
+- `pnpm preview` - ビルドしたアプリケーションをプレビュー
+- `pnpm test` - テストを実行
+- `pnpm lint` - コードをチェック
+- `pnpm format` - コードをフォーマット
+- `pnpm openapi:update` - OpenAPI定義からAPIクライアントを生成
+
+## 環境変数
+
+### VITE_USE_MSW
+
+MSW (Mock Service Worker) を有効にするかどうかを設定します。
+
+- `true`: MSWを有効にして、モックAPIを使用
+- `false`: 実際のバックエンドAPIを使用
+
+開発環境では通常`true`に設定します。
