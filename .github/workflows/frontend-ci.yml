@@ -1,0 +1,156 @@
+name: frontend-ci
+
+on:
+    pull_request:
+        branches:
+            - main
+        types:
+            - opened
+            - synchronize
+            - reopened
+            - ready_for_review
+        paths:
+            - packages/frontend/**
+            - packages/backend/openapi.json
+            - pnpm-lock.yaml
+            - pnpm-workspace.yaml
+            - package.json
+            - .github/workflows/frontend-ci.yml
+    push:
+        branches:
+            - main
+        paths:
+            - packages/frontend/**
+            - packages/backend/openapi.json
+            - pnpm-lock.yaml
+            - pnpm-workspace.yaml
+            - package.json
+            - .github/workflows/frontend-ci.yml
+    workflow_dispatch:
+
+permissions:
+    contents: read
+
+concurrency:
+    group: frontend-ci-${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    frontend-lint:
+        name: frontend-lint
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+            - name: Set up Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 24.x
+                  cache: pnpm
+                  cache-dependency-path: pnpm-lock.yaml
+
+            - name: Set up pnpm
+              uses: pnpm/action-setup@v4
+              with:
+                  version: 9
+                  run_install: false
+
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: Biome lint
+              run: pnpm --filter @tasche/frontend lint
+
+    frontend-test:
+        name: frontend-test
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+            - name: Set up Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 24.x
+                  cache: pnpm
+                  cache-dependency-path: pnpm-lock.yaml
+
+            - name: Set up pnpm
+              uses: pnpm/action-setup@v4
+              with:
+                  version: 9
+                  run_install: false
+
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: Run tests
+              run: pnpm --filter @tasche/frontend test
+
+    frontend-build:
+        name: frontend-build
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+            - name: Set up Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 24.x
+                  cache: pnpm
+                  cache-dependency-path: pnpm-lock.yaml
+
+            - name: Set up pnpm
+              uses: pnpm/action-setup@v4
+              with:
+                  version: 9
+                  run_install: false
+
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: Build
+              run: pnpm --filter @tasche/frontend build
+
+    frontend-openapi:
+        name: frontend-openapi
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+            - name: Set up Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 24.x
+                  cache: pnpm
+                  cache-dependency-path: pnpm-lock.yaml
+
+            - name: Set up pnpm
+              uses: pnpm/action-setup@v4
+              with:
+                  version: 9
+                  run_install: false
+
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: Regenerate OpenAPI client
+              run: pnpm --filter @tasche/frontend openapi:update
+
+            - name: Verify generated files are committed
+              run: |
+                  changes=$(git status --porcelain -- packages/frontend/src/api/generated)
+                  if [[ -n "$changes" ]]; then
+                    echo "OpenAPI generated files are out of date. Run the following command and commit the results:" >&2
+                    echo "  pnpm --filter @tasche/frontend openapi:update" >&2
+                    echo "" >&2
+                    echo "$changes" >&2
+                    exit 1
+                  fi
