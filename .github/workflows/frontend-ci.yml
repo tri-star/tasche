@@ -1,0 +1,84 @@
+name: frontend-ci
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+    paths:
+      - packages/frontend/**
+      - packages/backend/openapi.json
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - package.json
+      - .github/workflows/frontend-ci.yml
+      - .github/workflows/reusable-node-pnpm-run.yml
+  push:
+    branches:
+      - main
+    paths:
+      - packages/frontend/**
+      - packages/backend/openapi.json
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - package.json
+      - .github/workflows/frontend-ci.yml
+      - .github/workflows/reusable-node-pnpm-run.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: frontend-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend-lint:
+    name: frontend-lint
+    uses: ./.github/workflows/reusable-node-pnpm-run.yml
+    with:
+      node-version: 24.x
+      pnpm-version: "9"
+      cache-dependency-path: pnpm-lock.yaml
+      script: pnpm --filter @tasche/frontend lint
+
+  frontend-test:
+    name: frontend-test
+    uses: ./.github/workflows/reusable-node-pnpm-run.yml
+    with:
+      node-version: 24.x
+      pnpm-version: "9"
+      cache-dependency-path: pnpm-lock.yaml
+      script: pnpm --filter @tasche/frontend test
+
+  frontend-build:
+    name: frontend-build
+    uses: ./.github/workflows/reusable-node-pnpm-run.yml
+    with:
+      node-version: 24.x
+      pnpm-version: "9"
+      cache-dependency-path: pnpm-lock.yaml
+      script: pnpm --filter @tasche/frontend build
+
+  frontend-openapi:
+    name: frontend-openapi
+    uses: ./.github/workflows/reusable-node-pnpm-run.yml
+    with:
+      node-version: 24.x
+      pnpm-version: "9"
+      cache-dependency-path: pnpm-lock.yaml
+      script: |
+        pnpm --filter @tasche/frontend openapi:update
+        changes=$(git status --porcelain -- packages/frontend/src/api/generated)
+        if [[ -n "$changes" ]]; then
+          echo "OpenAPI generated files are out of date. Run the following command and commit the results:" >&2
+          echo "  pnpm --filter @tasche/frontend openapi:update" >&2
+          echo "" >&2
+          echo "$changes" >&2
+          exit 1
+        fi
