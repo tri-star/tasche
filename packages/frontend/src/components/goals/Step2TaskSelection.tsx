@@ -1,21 +1,21 @@
-import { Plus } from "lucide-react";
-import { useState } from "react";
-import type { TaskResponse } from "@/api/generated/model";
-import { Button } from "@/components/ui/button";
-import { TaskItem } from "./TaskItem";
-import type { NewTask } from "./types";
+import { Plus } from "lucide-react"
+import { useState } from "react"
+import type { TaskResponse } from "@/api/generated/model"
+import { Button } from "@/components/ui/button"
+import { TaskItem } from "./TaskItem"
+import type { NewTask } from "./types"
 
 type Step2Props = {
-  tasks: TaskResponse[];
-  selectedTaskIds: string[];
-  newTasks: NewTask[];
-  onToggleTask: (taskId: string) => void;
-  onAddNewTask: (name: string) => void;
-  onEditTask: (taskId: string, newName: string) => void;
-  onDeleteTask: (taskId: string) => void;
-  onNext: () => void;
-  onBack: () => void;
-};
+  tasks: TaskResponse[]
+  selectedTaskIds: string[]
+  newTasks: NewTask[]
+  onToggleTask: (taskId: string) => void
+  onAddNewTask: (name: string) => void
+  onEditTask: (taskId: string, newName: string) => void
+  onDeleteTask: (taskId: string) => void
+  onNext: () => void
+  onBack: () => void
+}
 
 export function Step2TaskSelection({
   tasks,
@@ -28,18 +28,18 @@ export function Step2TaskSelection({
   onNext,
   onBack,
 }: Step2Props) {
-  const [newTaskName, setNewTaskName] = useState("");
+  const [newTaskName, setNewTaskName] = useState("")
 
-  const hasSelection = selectedTaskIds.length > 0;
+  const hasSelection = selectedTaskIds.length > 0
 
   const handleAdd = () => {
-    const trimmed = newTaskName.trim();
+    const trimmed = newTaskName.trim()
     if (!trimmed) {
-      return;
+      return
     }
-    onAddNewTask(trimmed);
-    setNewTaskName("");
-  };
+    onAddNewTask(trimmed)
+    setNewTaskName("")
+  }
 
   return (
     <div className="space-y-6">
@@ -114,5 +114,5 @@ export function Step2TaskSelection({
         </Button>
       </div>
     </div>
-  );
+  )
 }

@@ -1,9 +1,9 @@
-import { Sidebar } from "./Sidebar";
-import { Bell } from "lucide-react";
+import { Bell } from "lucide-react"
+import { Sidebar } from "./Sidebar"
 
 type DashboardLayoutProps = {
-  children: React.ReactNode;
-};
+  children: React.ReactNode
+}
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
@@ -13,10 +13,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         <div className="flex items-center gap-2">
           <img src="/images/dashboard/logo.png" alt="Tasche" className="h-8" />
         </div>
-        <button
-          type="button"
-          className="rounded-full p-2 hover:bg-green-50 transition-colors"
-        >
+        <button type="button" className="rounded-full p-2 hover:bg-green-50 transition-colors">
           <Bell className="h-6 w-6 text-muted-foreground" />
         </button>
       </header>
@@ -29,5 +26,5 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         </div>
       </div>
     </div>
-  );
+  )
 }

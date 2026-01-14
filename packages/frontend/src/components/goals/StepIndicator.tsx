@@ -1,16 +1,16 @@
-import { Check } from "lucide-react";
+import { Check } from "lucide-react"
 
 type StepIndicatorProps = {
-  currentStep: number;
-  steps: { number: number; label: string }[];
-};
+  currentStep: number
+  steps: { number: number; label: string }[]
+}
 
 export function StepIndicator({ currentStep, steps }: StepIndicatorProps) {
   return (
     <div className="flex flex-wrap items-center gap-3">
       {steps.map((step) => {
-        const isActive = currentStep === step.number;
-        const isCompleted = currentStep > step.number;
+        const isActive = currentStep === step.number
+        const isCompleted = currentStep > step.number
         return (
           <div
             key={step.number}
@@ -27,8 +27,8 @@ export function StepIndicator({ currentStep, steps }: StepIndicatorProps) {
             </span>
             <span>{step.label}</span>
           </div>
-        );
+        )
       })}
     </div>
-  );
+  )
 }

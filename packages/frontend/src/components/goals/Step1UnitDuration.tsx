@@ -1,12 +1,12 @@
-import { Check } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Check } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 type Step1Props = {
-  value: number | null;
-  onChange: (minutes: number) => void;
-  onNext: () => void;
-  onCancel: () => void;
-};
+  value: number | null
+  onChange: (minutes: number) => void
+  onNext: () => void
+  onCancel: () => void
+}
 
 const options = [
   {
@@ -33,7 +33,7 @@ const options = [
     description: "Deep work",
     icon: "/images/goals/step1-option-4.png",
   },
-];
+]
 
 export function Step1UnitDuration({ value, onChange, onNext, onCancel }: Step1Props) {
   return (
@@ -53,7 +53,7 @@ export function Step1UnitDuration({ value, onChange, onNext, onCancel }: Step1Pr
 
       <div className="grid gap-4 md:grid-cols-2">
         {options.map((option) => {
-          const isSelected = value === option.minutes;
+          const isSelected = value === option.minutes
           return (
             <button
               key={option.minutes}
@@ -80,7 +80,7 @@ export function Step1UnitDuration({ value, onChange, onNext, onCancel }: Step1Pr
                 {isSelected ? <Check className="h-4 w-4" /> : null}
               </span>
             </button>
-          );
+          )
         })}
       </div>
 
@@ -93,5 +93,5 @@ export function Step1UnitDuration({ value, onChange, onNext, onCancel }: Step1Pr
         </Button>
       </div>
     </div>
-  );
+  )
 }

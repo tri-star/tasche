@@ -1,12 +1,12 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import type { TodayGoal } from "@/api/generated/model";
+import type { TodayGoal } from "@/api/generated/model"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Checkbox } from "@/components/ui/checkbox"
 
 type TodayGoalsWidgetProps = {
-  date: string;
-  goals: TodayGoal[];
-  onToggleGoal?: (taskId: string, checked: boolean) => void;
-};
+  date: string
+  goals: TodayGoal[]
+  onToggleGoal?: (taskId: string, checked: boolean) => void
+}
 
 export function TodayGoalsWidget({ date, goals, onToggleGoal }: TodayGoalsWidgetProps) {
   return (
@@ -49,9 +49,7 @@ export function TodayGoalsWidget({ date, goals, onToggleGoal }: TodayGoalsWidget
                 </span>
                 <Checkbox
                   checked={goal.actual_units >= goal.target_units}
-                  onCheckedChange={(checked) =>
-                    onToggleGoal?.(goal.task_id, checked as boolean)
-                  }
+                  onCheckedChange={(checked) => onToggleGoal?.(goal.task_id, checked as boolean)}
                 />
               </div>
             </li>
@@ -67,5 +65,5 @@ export function TodayGoalsWidget({ date, goals, onToggleGoal }: TodayGoalsWidget
         aria-hidden="true"
       />
     </Card>
-  );
+  )
 }

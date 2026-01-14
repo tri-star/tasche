@@ -1,3 +1,4 @@
+import type { DashboardResponseCurrentDayOfWeek, WeeklyMatrixItem } from "@/api/generated/model"
 import {
   Table,
   TableBody,
@@ -5,11 +6,18 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { cn } from "@/lib/utils";
-import type { WeeklyMatrixItem, DashboardResponseCurrentDayOfWeek } from "@/api/generated/model";
+} from "@/components/ui/table"
+import { cn } from "@/lib/utils"
 
-const DAYS_OF_WEEK = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"] as const;
+const DAYS_OF_WEEK = [
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+  "sunday",
+] as const
 const DAY_LABELS: Record<string, string> = {
   monday: "月",
   tuesday: "火",
@@ -18,42 +26,40 @@ const DAY_LABELS: Record<string, string> = {
   friday: "金",
   saturday: "土",
   sunday: "日",
-};
+}
 
 type WeeklyMatrixProps = {
-  data: WeeklyMatrixItem[];
-  currentDay: DashboardResponseCurrentDayOfWeek;
-};
+  data: WeeklyMatrixItem[]
+  currentDay: DashboardResponseCurrentDayOfWeek
+}
 
 function getCompletionColorClass(rate: number | null | undefined): string {
-  if (rate === null || rate === undefined) return "";
-  if (rate === 0) return "bg-red-200";
-  if (rate < 50) return "bg-red-100";
-  if (rate < 80) return "bg-yellow-100";
-  if (rate < 100) return "bg-yellow-50";
-  return "bg-green-200";
+  if (rate === null || rate === undefined) return ""
+  if (rate === 0) return "bg-red-200"
+  if (rate < 50) return "bg-red-100"
+  if (rate < 80) return "bg-yellow-100"
+  if (rate < 100) return "bg-yellow-50"
+  return "bg-green-200"
 }
 
 function getSpriteOffset(rate: number | null | undefined): number {
-  if (rate === null || rate === undefined) return 0;
-  if (rate < 50) return 0;
-  if (rate < 100) return 18;
-  return 36;
+  if (rate === null || rate === undefined) return 0
+  if (rate < 50) return 0
+  if (rate < 100) return 18
+  return 36
 }
 
 export function WeeklyMatrix({ data, currentDay }: WeeklyMatrixProps) {
   const totals = DAYS_OF_WEEK.map((day) => {
-    const dayData = data
-      .map((item) => item.daily_data[day])
-      .filter((d) => d !== undefined);
+    const dayData = data.map((item) => item.daily_data[day]).filter((d) => d !== undefined)
 
-    if (dayData.length === 0) return null;
+    if (dayData.length === 0) return null
 
-    const totalTarget = dayData.reduce((sum, d) => sum + (d?.target_units ?? 0), 0);
-    const totalActual = dayData.reduce((sum, d) => sum + (d?.actual_units ?? 0), 0);
+    const totalTarget = dayData.reduce((sum, d) => sum + (d?.target_units ?? 0), 0)
+    const totalActual = dayData.reduce((sum, d) => sum + (d?.actual_units ?? 0), 0)
 
-    return totalTarget > 0 ? Math.round((totalActual / totalTarget) * 100) : null;
-  });
+    return totalTarget > 0 ? Math.round((totalActual / totalTarget) * 100) : null
+  })
 
   return (
     <div className="rounded-lg border bg-card">
@@ -66,10 +72,7 @@ export function WeeklyMatrix({ data, currentDay }: WeeklyMatrixProps) {
               {DAYS_OF_WEEK.map((day) => (
                 <TableHead
                   key={day}
-                  className={cn(
-                    "text-center w-20",
-                    day === currentDay && "bg-primary/10"
-                  )}
+                  className={cn("text-center w-20", day === currentDay && "bg-primary/10")}
                 >
                   {DAY_LABELS[day]}
                 </TableHead>
@@ -81,8 +84,8 @@ export function WeeklyMatrix({ data, currentDay }: WeeklyMatrixProps) {
               <TableRow key={item.task_id}>
                 <TableCell className="font-medium">{item.task_name}</TableCell>
                 {DAYS_OF_WEEK.map((day) => {
-                  const dayData = item.daily_data[day];
-                  const rate = dayData?.completion_rate;
+                  const dayData = item.daily_data[day]
+                  const rate = dayData?.completion_rate
 
                   return (
                     <TableCell
@@ -90,7 +93,7 @@ export function WeeklyMatrix({ data, currentDay }: WeeklyMatrixProps) {
                       className={cn(
                         "text-center p-2",
                         day === currentDay && "bg-primary/5",
-                        getCompletionColorClass(rate)
+                        getCompletionColorClass(rate),
                       )}
                     >
                       {rate !== null && rate !== undefined ? (
@@ -106,7 +109,7 @@ export function WeeklyMatrix({ data, currentDay }: WeeklyMatrixProps) {
                         </div>
                       ) : null}
                     </TableCell>
-                  );
+                  )
                 })}
               </TableRow>
             ))}
@@ -118,7 +121,7 @@ export function WeeklyMatrix({ data, currentDay }: WeeklyMatrixProps) {
                   key={DAYS_OF_WEEK[index]}
                   className={cn(
                     "text-center",
-                    DAYS_OF_WEEK[index] === currentDay && "bg-primary/10"
+                    DAYS_OF_WEEK[index] === currentDay && "bg-primary/10",
                   )}
                 >
                   {total !== null ? `${total}%` : ""}
@@ -129,5 +132,5 @@ export function WeeklyMatrix({ data, currentDay }: WeeklyMatrixProps) {
         </Table>
       </div>
     </div>
-  );
+  )
 }

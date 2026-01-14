@@ -1,3 +1,3 @@
-import type { RequestHandler } from "msw";
+import type { RequestHandler } from "msw"
 
-export const passthroughHandlers: RequestHandler[] = [];
+export const passthroughHandlers: RequestHandler[] = []

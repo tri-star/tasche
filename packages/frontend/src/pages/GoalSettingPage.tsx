@@ -1,5 +1,5 @@
-import { GoalWizard } from "@/components/goals/GoalWizard";
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { GoalWizard } from "@/components/goals/GoalWizard"
+import { DashboardLayout } from "@/components/layout/DashboardLayout"
 
 export function GoalSettingPage() {
   return (
@@ -23,5 +23,5 @@ export function GoalSettingPage() {
         </div>
       </div>
     </DashboardLayout>
-  );
+  )
 }

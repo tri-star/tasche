@@ -1,6 +1,6 @@
-import type { DailyTargets } from "@/api/generated/model";
-import { Button } from "@/components/ui/button";
-import type { GoalTask } from "./types";
+import type { DailyTargets } from "@/api/generated/model"
+import { Button } from "@/components/ui/button"
+import type { GoalTask } from "./types"
 
 const dayLabels = [
   { key: "monday", label: "月" },
@@ -10,17 +10,17 @@ const dayLabels = [
   { key: "friday", label: "金" },
   { key: "saturday", label: "土" },
   { key: "sunday", label: "日" },
-] as const;
+] as const
 
 type Step4Props = {
-  unitDurationMinutes: number;
-  tasks: GoalTask[];
-  weeklyTargets: Record<string, DailyTargets>;
-  onSave: () => void;
-  onBack: () => void;
-  isSaving: boolean;
-  errorMessage?: string | null;
-};
+  unitDurationMinutes: number
+  tasks: GoalTask[]
+  weeklyTargets: Record<string, DailyTargets>
+  onSave: () => void
+  onBack: () => void
+  isSaving: boolean
+  errorMessage?: string | null
+}
 
 export function Step4Confirmation({
   unitDurationMinutes,
@@ -60,8 +60,8 @@ export function Step4Confirmation({
             </thead>
             <tbody>
               {tasks.map((task) => {
-                const targets = weeklyTargets[task.id];
-                const total = dayLabels.reduce((sum, day) => sum + (targets?.[day.key] ?? 0), 0);
+                const targets = weeklyTargets[task.id]
+                const total = dayLabels.reduce((sum, day) => sum + (targets?.[day.key] ?? 0), 0)
                 return (
                   <tr key={task.id} className="border-t border-dashed border-emerald-100">
                     <td className="px-2 py-3 font-semibold text-emerald-900">{task.name}</td>
@@ -72,7 +72,7 @@ export function Step4Confirmation({
                     ))}
                     <td className="px-2 py-3 text-center font-semibold">{total.toFixed(1)}</td>
                   </tr>
-                );
+                )
               })}
             </tbody>
           </table>
@@ -90,5 +90,5 @@ export function Step4Confirmation({
         </Button>
       </div>
     </div>
-  );
+  )
 }

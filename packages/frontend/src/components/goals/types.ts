@@ -1,17 +1,17 @@
-import type { DailyTargets } from "@/api/generated/model";
+import type { DailyTargets } from "@/api/generated/model"
 
-export type WizardStep = 1 | 2 | 3 | 4;
+export type WizardStep = 1 | 2 | 3 | 4
 
 export type NewTask = {
-  tempId: string;
-  name: string;
-};
+  tempId: string
+  name: string
+}
 
 export type GoalTask = {
-  id: string;
-  name: string;
-  isNew?: boolean;
-};
+  id: string
+  name: string
+  isNew?: boolean
+}
 
 export const createEmptyTargets = (): DailyTargets => ({
   monday: 0,
@@ -21,4 +21,4 @@ export const createEmptyTargets = (): DailyTargets => ({
   friday: 0,
   saturday: 0,
   sunday: 0,
-});
+})

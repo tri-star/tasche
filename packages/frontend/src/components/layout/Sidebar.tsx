@@ -1,28 +1,28 @@
-import { cn } from "@/lib/utils";
-import { Home, Target, Settings, HelpCircle, User } from "lucide-react";
+import { HelpCircle, Home, Settings, Target, User } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 type NavItem = {
-  icon: React.ReactNode;
-  label: string;
-  href: string;
-  active?: boolean;
-};
+  icon: React.ReactNode
+  label: string
+  href: string
+  active?: boolean
+}
 
 type SidebarProps = {
-  className?: string;
-};
+  className?: string
+}
 
 export function Sidebar({ className }: SidebarProps) {
   const mainNavItems: NavItem[] = [
     { icon: <Home className="h-5 w-5" />, label: "ダッシュボード", href: "/", active: true },
     { icon: <Target className="h-5 w-5" />, label: "目標設定", href: "/goals" },
     { icon: <Settings className="h-5 w-5" />, label: "設定", href: "/settings" },
-  ];
+  ]
 
   const bottomNavItems: NavItem[] = [
     { icon: <HelpCircle className="h-5 w-5" />, label: "ヘルプ", href: "/help" },
     { icon: <User className="h-5 w-5" />, label: "アカウント", href: "/account" },
-  ];
+  ]
 
   return (
     <aside className={cn("flex w-60 flex-col bg-white border-r", className)}>
@@ -37,7 +37,7 @@ export function Sidebar({ className }: SidebarProps) {
                   "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
                   item.active
                     ? "bg-accent text-accent-foreground font-medium"
-                    : "text-muted-foreground hover:bg-muted"
+                    : "text-muted-foreground hover:bg-muted",
                 )}
               >
                 {item.icon}
@@ -65,5 +65,5 @@ export function Sidebar({ className }: SidebarProps) {
         </ul>
       </nav>
     </aside>
-  );
+  )
 }

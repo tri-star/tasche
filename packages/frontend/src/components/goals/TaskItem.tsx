@@ -1,34 +1,34 @@
-import { Check, Pencil, Trash2, X } from "lucide-react";
-import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Check, Pencil, Trash2, X } from "lucide-react"
+import { useEffect, useState } from "react"
+import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 
 type TaskItemProps = {
-  id: string;
-  name: string;
-  isSelected: boolean;
-  isNew?: boolean;
-  onToggle: () => void;
-  onEdit: (newName: string) => void;
-  onDelete: () => void;
-};
+  id: string
+  name: string
+  isSelected: boolean
+  isNew?: boolean
+  onToggle: () => void
+  onEdit: (newName: string) => void
+  onDelete: () => void
+}
 
 export function TaskItem({ name, isSelected, isNew, onToggle, onEdit, onDelete }: TaskItemProps) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [draftName, setDraftName] = useState(name);
+  const [isEditing, setIsEditing] = useState(false)
+  const [draftName, setDraftName] = useState(name)
 
   useEffect(() => {
-    setDraftName(name);
-  }, [name]);
+    setDraftName(name)
+  }, [name])
 
   const handleSave = () => {
-    const trimmed = draftName.trim();
+    const trimmed = draftName.trim()
     if (!trimmed) {
-      return;
+      return
     }
-    onEdit(trimmed);
-    setIsEditing(false);
-  };
+    onEdit(trimmed)
+    setIsEditing(false)
+  }
 
   return (
     <div
@@ -87,5 +87,5 @@ export function TaskItem({ name, isSelected, isNew, onToggle, onEdit, onDelete }
         </div>
       </div>
     </div>
-  );
+  )
 }

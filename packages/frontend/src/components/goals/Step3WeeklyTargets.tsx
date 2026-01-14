@@ -1,15 +1,15 @@
-import type { DailyTargets } from "@/api/generated/model";
-import { Button } from "@/components/ui/button";
-import type { GoalTask } from "./types";
-import { WeeklyTargetGrid } from "./WeeklyTargetGrid";
+import type { DailyTargets } from "@/api/generated/model"
+import { Button } from "@/components/ui/button"
+import type { GoalTask } from "./types"
+import { WeeklyTargetGrid } from "./WeeklyTargetGrid"
 
 type Step3Props = {
-  tasks: GoalTask[];
-  weeklyTargets: Record<string, DailyTargets>;
-  onUpdateTargets: (taskId: string, targets: DailyTargets) => void;
-  onNext: () => void;
-  onBack: () => void;
-};
+  tasks: GoalTask[]
+  weeklyTargets: Record<string, DailyTargets>
+  onUpdateTargets: (taskId: string, targets: DailyTargets) => void
+  onNext: () => void
+  onBack: () => void
+}
 
 export function Step3WeeklyTargets({
   tasks,
@@ -40,5 +40,5 @@ export function Step3WeeklyTargets({
         <Button onClick={onNext}>次へ →</Button>
       </div>
     </div>
-  );
+  )
 }

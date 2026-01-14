@@ -1,9 +1,9 @@
-import { HttpResponse, http } from "msw";
+import { HttpResponse, http } from "msw"
 import type {
   APIResponseGoalsResponse,
   APIResponseGoalsUpdateResponse,
   APIResponseTaskListResponse,
-} from "@/api/generated/model";
+} from "@/api/generated/model"
 
 const mockTasks: APIResponseTaskListResponse = {
   data: {
@@ -45,7 +45,7 @@ const mockTasks: APIResponseTaskListResponse = {
       },
     ],
   },
-};
+}
 
 const mockGoals: APIResponseGoalsResponse = {
   data: {
@@ -53,12 +53,12 @@ const mockGoals: APIResponseGoalsResponse = {
     unit_duration_minutes: 30,
     goals: [],
   },
-};
+}
 
 export const goalsHandlers = [
   http.get("*/api/tasks", () => HttpResponse.json(mockTasks)),
   http.post("*/api/tasks", async ({ request }) => {
-    const body = await request.json();
+    const body = await request.json()
     return HttpResponse.json(
       {
         data: {
@@ -70,10 +70,10 @@ export const goalsHandlers = [
         },
       },
       { status: 201 },
-    );
+    )
   }),
   http.put("*/api/tasks/:taskId", async ({ request, params }) => {
-    const body = await request.json();
+    const body = await request.json()
     return HttpResponse.json({
       data: {
         id: params.taskId,
@@ -82,7 +82,7 @@ export const goalsHandlers = [
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       },
-    });
+    })
   }),
   http.delete("*/api/tasks/:taskId", ({ params }) => {
     return HttpResponse.json({
@@ -93,11 +93,11 @@ export const goalsHandlers = [
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       },
-    });
+    })
   }),
   http.get("*/api/weeks/current/goals", () => HttpResponse.json(mockGoals)),
   http.put("*/api/weeks/current/goals", async ({ request }) => {
-    const body = await request.json();
+    const body = await request.json()
     const response: APIResponseGoalsUpdateResponse = {
       data: {
         week_id: "wk_01HXYZ1234567890ABCDEF",
@@ -114,8 +114,8 @@ export const goalsHandlers = [
             name: goal.new_task_name ?? `Task ${index + 1}`,
           })),
       },
-    };
+    }
 
-    return HttpResponse.json(response);
+    return HttpResponse.json(response)
   }),
-];
+]
