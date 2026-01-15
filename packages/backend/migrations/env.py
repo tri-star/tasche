@@ -1,4 +1,5 @@
 """Alembic 環境設定."""
+
 import asyncio
 from logging.config import fileConfig
 
