@@ -25,7 +25,9 @@
       "mcp__github__list_pull_requests",
       "mcp__github__get_issue_comments",
       "mcp__github__get_pull_request_comments",
-      "Bash(pnpm lint:*)"
+      "Bash(pnpm lint:*)",
+      "Bash(docker compose:*)",
+      "Bash(git add:*)"
     ]
   }
 }
