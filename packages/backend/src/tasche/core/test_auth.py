@@ -1,4 +1,5 @@
 """テスト用認証サービス（enable_test_auth==True の時のみ使用可能）."""
+
 from datetime import datetime, timedelta, timezone
 
 from jose import jwt

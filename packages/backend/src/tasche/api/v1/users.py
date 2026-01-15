@@ -1,4 +1,5 @@
 """ユーザーエンドポイント."""
+
 from fastapi import APIRouter
 
 from tasche.api.deps import CurrentUser

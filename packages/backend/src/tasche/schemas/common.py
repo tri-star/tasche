@@ -1,4 +1,5 @@
 """共通スキーマ."""
+
 from typing import Generic, TypeVar
 
 from pydantic import BaseModel

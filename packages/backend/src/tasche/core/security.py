@@ -1,4 +1,5 @@
 """JWT 検証（Auth0 + テスト用フォールバック）."""
+
 from jose import JWTError, jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials

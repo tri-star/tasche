@@ -61,5 +61,6 @@ class DashboardResponse(BaseModel):
     today_goals: list[TodayGoal] = Field(..., description="今日の目標一覧")
     weekly_matrix: list[WeeklyMatrixItem] = Field(..., description="週次マトリックス")
     has_goals_configured: bool = Field(
-        ..., description="目標設定済みフラグ（false の場合は目標設定ウィザードへの誘導が必要）"
+        ...,
+        description="目標設定済みフラグ（false の場合は目標設定ウィザードへの誘導が必要）",
     )

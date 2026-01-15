@@ -1,4 +1,5 @@
 """共通依存関係."""
+
 from typing import Annotated
 
 from fastapi import Depends, HTTPException, status

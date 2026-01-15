@@ -1,4 +1,5 @@
 """環境変数・設定管理."""
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 

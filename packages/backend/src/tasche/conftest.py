@@ -1,4 +1,5 @@
 """pytest 共通 fixtures."""
+
 import os
 
 import pytest

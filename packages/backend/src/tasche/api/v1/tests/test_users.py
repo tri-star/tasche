@@ -1,4 +1,5 @@
 """GET /api/users/me のテスト."""
+
 import pytest
 from httpx import AsyncClient
 
@@ -51,7 +52,9 @@ async def test_get_current_user_not_found(
     token_service: TestTokenService,
 ):
     """存在しないユーザーIDで404."""
-    token = token_service.create_token("usr_99NOTEXIST99999999999", "notfound@example.com")
+    token = token_service.create_token(
+        "usr_99NOTEXIST99999999999", "notfound@example.com"
+    )
 
     response = await client.get(
         "/api/users/me",
