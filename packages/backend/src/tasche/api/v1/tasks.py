@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, Query
 
-from tasche.api.deps import CurrentUser
+from tasche.api.deps import CurrentUser, DbSession
 from tasche.schemas.common import APIResponse
 from tasche.schemas.task import (
     TaskCreate,
@@ -12,53 +12,27 @@ from tasche.schemas.task import (
     TaskResponse,
     TaskUpdate,
 )
+from tasche.services import task as task_service
 
 router = APIRouter()
 
 
 @router.get("", response_model=APIResponse[TaskListResponse])
 async def get_tasks(
+    db: DbSession,
     current_user: CurrentUser,
     include_archived: bool = Query(False, description="アーカイブ済みタスクを含める"),
 ) -> APIResponse[TaskListResponse]:
     """タスク一覧を取得する."""
-    # ダミーデータを返す
-    tasks = [
-        TaskResponse(
-            id="tsk_01HXYZ1234567890ABCDEF",
-            name="英語学習",
-            is_archived=False,
-            created_at=datetime(2024, 1, 10, 9, 0, 0, tzinfo=timezone.utc),
-            updated_at=datetime(2024, 1, 10, 9, 0, 0, tzinfo=timezone.utc),
-        ),
-        TaskResponse(
-            id="tsk_02HXYZ1234567890ABCDEF",
-            name="個人開発",
-            is_archived=False,
-            created_at=datetime(2024, 1, 10, 9, 5, 0, tzinfo=timezone.utc),
-            updated_at=datetime(2024, 1, 10, 9, 5, 0, tzinfo=timezone.utc),
-        ),
-        TaskResponse(
-            id="tsk_03HXYZ1234567890ABCDEF",
-            name="読書",
-            is_archived=False,
-            created_at=datetime(2024, 1, 10, 9, 10, 0, tzinfo=timezone.utc),
-            updated_at=datetime(2024, 1, 10, 9, 10, 0, tzinfo=timezone.utc),
-        ),
-    ]
+    tasks = await task_service.get_tasks_by_user_id(
+        db,
+        user_id=current_user.id,
+        include_archived=include_archived,
+    )
 
-    if include_archived:
-        tasks.append(
-            TaskResponse(
-                id="tsk_04HXYZ1234567890ABCDEF",
-                name="アーカイブ済みタスク",
-                is_archived=True,
-                created_at=datetime(2024, 1, 1, 0, 0, 0, tzinfo=timezone.utc),
-                updated_at=datetime(2024, 1, 5, 0, 0, 0, tzinfo=timezone.utc),
-            )
-        )
+    task_responses = [TaskResponse.model_validate(task) for task in tasks]
 
-    return APIResponse(data=TaskListResponse(tasks=tasks))
+    return APIResponse(data=TaskListResponse(tasks=task_responses))
 
 
 @router.post("", response_model=APIResponse[TaskResponse], status_code=201)
