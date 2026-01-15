@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter
 
-from tasche.api.v1 import dashboard, goals, records, tasks, users, weeks
+from tasche.api.v1 import dashboard, goals, records, tasks, test_auth, users, weeks
 
 api_router = APIRouter()
 
@@ -15,4 +15,7 @@ api_router.include_router(
 )
 api_router.include_router(
     dashboard.router, prefix="/dashboard", tags=["ダッシュボード"]
+)
+api_router.include_router(
+    test_auth.router, prefix="/test-auth", tags=["テスト認証"]
 )
