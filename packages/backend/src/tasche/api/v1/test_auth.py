@@ -28,9 +28,7 @@ async def create_test_token(
     email = email or settings.test_auth_default_user_email
 
     expires_delta = (
-        timedelta(seconds=expires_in)
-        if expires_in is not None
-        else timedelta(hours=1)
+        timedelta(seconds=expires_in) if expires_in is not None else timedelta(hours=1)
     )
 
     token = token_service.create_token(

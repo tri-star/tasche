@@ -16,6 +16,4 @@ api_router.include_router(
 api_router.include_router(
     dashboard.router, prefix="/dashboard", tags=["ダッシュボード"]
 )
-api_router.include_router(
-    test_auth.router, prefix="/test-auth", tags=["テスト認証"]
-)
+api_router.include_router(test_auth.router, prefix="/test-auth", tags=["テスト認証"])
