@@ -1,5 +1,6 @@
 import type { DailyTargets } from "@/api/generated/model"
 import type { GoalTask } from "./types"
+import { createEmptyTargets } from "./types"
 
 const days = [
   { key: "monday", label: "月" },
@@ -69,15 +70,7 @@ export function WeeklyTargetGrid({ tasks, weeklyTargets, onUpdateTargets }: Week
                       onChange={(event) => {
                         const nextValue = Number(event.target.value)
                         onUpdateTargets(task.id, {
-                          ...(targets ?? {
-                            monday: 0,
-                            tuesday: 0,
-                            wednesday: 0,
-                            thursday: 0,
-                            friday: 0,
-                            saturday: 0,
-                            sunday: 0,
-                          }),
+                          ...(targets ?? createEmptyTargets()),
                           [day.key]: Number.isFinite(nextValue) ? nextValue : 0,
                         })
                       }}

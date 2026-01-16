@@ -24,6 +24,8 @@ export function TaskItem({ name, isSelected, isNew, onToggle, onEdit, onDelete }
   const handleSave = () => {
     const trimmed = draftName.trim()
     if (!trimmed) {
+      setDraftName(name)
+      setIsEditing(false)
       return
     }
     onEdit(trimmed)

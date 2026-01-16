@@ -239,7 +239,7 @@ export function GoalWizard() {
     )
   }
 
-  if (errorMessage && tasks.length === 0) {
+  if (errorMessage) {
     return (
       <div className="rounded-3xl border border-rose-100 bg-rose-50 p-6 text-sm text-rose-700">
         {errorMessage}
