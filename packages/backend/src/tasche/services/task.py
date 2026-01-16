@@ -24,7 +24,7 @@ async def get_tasks_by_user_id(
     query = select(Task).where(Task.user_id == user_id)
 
     if not include_archived:
-        query = query.where(Task.is_archived == False)  # noqa: E712
+        query = query.where(Task.is_archived.is_(False))
 
     query = query.order_by(Task.created_at)
 

@@ -8,11 +8,10 @@ from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
+# モデルを一括インポート（自動検出用）
+import tasche.models  # noqa: F401
 from tasche.core.config import settings
 from tasche.db.base import Base
-
-# モデルをインポート（自動検出用）
-from tasche.models import user  # noqa: F401
 
 config = context.config
 
