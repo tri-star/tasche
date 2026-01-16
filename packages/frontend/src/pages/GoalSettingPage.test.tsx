@@ -12,9 +12,9 @@ describe("GoalSettingPage", () => {
   it("ステップインジケーターが表示される", async () => {
     render(<GoalSettingPage />)
 
-    expect(await screen.findByText("1. ユニット時間選択")).toBeInTheDocument()
-    expect(screen.getByText("2. タスク選択")).toBeInTheDocument()
-    expect(screen.getByText("3. 曜日別目標設定")).toBeInTheDocument()
-    expect(screen.getByText("4. 確認")).toBeInTheDocument()
+    expect(await screen.findByText("ユニット時間選択")).toBeInTheDocument()
+    expect(screen.getByText("タスク選択")).toBeInTheDocument()
+    expect(screen.getByText("曜日別目標設定")).toBeInTheDocument()
+    expect(screen.getByText("確認")).toBeInTheDocument()
   })
 })

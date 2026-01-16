@@ -36,7 +36,7 @@ export function TaskItem({ name, isSelected, isNew, onToggle, onEdit, onDelete }
         isSelected ? "border-emerald-300" : "border-transparent"
       }`}
     >
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex items-center justify-between gap-3">
         <button
           type="button"
           onClick={onToggle}
@@ -47,7 +47,12 @@ export function TaskItem({ name, isSelected, isNew, onToggle, onEdit, onDelete }
             onCheckedChange={onToggle}
             onClick={(event) => event.stopPropagation()}
           />
-          <div>
+          <div className="flex">
+            {isNew ? (
+              <span className="inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
+                new
+              </span>
+            ) : null}
             {isEditing ? (
               <input
                 value={draftName}
@@ -57,11 +62,6 @@ export function TaskItem({ name, isSelected, isNew, onToggle, onEdit, onDelete }
             ) : (
               <p className="text-sm font-semibold text-emerald-900">{name}</p>
             )}
-            {isNew ? (
-              <span className="mt-1 inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
-                new
-              </span>
-            ) : null}
           </div>
         </button>
         <div className="flex items-center gap-2">

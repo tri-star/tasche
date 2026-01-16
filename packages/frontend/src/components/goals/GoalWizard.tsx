@@ -16,10 +16,10 @@ import type { GoalTask, NewTask, WizardStep } from "./types"
 import { createEmptyTargets } from "./types"
 
 const steps = [
-  { number: 1, label: "1. ユニット時間選択" },
-  { number: 2, label: "2. タスク選択" },
-  { number: 3, label: "3. 曜日別目標設定" },
-  { number: 4, label: "4. 確認" },
+  { number: 1, label: "ユニット時間選択" },
+  { number: 2, label: "タスク選択" },
+  { number: 3, label: "曜日別目標設定" },
+  { number: 4, label: "確認" },
 ]
 
 const buildTargetsMap = (goals: { task_id: string; daily_targets: DailyTargets }[]) => {
@@ -105,7 +105,11 @@ export function GoalWizard() {
       lookup.set(task.id, { id: task.id, name: task.name })
     }
     for (const task of newTasks) {
-      lookup.set(task.tempId, { id: task.tempId, name: task.name, isNew: true })
+      lookup.set(task.tempId, {
+        id: task.tempId,
+        name: task.name,
+        isNew: true,
+      })
     }
     return lookup
   }, [tasks, newTasks])

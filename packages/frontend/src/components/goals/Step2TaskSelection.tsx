@@ -1,4 +1,3 @@
-import { Plus } from "lucide-react"
 import { useState } from "react"
 import type { TaskResponse } from "@/api/generated/model"
 import { Button } from "@/components/ui/button"
@@ -78,30 +77,16 @@ export function Step2TaskSelection({
             onDelete={() => onDeleteTask(task.tempId)}
           />
         ))}
-        <div className="flex flex-col justify-between rounded-2xl border-2 border-dashed border-emerald-200 bg-white/70 p-4">
-          <div>
-            <div className="flex items-center gap-2 text-emerald-700">
-              <Plus className="h-5 w-5" />
-              <span className="text-sm font-semibold">新しいタスクを追加</span>
-            </div>
-            <p className="mt-2 text-xs text-muted-foreground">ひとつずつ増やしていきましょう。</p>
-          </div>
-          <div className="mt-4 space-y-2">
-            <input
-              value={newTaskName}
-              onChange={(event) => setNewTaskName(event.target.value)}
-              placeholder="例: ストレッチ"
-              className="w-full rounded-xl border border-emerald-100 bg-white px-3 py-2 text-sm focus:border-emerald-300 focus:outline-none"
-            />
-            <Button
-              variant="secondary"
-              className="w-full"
-              onClick={handleAdd}
-              disabled={!newTaskName.trim()}
-            >
-              追加する
-            </Button>
-          </div>
+        <div className="flex justify-between items-center rounded-2xl border-2 border-dashed border-emerald-200 bg-white/70 px-2 gap-2">
+          <input
+            value={newTaskName}
+            onChange={(event) => setNewTaskName(event.target.value)}
+            placeholder="例: ストレッチ"
+            className="w-full rounded-xl border border-emerald-100 bg-white px-3 py-2 text-sm focus:border-emerald-300 focus:outline-none"
+          />
+          <Button variant="secondary" onClick={handleAdd} disabled={!newTaskName.trim()}>
+            追加する
+          </Button>
         </div>
       </div>
 
