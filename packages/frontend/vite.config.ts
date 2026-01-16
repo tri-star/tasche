@@ -1,28 +1,28 @@
-import { execSync } from "node:child_process";
-import { existsSync, rmSync } from "node:fs";
-import { fileURLToPath, URL } from "node:url";
-import react from "@vitejs/plugin-react";
-import { type Plugin, defineConfig, loadEnv } from "vite";
+import { execSync } from "node:child_process"
+import { existsSync, rmSync } from "node:fs"
+import { fileURLToPath, URL } from "node:url"
+import react from "@vitejs/plugin-react"
+import { defineConfig, loadEnv, type Plugin } from "vite"
 
 function mswPlugin(useMsw: boolean): Plugin {
   return {
     name: "vite-plugin-msw",
     configResolved() {
-      const workerPath = "public/mockServiceWorker.js";
+      const workerPath = "public/mockServiceWorker.js"
       if (useMsw) {
-        execSync("npx msw init public --save", { stdio: "inherit" });
+        execSync("npx msw init public --save", { stdio: "inherit" })
       } else if (existsSync(workerPath)) {
-        rmSync(workerPath);
+        rmSync(workerPath)
       }
     },
-  };
+  }
 }
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), "");
-  const apiBaseUrl = env.VITE_API_BASE_URL || "http://localhost:8000";
-  const useMsw = env.VITE_USE_MSW === "true";
+  const env = loadEnv(mode, process.cwd(), "")
+  const apiBaseUrl = env.VITE_API_BASE_URL || "http://localhost:8000"
+  const useMsw = env.VITE_USE_MSW === "true"
 
   return {
     plugins: [react(), mswPlugin(useMsw)],
@@ -39,5 +39,5 @@ export default defineConfig(({ mode }) => {
         },
       },
     },
-  };
-});
+  }
+})

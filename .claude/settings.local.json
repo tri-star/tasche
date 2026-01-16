@@ -17,7 +17,15 @@
       "Bash(npx shadcn@latest add button card checkbox select table toggle-group -y)",
       "Bash(cd:*)",
       "Bash(pnpm add:*)",
-      "Bash(pnpm test:*)"
+      "Bash(pnpm test:*)",
+      "Bash(pnpm --filter frontend build:*)",
+      "Bash(git add:*)",
+      "Bash(git push:*)",
+      "Bash(git remote:*)",
+      "mcp__github__list_pull_requests",
+      "mcp__github__get_issue_comments",
+      "mcp__github__get_pull_request_comments",
+      "Bash(pnpm lint:*)"
     ]
   }
 }

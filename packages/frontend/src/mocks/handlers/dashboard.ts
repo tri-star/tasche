@@ -1,5 +1,5 @@
-import { http, HttpResponse } from "msw";
-import type { APIResponseDashboardResponse } from "@/api/generated/model";
+import { HttpResponse, http } from "msw"
+import type { APIResponseDashboardResponse } from "@/api/generated/model"
 
 const mockDashboardData: APIResponseDashboardResponse = {
   data: {
@@ -71,10 +71,10 @@ const mockDashboardData: APIResponseDashboardResponse = {
     ],
     has_goals_configured: true,
   },
-};
+}
 
 export const dashboardHandlers = [
   http.get("*/api/dashboard", () => {
-    return HttpResponse.json(mockDashboardData);
+    return HttpResponse.json(mockDashboardData)
   }),
-];
+]

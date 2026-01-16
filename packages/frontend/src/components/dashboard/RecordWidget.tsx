@@ -1,15 +1,15 @@
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { useState } from "react"
+import type { DashboardResponseCurrentDayOfWeek, TodayGoal } from "@/api/generated/model"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import type { TodayGoal, DashboardResponseCurrentDayOfWeek } from "@/api/generated/model";
+} from "@/components/ui/select"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 
 const DAYS_OF_WEEK = [
   { value: "monday", label: "月" },
@@ -19,32 +19,32 @@ const DAYS_OF_WEEK = [
   { value: "friday", label: "金" },
   { value: "saturday", label: "土" },
   { value: "sunday", label: "日" },
-] as const;
+] as const
 
 type RecordWidgetProps = {
-  currentDay: DashboardResponseCurrentDayOfWeek;
-  tasks: TodayGoal[];
-  onRecord?: (day: string, taskId: string, units: number) => void;
-};
+  currentDay: DashboardResponseCurrentDayOfWeek
+  tasks: TodayGoal[]
+  onRecord?: (day: string, taskId: string, units: number) => void
+}
 
 export function RecordWidget({ currentDay, tasks, onRecord }: RecordWidgetProps) {
-  const [selectedDay, setSelectedDay] = useState<string>(currentDay);
-  const [selectedTask, setSelectedTask] = useState<string>("");
-  const [units, setUnits] = useState<number>(1.5);
+  const [selectedDay, setSelectedDay] = useState<string>(currentDay)
+  const [selectedTask, setSelectedTask] = useState<string>("")
+  const [units, setUnits] = useState<number>(1.5)
 
   const handleDecrement = () => {
-    setUnits((prev) => Math.max(0, +(prev - 0.5).toFixed(1)));
-  };
+    setUnits((prev) => Math.max(0, +(prev - 0.5).toFixed(1)))
+  }
 
   const handleIncrement = () => {
-    setUnits((prev) => +(prev + 0.5).toFixed(1));
-  };
+    setUnits((prev) => +(prev + 0.5).toFixed(1))
+  }
 
   const handleRecord = () => {
     if (selectedTask) {
-      onRecord?.(selectedDay, selectedTask, units);
+      onRecord?.(selectedDay, selectedTask, units)
     }
-  };
+  }
 
   return (
     <Card className="relative overflow-hidden">
@@ -111,12 +111,7 @@ export function RecordWidget({ currentDay, tasks, onRecord }: RecordWidgetProps)
               −
             </Button>
             <span className="w-16 text-center text-xl font-medium">{units}</span>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={handleIncrement}
-              className="h-9 w-9"
-            >
+            <Button variant="outline" size="icon" onClick={handleIncrement} className="h-9 w-9">
               +
             </Button>
             <span className="text-sm text-muted-foreground">units</span>
@@ -141,5 +136,5 @@ export function RecordWidget({ currentDay, tasks, onRecord }: RecordWidgetProps)
         aria-hidden="true"
       />
     </Card>
-  );
+  )
 }

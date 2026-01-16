@@ -1,8 +1,13 @@
-import "./App.css";
-import { DashboardPage } from "@/pages/DashboardPage";
+import "./App.css"
+import { DashboardPage } from "@/pages/DashboardPage"
+import { GoalSettingPage } from "@/pages/GoalSettingPage"
 
 function App() {
-  return <DashboardPage />;
+  if (window.location.pathname.startsWith("/goals")) {
+    return <GoalSettingPage />
+  }
+
+  return <DashboardPage />
 }
 
-export default App;
+export default App

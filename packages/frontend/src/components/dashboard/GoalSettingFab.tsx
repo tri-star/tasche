@@ -1,9 +1,9 @@
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 type GoalSettingFabProps = {
-  onClick?: () => void;
-};
+  onClick?: () => void
+}
 
 export function GoalSettingFab({ onClick }: GoalSettingFabProps) {
   return (
@@ -14,5 +14,5 @@ export function GoalSettingFab({ onClick }: GoalSettingFabProps) {
       <Plus className="h-5 w-5" />
       <span>目標設定</span>
     </Button>
-  );
+  )
 }
