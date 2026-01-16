@@ -3,6 +3,10 @@ import type {
   APIResponseGoalsResponse,
   APIResponseGoalsUpdateResponse,
   APIResponseTaskListResponse,
+  GoalsUpdate,
+  GoalUpdateItem,
+  TaskCreate,
+  TaskUpdate,
 } from "@/api/generated/model"
 
 const mockTasks: APIResponseTaskListResponse = {
@@ -58,7 +62,7 @@ const mockGoals: APIResponseGoalsResponse = {
 export const goalsHandlers = [
   http.get("*/api/tasks", () => HttpResponse.json(mockTasks)),
   http.post("*/api/tasks", async ({ request }) => {
-    const body = await request.json()
+    const body = (await request.json()) as TaskCreate
     return HttpResponse.json(
       {
         data: {
@@ -73,7 +77,7 @@ export const goalsHandlers = [
     )
   }),
   http.put("*/api/tasks/:taskId", async ({ request, params }) => {
-    const body = await request.json()
+    const body = (await request.json()) as TaskUpdate
     return HttpResponse.json({
       data: {
         id: params.taskId,
@@ -97,19 +101,19 @@ export const goalsHandlers = [
   }),
   http.get("*/api/weeks/current/goals", () => HttpResponse.json(mockGoals)),
   http.put("*/api/weeks/current/goals", async ({ request }) => {
-    const body = await request.json()
+    const body = (await request.json()) as GoalsUpdate
     const response: APIResponseGoalsUpdateResponse = {
       data: {
         week_id: "wk_01HXYZ1234567890ABCDEF",
         unit_duration_minutes: body.unit_duration_minutes,
-        goals: body.goals.map((goal, index) => ({
+        goals: body.goals.map((goal: GoalUpdateItem, index: number) => ({
           task_id: goal.task_id ?? `tsk_new_${index}`,
           task_name: goal.new_task_name ?? `Task ${index + 1}`,
           daily_targets: goal.daily_targets,
         })),
         created_tasks: body.goals
-          .filter((goal) => !goal.task_id)
-          .map((goal, index) => ({
+          .filter((goal: GoalUpdateItem) => !goal.task_id)
+          .map((goal: GoalUpdateItem, index: number) => ({
             id: `tsk_new_${index}`,
             name: goal.new_task_name ?? `Task ${index + 1}`,
           })),
