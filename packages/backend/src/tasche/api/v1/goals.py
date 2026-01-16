@@ -77,9 +77,7 @@ async def update_current_goals(
                     daily_targets=goal_item.daily_targets,
                 )
             )
-            created_tasks.append(
-                CreatedTask(id=new_task_id, name=goal_item.new_task_name)
-            )
+            created_tasks.append(CreatedTask(id=new_task_id, name=goal_item.new_task_name))
         elif goal_item.task_id:
             # 既存タスク
             response_goals.append(

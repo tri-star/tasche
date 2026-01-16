@@ -14,14 +14,10 @@ class User(Base):
     __tablename__ = "users"
 
     id: Mapped[str] = mapped_column(String(30), primary_key=True)  # ULID
-    email: Mapped[str] = mapped_column(
-        String(255), unique=True, nullable=False, index=True
-    )
+    email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     picture: Mapped[str | None] = mapped_column(String(512), nullable=True)
-    timezone: Mapped[str] = mapped_column(
-        String(50), nullable=False, default="Asia/Tokyo"
-    )
+    timezone: Mapped[str] = mapped_column(String(50), nullable=False, default="Asia/Tokyo")
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

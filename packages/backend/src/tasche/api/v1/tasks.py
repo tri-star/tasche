@@ -68,9 +68,7 @@ async def update_task(
 
 
 @router.delete("/{task_id}", response_model=APIResponse[TaskResponse])
-async def delete_task(
-    task_id: str, current_user: CurrentUser
-) -> APIResponse[TaskResponse]:
+async def delete_task(task_id: str, current_user: CurrentUser) -> APIResponse[TaskResponse]:
     """タスクを削除（アーカイブ）する."""
     # ダミーデータを返す
     archived_task = TaskResponse(

@@ -21,9 +21,7 @@ class WeekResponse(BaseModel):
     user_id: str = Field(..., description="ユーザーID")
     start_date: date = Field(..., description="週開始日（YYYY-MM-DD）")
     end_date: date = Field(..., description="週終了日（YYYY-MM-DD）")
-    unit_duration_minutes: int = Field(
-        ..., description="1ユニットの時間（分）: 10, 30, 60, 120"
-    )
+    unit_duration_minutes: int = Field(..., description="1ユニットの時間（分）: 10, 30, 60, 120")
     week_start_day: Literal["monday", "sunday"] = Field(
         ..., description="週開始曜日: monday or sunday"
     )

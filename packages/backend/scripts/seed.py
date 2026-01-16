@@ -30,9 +30,7 @@ async def seed_users(session: AsyncSession) -> None:
         # 既存ユーザーをチェック
         from sqlalchemy import select
 
-        result = await session.execute(
-            select(User).where(User.email == user_data["email"])
-        )
+        result = await session.execute(select(User).where(User.email == user_data["email"]))
         existing_user = result.scalar_one_or_none()
 
         if existing_user:

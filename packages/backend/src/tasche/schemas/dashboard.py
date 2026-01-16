@@ -22,9 +22,7 @@ class TodayGoal(BaseModel):
     task_name: str = Field(..., description="タスク名")
     target_units: float = Field(..., ge=0, description="目標ユニット数")
     actual_units: float = Field(..., ge=0, description="実績ユニット数")
-    completion_rate: float | None = Field(
-        None, description="達成率（%）。目標が0の場合はnull"
-    )
+    completion_rate: float | None = Field(None, description="達成率（%）。目標が0の場合はnull")
 
 
 class DailyData(BaseModel):
@@ -32,9 +30,7 @@ class DailyData(BaseModel):
 
     target_units: float = Field(..., ge=0, description="目標ユニット数")
     actual_units: float = Field(..., ge=0, description="実績ユニット数")
-    completion_rate: float | None = Field(
-        None, description="達成率（%）。目標が0の場合はnull"
-    )
+    completion_rate: float | None = Field(None, description="達成率（%）。目標が0の場合はnull")
 
 
 class WeeklyMatrixItem(BaseModel):
@@ -43,9 +39,7 @@ class WeeklyMatrixItem(BaseModel):
     task_id: str = Field(..., description="タスクID")
     task_name: str = Field(..., description="タスク名")
     daily_data: dict[
-        Literal[
-            "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"
-        ],
+        Literal["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"],
         DailyData,
     ] = Field(..., description="曜日ごとのデータ")
 

@@ -10,10 +10,6 @@ api_router.include_router(users.router, prefix="/users", tags=["ユーザー"])
 api_router.include_router(tasks.router, prefix="/tasks", tags=["タスク"])
 api_router.include_router(weeks.router, prefix="/weeks", tags=["週"])
 api_router.include_router(goals.router, prefix="/weeks/current/goals", tags=["目標"])
-api_router.include_router(
-    records.router, prefix="/weeks/current/records", tags=["実績"]
-)
-api_router.include_router(
-    dashboard.router, prefix="/dashboard", tags=["ダッシュボード"]
-)
+api_router.include_router(records.router, prefix="/weeks/current/records", tags=["実績"])
+api_router.include_router(dashboard.router, prefix="/dashboard", tags=["ダッシュボード"])
 api_router.include_router(test_auth.router, prefix="/test-auth", tags=["テスト認証"])

@@ -18,9 +18,7 @@ class TestTokenService:
 
     def __init__(self):
         if not settings.enable_test_auth:
-            raise TestAuthDisabledError(
-                "TestTokenService requires ENABLE_TEST_AUTH=true"
-            )
+            raise TestAuthDisabledError("TestTokenService requires ENABLE_TEST_AUTH=true")
 
     def create_token(
         self,

@@ -34,12 +34,8 @@ class GoalsResponse(BaseModel):
 class GoalUpdateItem(BaseModel):
     """目標更新アイテム."""
 
-    task_id: str | None = Field(
-        None, description="タスクID（nullの場合は新規タスク作成）"
-    )
-    new_task_name: str | None = Field(
-        None, description="新規タスク名（task_idがnullの場合に必須）"
-    )
+    task_id: str | None = Field(None, description="タスクID（nullの場合は新規タスク作成）")
+    new_task_name: str | None = Field(None, description="新規タスク名（task_idがnullの場合に必須）")
     daily_targets: DailyTargets = Field(..., description="曜日ごとの目標ユニット数")
 
 
