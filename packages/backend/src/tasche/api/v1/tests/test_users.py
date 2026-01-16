@@ -1,4 +1,5 @@
 """GET /api/users/me のテスト."""
+
 import pytest
 from httpx import AsyncClient
 

@@ -1,5 +1,4 @@
 """カスタム例外クラス、FastAPI 例外ハンドラー."""
-from fastapi import HTTPException, status
 
 
 class TascheException(Exception):

@@ -54,6 +54,4 @@ class RecordsResponse(BaseModel):
 class RecordUpdate(BaseModel):
     """実績更新リクエスト."""
 
-    actual_units: float = Field(
-        ..., ge=0, description="実績ユニット数（0.1単位）", multiple_of=0.1
-    )
+    actual_units: float = Field(..., ge=0, description="実績ユニット数（0.1単位）", multiple_of=0.1)

@@ -1,4 +1,5 @@
 """テスト用認証サービス（enable_test_auth==True の時のみ使用可能）."""
+
 from datetime import datetime, timedelta, timezone
 
 from jose import jwt
@@ -17,9 +18,7 @@ class TestTokenService:
 
     def __init__(self):
         if not settings.enable_test_auth:
-            raise TestAuthDisabledError(
-                "TestTokenService requires ENABLE_TEST_AUTH=true"
-            )
+            raise TestAuthDisabledError("TestTokenService requires ENABLE_TEST_AUTH=true")
 
     def create_token(
         self,

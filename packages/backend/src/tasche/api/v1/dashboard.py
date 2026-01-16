@@ -56,54 +56,28 @@ async def get_dashboard(
                 task_id="tsk_01HXYZ1234567890ABCDEF",
                 task_name="英語学習",
                 daily_data={
-                    "monday": DailyData(
-                        target_units=2.0, actual_units=2.5, completion_rate=125.0
-                    ),
-                    "tuesday": DailyData(
-                        target_units=1.0, actual_units=1.0, completion_rate=100.0
-                    ),
+                    "monday": DailyData(target_units=2.0, actual_units=2.5, completion_rate=125.0),
+                    "tuesday": DailyData(target_units=1.0, actual_units=1.0, completion_rate=100.0),
                     "wednesday": DailyData(
                         target_units=2.0, actual_units=1.5, completion_rate=75.0
                     ),
-                    "thursday": DailyData(
-                        target_units=1.0, actual_units=0, completion_rate=0
-                    ),
-                    "friday": DailyData(
-                        target_units=2.0, actual_units=0, completion_rate=0
-                    ),
-                    "saturday": DailyData(
-                        target_units=0, actual_units=0, completion_rate=None
-                    ),
-                    "sunday": DailyData(
-                        target_units=0, actual_units=0, completion_rate=None
-                    ),
+                    "thursday": DailyData(target_units=1.0, actual_units=0, completion_rate=0),
+                    "friday": DailyData(target_units=2.0, actual_units=0, completion_rate=0),
+                    "saturday": DailyData(target_units=0, actual_units=0, completion_rate=None),
+                    "sunday": DailyData(target_units=0, actual_units=0, completion_rate=None),
                 },
             ),
             WeeklyMatrixItem(
                 task_id="tsk_02HXYZ1234567890ABCDEF",
                 task_name="個人開発",
                 daily_data={
-                    "monday": DailyData(
-                        target_units=2.0, actual_units=2.0, completion_rate=100.0
-                    ),
-                    "tuesday": DailyData(
-                        target_units=2.0, actual_units=1.5, completion_rate=75.0
-                    ),
-                    "wednesday": DailyData(
-                        target_units=0, actual_units=0, completion_rate=None
-                    ),
-                    "thursday": DailyData(
-                        target_units=2.0, actual_units=0, completion_rate=0
-                    ),
-                    "friday": DailyData(
-                        target_units=0, actual_units=0, completion_rate=None
-                    ),
-                    "saturday": DailyData(
-                        target_units=4.0, actual_units=0, completion_rate=0
-                    ),
-                    "sunday": DailyData(
-                        target_units=4.0, actual_units=0, completion_rate=0
-                    ),
+                    "monday": DailyData(target_units=2.0, actual_units=2.0, completion_rate=100.0),
+                    "tuesday": DailyData(target_units=2.0, actual_units=1.5, completion_rate=75.0),
+                    "wednesday": DailyData(target_units=0, actual_units=0, completion_rate=None),
+                    "thursday": DailyData(target_units=2.0, actual_units=0, completion_rate=0),
+                    "friday": DailyData(target_units=0, actual_units=0, completion_rate=None),
+                    "saturday": DailyData(target_units=4.0, actual_units=0, completion_rate=0),
+                    "sunday": DailyData(target_units=4.0, actual_units=0, completion_rate=0),
                 },
             ),
         ],

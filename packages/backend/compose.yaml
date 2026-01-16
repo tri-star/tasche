@@ -37,6 +37,7 @@ services:
       - ./scripts:/app/scripts
       - ./alembic.ini:/app/alembic.ini
       - ./openapi.json:/app/openapi.json
+      - ./ruff.toml:/app/ruff.toml
     depends_on:
       db:
         condition: service_healthy

@@ -6,16 +6,16 @@ Tasche MVP のバックエンド（FastAPI + PostgreSQL）のフォルダ構造�
 
 ## 技術スタック
 
-| 項目               | 技術                    |
-| ------------------ | ----------------------- |
-| フレームワーク     | FastAPI                 |
-| パッケージ管理     | uv                      |
-| Linter/Formatter   | ruff                    |
-| ORM                | SQLAlchemy (async)      |
-| DB                 | PostgreSQL (Neon)       |
-| 認証               | Auth0 (JWT)             |
-| Lambda 対応        | Mangum                  |
-| ローカル開発       | Docker Compose          |
+| 項目             | 技術               |
+| ---------------- | ------------------ |
+| フレームワーク   | FastAPI            |
+| パッケージ管理   | uv                 |
+| Linter/Formatter | ruff               |
+| ORM              | SQLAlchemy (async) |
+| DB               | PostgreSQL (Neon)  |
+| 認証             | Auth0 (JWT)        |
+| Lambda 対応      | Mangum             |
+| ローカル開発     | Docker Compose     |
 
 ## フォルダ構造
 
@@ -26,7 +26,7 @@ packages/backend/
 ├── ruff.toml                   # ruff 設定
 ├── Dockerfile                  # 本番用 Dockerfile
 ├── Dockerfile.dev              # 開発用 Dockerfile
-├── docker-compose.yml          # ローカル開発用
+├── compose.yaml                # ローカル開発用
 ├── .env.example                # 環境変数サンプル
 ├── alembic.ini                 # Alembic 設定
 ├── README.md                   # バックエンド README
@@ -118,16 +118,16 @@ packages/backend/
 
 ### ルートファイル
 
-| ファイル             | 説明                                           |
-| -------------------- | ---------------------------------------------- |
-| `pyproject.toml`     | uv プロジェクト設定、依存関係定義              |
-| `uv.lock`            | 依存関係のロックファイル                       |
-| `ruff.toml`          | ruff（Linter/Formatter）設定                   |
-| `Dockerfile`         | 本番用 Docker イメージ                         |
-| `Dockerfile.dev`     | 開発用 Docker イメージ（ホットリロード対応等） |
-| `docker-compose.yml` | ローカル開発環境（API + PostgreSQL）           |
-| `.env.example`       | 環境変数のサンプル                             |
-| `alembic.ini`        | Alembic（DB マイグレーション）設定             |
+| ファイル         | 説明                                           |
+| ---------------- | ---------------------------------------------- |
+| `pyproject.toml` | uv プロジェクト設定、依存関係定義              |
+| `uv.lock`        | 依存関係のロックファイル                       |
+| `ruff.toml`      | ruff（Linter/Formatter）設定                   |
+| `Dockerfile`     | 本番用 Docker イメージ                         |
+| `Dockerfile.dev` | 開発用 Docker イメージ（ホットリロード対応等） |
+| `compose.yaml`   | ローカル開発環境（API + PostgreSQL）           |
+| `.env.example`   | 環境変数のサンプル                             |
+| `alembic.ini`    | Alembic（DB マイグレーション）設定             |
 
 ### src/tasche/
 
@@ -166,52 +166,52 @@ api/
 
 アプリケーション全体で使用する設定・ユーティリティ。
 
-| ファイル          | 説明                                                                 |
-| ----------------- | -------------------------------------------------------------------- |
-| `config.py`       | pydantic-settings を使用した環境変数管理                             |
-| `security.py`     | JWT 検証（Auth0 + テスト用フォールバック）                           |
-| `exceptions.py`   | カスタム例外クラス、FastAPI 例外ハンドラー                           |
+| ファイル        | 説明                                       |
+| --------------- | ------------------------------------------ |
+| `config.py`     | pydantic-settings を使用した環境変数管理   |
+| `security.py`   | JWT 検証（Auth0 + テスト用フォールバック） |
+| `exceptions.py` | カスタム例外クラス、FastAPI 例外ハンドラー |
 
 ### models/
 
 SQLAlchemy ORM モデル（テーブル定義）。
 
-| ファイル     | 対応テーブル | 説明                         |
-| ------------ | ------------ | ---------------------------- |
-| `user.py`    | users        | ユーザー情報                 |
-| `task.py`    | tasks        | タスク定義                   |
-| `week.py`    | weeks        | 週設定（ユニット時間等）     |
-| `goal.py`    | goals        | 曜日別目標（daily_targets）  |
-| `record.py`  | records      | 実績記録                     |
+| ファイル    | 対応テーブル | 説明                        |
+| ----------- | ------------ | --------------------------- |
+| `user.py`   | users        | ユーザー情報                |
+| `task.py`   | tasks        | タスク定義                  |
+| `week.py`   | weeks        | 週設定（ユニット時間等）    |
+| `goal.py`   | goals        | 曜日別目標（daily_targets） |
+| `record.py` | records      | 実績記録                    |
 
 ### schemas/
 
 Pydantic スキーマ（API リクエスト/レスポンスの型定義）。
 
-| ファイル        | 説明                                   |
-| --------------- | -------------------------------------- |
-| `common.py`     | 共通スキーマ（APIResponse、Error 等）  |
-| `auth.py`       | 認証関連（AuthCallback、TokenResponse）|
-| `user.py`       | ユーザー関連                           |
-| `task.py`       | タスク関連（TaskCreate、TaskResponse） |
-| `week.py`       | 週関連                                 |
-| `goal.py`       | 目標関連                               |
-| `record.py`     | 実績関連                               |
-| `dashboard.py`  | ダッシュボード集約データ               |
+| ファイル       | 説明                                    |
+| -------------- | --------------------------------------- |
+| `common.py`    | 共通スキーマ（APIResponse、Error 等）   |
+| `auth.py`      | 認証関連（AuthCallback、TokenResponse） |
+| `user.py`      | ユーザー関連                            |
+| `task.py`      | タスク関連（TaskCreate、TaskResponse）  |
+| `week.py`      | 週関連                                  |
+| `goal.py`      | 目標関連                                |
+| `record.py`    | 実績関連                                |
+| `dashboard.py` | ダッシュボード集約データ                |
 
 ### services/
 
 ビジネスロジックと DB アクセスを担当。
 
-| ファイル        | 説明                                           |
-| --------------- | ---------------------------------------------- |
-| `auth.py`       | Auth0 トークン処理、ユーザー登録/取得          |
-| `user.py`       | ユーザー情報取得・更新                         |
-| `task.py`       | タスク CRUD 操作                               |
-| `week.py`       | 週の取得・更新、週の引き継ぎロジック           |
-| `goal.py`       | 目標設定の取得・更新                           |
-| `record.py`     | 実績記録の取得・更新                           |
-| `dashboard.py`  | ダッシュボード用集約データの構築               |
+| ファイル       | 説明                                  |
+| -------------- | ------------------------------------- |
+| `auth.py`      | Auth0 トークン処理、ユーザー登録/取得 |
+| `user.py`      | ユーザー情報取得・更新                |
+| `task.py`      | タスク CRUD 操作                      |
+| `week.py`      | 週の取得・更新、週の引き継ぎロジック  |
+| `goal.py`      | 目標設定の取得・更新                  |
+| `record.py`    | 実績記録の取得・更新                  |
+| `dashboard.py` | ダッシュボード用集約データの構築      |
 
 ## 設計方針
 

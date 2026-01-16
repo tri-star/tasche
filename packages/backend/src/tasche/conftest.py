@@ -1,4 +1,5 @@
 """pytest 共通 fixtures."""
+
 import os
 
 import pytest
@@ -29,9 +30,7 @@ async def db_session():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
-    async_session = async_sessionmaker(
-        engine, class_=AsyncSession, expire_on_commit=False
-    )
+    async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
     async with async_session() as session:
         # テスト開始前: 全テーブルをTRUNCATEしてリセット
@@ -52,9 +51,7 @@ async def truncate_all_tables(session: AsyncSession):
 
     # TRUNCATE実行（CASCADE付き）
     for table_name in table_names:
-        await session.execute(
-            text(f"TRUNCATE TABLE {table_name} RESTART IDENTITY CASCADE")
-        )
+        await session.execute(text(f"TRUNCATE TABLE {table_name} RESTART IDENTITY CASCADE"))
 
     await session.commit()
 
@@ -89,9 +86,7 @@ async def client(db_session: AsyncSession):
 
     app.dependency_overrides[get_db] = override_get_db
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as ac:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         yield ac
 
     app.dependency_overrides.clear()

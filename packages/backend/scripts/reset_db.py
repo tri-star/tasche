@@ -1,4 +1,5 @@
 """データベースリセットスクリプト（開発用）."""
+
 import asyncio
 
 from tasche.core.config import settings

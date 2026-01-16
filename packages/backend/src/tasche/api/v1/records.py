@@ -61,9 +61,7 @@ async def get_current_records(
 
 @router.put("/{day}/{task_id}", response_model=APIResponse[RecordResponse])
 async def update_record(
-    day: Literal[
-        "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"
-    ],
+    day: Literal["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"],
     task_id: str,
     record_update: RecordUpdate,
     current_user: CurrentUser,

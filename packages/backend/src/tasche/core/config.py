@@ -1,4 +1,5 @@
 """環境変数・設定管理."""
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -15,6 +16,8 @@ class Settings(BaseSettings):
     # Development
     enable_test_auth: bool = False
     test_jwt_secret: str = "dev_secret_key"
+    test_auth_default_user_id: str = "usr_01HXYZ1234567890ABCDEF"
+    test_auth_default_user_email: str = "test@example.com"
     log_level: str = "info"
 
     model_config = SettingsConfigDict(
