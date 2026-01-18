@@ -74,9 +74,10 @@ async def auth_callback(code: str, request: Request, response: Response, db: DbS
         )
 
     except Exception as e:
+        logger.error(f"Failed to authenticate: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Failed to authenticate: {str(e)}",
+            detail="Failed to authenticate.",
         ) from e
 
 
