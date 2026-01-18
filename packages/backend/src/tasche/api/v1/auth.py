@@ -129,9 +129,10 @@ async def refresh_token(
         )
 
     except Exception as e:
+        logger.error(f"Failed to refresh token: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Failed to refresh token: {str(e)}",
+            detail="Failed to refresh token.",
         ) from e
 
 
