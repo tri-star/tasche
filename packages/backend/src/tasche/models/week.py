@@ -2,7 +2,7 @@
 
 from datetime import date, datetime
 
-from sqlalchemy import Date, DateTime, ForeignKey, Integer, String, UniqueConstraint, func
+from sqlalchemy import Date, DateTime, Enum, ForeignKey, Integer, String, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from tasche.db.base import Base
@@ -23,7 +23,9 @@ class Week(Base):
     start_date: Mapped[date] = mapped_column(Date, nullable=False)
     end_date: Mapped[date] = mapped_column(Date, nullable=False)
     unit_duration_minutes: Mapped[int] = mapped_column(Integer, nullable=False)
-    week_start_day: Mapped[str] = mapped_column(String(10), nullable=False)
+    week_start_day: Mapped[str] = mapped_column(
+        Enum("monday", "sunday", name="week_start_day_enum"), nullable=False
+    )
     week_start_hour: Mapped[int] = mapped_column(Integer, nullable=False)
 
     created_at: Mapped[datetime] = mapped_column(

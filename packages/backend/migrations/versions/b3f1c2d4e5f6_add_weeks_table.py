@@ -27,7 +27,11 @@ def upgrade() -> None:
         sa.Column("start_date", sa.Date(), nullable=False),
         sa.Column("end_date", sa.Date(), nullable=False),
         sa.Column("unit_duration_minutes", sa.Integer(), nullable=False),
-        sa.Column("week_start_day", sa.String(length=10), nullable=False),
+        sa.Column(
+            "week_start_day",
+            sa.Enum("monday", "sunday", name="week_start_day_enum"),
+            nullable=False,
+        ),
         sa.Column("week_start_hour", sa.Integer(), nullable=False),
         sa.Column(
             "created_at",
@@ -39,6 +43,7 @@ def upgrade() -> None:
             "updated_at",
             sa.DateTime(timezone=True),
             server_default=sa.text("now()"),
+            onupdate=sa.text("now()"),
             nullable=False,
         ),
         sa.ForeignKeyConstraint(
