@@ -41,7 +41,7 @@ async def create_user(
     user = User(
         id=user_id,
         email=email,
-        name=name or email.split("@")[0],  # nameがない場合はメールの@前を使用
+        name=name if name is not None else email.split("@")[0],  # nameがない場合はメールの@前を使用
         picture=picture,
     )
     db.add(user)

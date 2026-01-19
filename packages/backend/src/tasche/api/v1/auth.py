@@ -21,6 +21,7 @@ router = APIRouter()
 # Cookie設定の定数
 REFRESH_TOKEN_COOKIE_NAME = "refresh_token"
 REFRESH_TOKEN_MAX_AGE = 604800  # 7日間（秒）
+AUTH_COOKIE_PATH = "/api/auth"
 
 
 @router.get("/callback", response_model=APIResponse[TokenResponse])
@@ -61,7 +62,7 @@ async def auth_callback(code: str, request: Request, response: Response, db: DbS
                 httponly=True,
                 secure=settings.cookie_secure,
                 samesite=settings.cookie_samesite,
-                path="/api/auth",
+                path=AUTH_COOKIE_PATH,
             )
 
         # 5. Access Tokenをレスポンスで返す
@@ -117,7 +118,7 @@ async def refresh_token(
                 httponly=True,
                 secure=settings.cookie_secure,
                 samesite=settings.cookie_samesite,
-                path="/api/auth",
+                path=AUTH_COOKIE_PATH,
             )
 
         # 3. 新しいAccess Tokenをレスポンスで返す

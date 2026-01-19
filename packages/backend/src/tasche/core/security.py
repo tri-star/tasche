@@ -1,5 +1,7 @@
 """JWT 検証（Auth0 + テスト用フォールバック）."""
 
+import time
+
 import httpx
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -9,15 +11,24 @@ from tasche.core.config import settings
 
 security = HTTPBearer()
 
-# JWKSキャッシュ（シンプルな実装）
+# JWKSキャッシュ（TTL付き）
 _jwks_cache: dict | None = None
+_jwks_cache_time: float | None = None
+JWKS_CACHE_TTL = 3600  # キャッシュの有効期限（秒）: 1時間
 
 
 async def get_jwks() -> dict:
-    """Auth0 JWKSを取得（キャッシュ付き）."""
-    global _jwks_cache
+    """Auth0 JWKSを取得（キャッシュ付き、TTL: 1時間）."""
+    global _jwks_cache, _jwks_cache_time
 
-    if _jwks_cache is not None:
+    current_time = time.time()
+
+    # キャッシュが有効な場合は再利用
+    if (
+        _jwks_cache is not None
+        and _jwks_cache_time is not None
+        and (current_time - _jwks_cache_time) < JWKS_CACHE_TTL
+    ):
         return _jwks_cache
 
     # JWKSエンドポイントから公開鍵を取得
@@ -26,6 +37,7 @@ async def get_jwks() -> dict:
         response = await client.get(jwks_url)
         response.raise_for_status()
         _jwks_cache = response.json()
+        _jwks_cache_time = current_time
         return _jwks_cache
 
 

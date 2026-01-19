@@ -19,6 +19,7 @@ class Auth0Service:
         self.client_id = settings.auth0_client_id
         self.client_secret = settings.auth0_client_secret
         self.audience = settings.auth0_audience
+        self._client = httpx.AsyncClient()
 
     async def exchange_code_for_tokens(self, code: str, redirect_uri: str) -> Auth0TokenResponse:
         """認可コードをトークンに交換.
@@ -42,10 +43,9 @@ class Auth0Service:
             "redirect_uri": redirect_uri,
         }
 
-        async with httpx.AsyncClient() as client:
-            response = await client.post(url, json=data)
-            response.raise_for_status()
-            return Auth0TokenResponse(**response.json())
+        response = await self._client.post(url, json=data)
+        response.raise_for_status()
+        return Auth0TokenResponse(**response.json())
 
     async def refresh_tokens(self, refresh_token: str) -> Auth0TokenResponse:
         """リフレッシュトークンで新しいトークンを取得.
@@ -67,10 +67,9 @@ class Auth0Service:
             "refresh_token": refresh_token,
         }
 
-        async with httpx.AsyncClient() as client:
-            response = await client.post(url, json=data)
-            response.raise_for_status()
-            return Auth0TokenResponse(**response.json())
+        response = await self._client.post(url, json=data)
+        response.raise_for_status()
+        return Auth0TokenResponse(**response.json())
 
     async def get_userinfo(self, access_token: str) -> Auth0UserInfo:
         """アクセストークンからユーザー情報を取得.
@@ -87,10 +86,13 @@ class Auth0Service:
         url = f"https://{self.domain}/userinfo"
         headers = {"Authorization": f"Bearer {access_token}"}
 
-        async with httpx.AsyncClient() as client:
-            response = await client.get(url, headers=headers)
-            response.raise_for_status()
-            return Auth0UserInfo(**response.json())
+        response = await self._client.get(url, headers=headers)
+        response.raise_for_status()
+        return Auth0UserInfo(**response.json())
+
+    async def aclose(self):
+        """HTTPクライアントをクローズ（アプリケーションのシャットダウン時に呼び出す）."""
+        await self._client.aclose()
 
 
 # シングルトンインスタンス
