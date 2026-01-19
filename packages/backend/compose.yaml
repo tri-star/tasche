@@ -1,7 +1,6 @@
 services:
   db:
     image: postgres:17-alpine
-    container_name: tasche-db
     environment:
       POSTGRES_DB: tasche
       POSTGRES_USER: tasche
@@ -21,7 +20,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dev
-    container_name: tasche-api
     environment:
       DATABASE_URL: postgresql+asyncpg://tasche:tasche_dev_password@db:5432/tasche
       TEST_DATABASE_URL: postgresql+asyncpg://tasche:tasche_dev_password@db:5432/tasche_test
