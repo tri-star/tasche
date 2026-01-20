@@ -33,9 +33,7 @@ export const getTestAuthToken = async (user?: TestAuthUser) => {
   })
 
   if (!response.ok) {
-    throw new Error(
-      `Failed to get test auth token: ${response.status} ${response.statusText}`,
-    )
+    throw new Error(`Failed to get test auth token: ${response.status} ${response.statusText}`)
   }
 
   const data = (await response.json()) as TestAuthResponse
