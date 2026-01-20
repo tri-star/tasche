@@ -2,6 +2,8 @@ import { expect, test } from "@/e2e/fixtures/auth"
 import { DashboardPage } from "@/e2e/pages/dashboard.page"
 
 test.describe("DashboardPage", () => {
+  const useMsw = process.env.E2E_USE_MSW === "true"
+
   test.describe("スモークテスト", () => {
     test("ページが正常に表示される", async ({ authenticatedPage }) => {
       const dashboardPage = new DashboardPage(authenticatedPage)
@@ -54,6 +56,7 @@ test.describe("DashboardPage", () => {
 
   test.describe("機能テスト", () => {
     test("今日の目標が3件表示される（MSWモックデータ）", async ({ authenticatedPage }) => {
+      test.skip(!useMsw, "MSWモックデータ専用のテスト")
       const dashboardPage = new DashboardPage(authenticatedPage)
       await dashboardPage.goto()
       await dashboardPage.waitForLoaded()
@@ -64,6 +67,7 @@ test.describe("DashboardPage", () => {
     })
 
     test("モックデータのタスク名が表示される", async ({ authenticatedPage }) => {
+      test.skip(!useMsw, "MSWモックデータ専用のテスト")
       const dashboardPage = new DashboardPage(authenticatedPage)
       await dashboardPage.goto()
       await dashboardPage.waitForLoaded()

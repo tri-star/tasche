@@ -66,10 +66,29 @@ test("ダッシュボードが表示される", async ({ authenticatedPage }) =>
 
 `authenticatedPage` フィクスチャを使用すると、認証済みの状態でテストを開始できます。
 
+実APIモードでは `/api/test-auth` からトークンを取得し、APIリクエストに
+`Authorization: Bearer {token}` を付与します。
+
 ```typescript
 test("テスト名", async ({ authenticatedPage }) => {
   // authenticatedPageは認証済みの状態で使用できる
   await authenticatedPage.goto("/")
+})
+```
+
+ユーザー切り替えが必要な場合は `auth.loginAs` を使用します。
+
+```typescript
+import { test, expect } from "@/e2e/fixtures/auth"
+import { testUsers } from "@/e2e/fixtures/test-data"
+
+test("ユーザー切り替え", async ({ authenticatedPage, auth }) => {
+  await authenticatedPage.goto("/")
+
+  await auth.loginAs({ email: testUsers.secondary.email })
+  await authenticatedPage.reload()
+
+  await expect(authenticatedPage).toHaveURL("/")
 })
 ```
 
@@ -78,10 +97,11 @@ test("テスト名", async ({ authenticatedPage }) => {
 `test-data.ts` で定義されたテストデータを使用します。
 
 ```typescript
-import { testUser, testTaskIds } from "@/e2e/fixtures/test-data"
+import { testUsers, testTaskIds } from "@/e2e/fixtures/test-data"
 
 // テスト内で使用
-console.log(testUser.email) // test@example.com
+console.log(testUsers.primary.email) // test@example.com
+console.log(testUsers.primary.userId) // usr_01HXYZ1234567890ABCDEF
 console.log(testTaskIds.task1) // tsk_01HXYZ1234567890ABCDEF
 ```
 

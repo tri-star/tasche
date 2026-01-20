@@ -18,11 +18,11 @@ export class GoalSettingPage {
     this.page = page
 
     // ウィザード全体
-    this.wizard = page.locator('[class*="wizard"], [data-testid="goal-wizard"]').first()
+    this.wizard = page.getByRole("region", { name: "目標設定ウィザード" })
 
     // ヘッダー
     this.wizardHeader = page.locator("header, [role=banner]").first()
-    this.wizardTitle = page.getByRole("heading", { level: 1 }).first()
+    this.wizardTitle = page.getByRole("heading", { level: 2 }).first()
   }
 
   /**
@@ -36,27 +36,25 @@ export class GoalSettingPage {
    * ページが正常に表示されていることを確認
    */
   async waitForLoaded() {
-    // ページが読み込まれるまで待機
-    await this.page.waitForLoadState("networkidle")
+    await this.page.getByText("読み込み中...").waitFor({ state: "hidden" })
+    await this.wizard.waitFor({ state: "visible" })
   }
 
   /**
    * ページタイトルが表示されているか確認
    */
   async isTitleVisible(): Promise<boolean> {
-    return await this.wizardTitle.isVisible()
+    await this.wizardTitle.waitFor({ state: "visible" })
+    const isVisible = await this.wizardTitle.isVisible()
+    return isVisible
   }
 
   /**
    * ウィザードが表示されているか確認
    */
   async isWizardVisible(): Promise<boolean> {
-    // いずれかの要素が表示されていればOK
-    const titleVisible = await this.wizardTitle.isVisible().catch(() => false)
-    const formVisible = await this.page
-      .getByRole("form")
-      .isVisible()
-      .catch(() => false)
-    return titleVisible || formVisible
+    await this.wizard.waitFor({ state: "visible" })
+    const isVisible = await this.wizard.isVisible()
+    return isVisible
   }
 }

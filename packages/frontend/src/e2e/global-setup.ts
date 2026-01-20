@@ -1,8 +1,6 @@
-import { testUser } from "./fixtures/test-data"
-
 /**
  * グローバルセットアップ（実APIモード用）
- * テスト用トークンを取得してテスト全体で使用できるようにする
+ * バックエンド疎通確認のみを行う
  */
 async function globalSetup() {
   const apiBaseURL = process.env.E2E_API_BASE_URL || "http://localhost:8000"
@@ -11,8 +9,6 @@ async function globalSetup() {
   console.log(`📡 API Base URL: ${apiBaseURL}`)
 
   // 実APIモードの場合、バックエンドが ENABLE_TEST_AUTH=true で起動されていることを前提とする
-  // テスト用トークンはフィクスチャで定義されている testUser.token を使用
-  console.log("✅ テスト用トークンを使用:", testUser.token)
 
   // 必要に応じて、ここでAPIヘルスチェックを実行
   try {

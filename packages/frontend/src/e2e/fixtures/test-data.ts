@@ -5,11 +5,18 @@
 /**
  * テスト用ユーザー情報
  */
-export const testUser = {
-  email: "test@example.com",
-  password: "testpassword123",
-  token: "test-auth-token",
-}
+export const testUsers = {
+  primary: {
+    email: "test@example.com",
+    password: "testpassword123",
+    userId: "usr_01HXYZ1234567890ABCDEF",
+  },
+  secondary: {
+    email: "test2@example.com",
+    password: "testpassword123",
+    userId: "usr_02HXYZ1234567890ABCDEF",
+  },
+} as const
 
 /**
  * テスト用タスクID

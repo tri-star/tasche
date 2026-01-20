@@ -21,9 +21,9 @@ export class DashboardPage {
     this.page = page
 
     // 各ウィジェットの要素
-    this.todayGoalsWidget = page.getByRole("region").filter({ hasText: "今日の目標" })
-    this.recordWidget = page.getByRole("region").filter({ hasText: "記録する" })
-    this.weeklyMatrix = page.locator('[class*="weekly"]').first()
+    this.todayGoalsWidget = page.getByRole("region", { name: "今日の目標" })
+    this.recordWidget = page.getByRole("region", { name: "実績を記録" })
+    this.weeklyMatrix = page.getByRole("region", { name: "週間達成状況" })
     this.goalSettingFab = page.getByRole("button", { name: /目標/ })
 
     // 今日の目標ウィジェット内の要素
@@ -42,7 +42,8 @@ export class DashboardPage {
    * ページが正常に表示されていることを確認
    */
   async waitForLoaded() {
-    await this.todayGoalsTitle.waitFor({ state: "visible" })
+    await this.page.getByText("読み込み中...").waitFor({ state: "hidden" })
+    await this.todayGoalsWidget.waitFor({ state: "visible" })
   }
 
   /**
@@ -72,13 +73,17 @@ export class DashboardPage {
    * ウィークリーマトリックスが表示されているか確認
    */
   async isWeeklyMatrixVisible(): Promise<boolean> {
-    return await this.weeklyMatrix.isVisible()
+    await this.weeklyMatrix.waitFor({ state: "visible" })
+    const isVisible = await this.weeklyMatrix.isVisible()
+    return isVisible
   }
 
   /**
    * 記録ウィジェットが表示されているか確認
    */
   async isRecordWidgetVisible(): Promise<boolean> {
-    return await this.recordWidget.isVisible()
+    await this.recordWidget.waitFor({ state: "visible" })
+    const isVisible = await this.recordWidget.isVisible()
+    return isVisible
   }
 }

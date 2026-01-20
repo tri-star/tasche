@@ -62,7 +62,7 @@ export function WeeklyMatrix({ data, currentDay }: WeeklyMatrixProps) {
   })
 
   return (
-    <div className="rounded-lg border bg-card">
+    <section className="rounded-lg border bg-card" aria-label="週間達成状況">
       <h3 className="px-4 py-3 text-lg font-semibold">週間達成状況</h3>
       <div className="overflow-x-auto">
         <Table>
@@ -131,6 +131,6 @@ export function WeeklyMatrix({ data, currentDay }: WeeklyMatrixProps) {
           </TableBody>
         </Table>
       </div>
-    </div>
+    </section>
   )
 }
