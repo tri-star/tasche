@@ -5,6 +5,8 @@
  * OpenAPI spec version: 0.1.0
  */
 import type {
+  AuthCallbackApiAuthCallbackGetParams,
+  CreateTestTokenApiTestAuthGetParams,
   GetCurrentWeekApiWeeksCurrentGetParams,
   GetDashboardApiDashboardGetParams,
   GetTasksApiTasksGetParams,
@@ -33,13 +35,196 @@ import type {
   APIResponseDashboardResponse,
   APIResponseGoalsResponse,
   APIResponseGoalsUpdateResponse,
+  APIResponseLogoutResponse,
   APIResponseRecordResponse,
   APIResponseRecordsResponse,
   APIResponseTaskListResponse,
   APIResponseTaskResponse,
+  APIResponseTokenResponse,
   APIResponseUserResponse,
-  APIResponseWeekResponse
+  APIResponseWeekResponse,
+  TestTokenResponse
 } from './model';
+
+/**
+ * 認証コールバック.
+
+Auth0の認可コードをトークンに交換し、ユーザー情報を取得してDBに保存/更新する。
+Refresh TokenはHttpOnly Cookieに保存し、Access Tokenはレスポンスで返す。
+
+Args:
+    request: 認証コールバックリクエスト
+    response: FastAPIレスポンス（Cookie設定用）
+    db: データベースセッション
+
+Returns:
+    APIResponse[TokenResponse]: トークンレスポンス
+ * @summary Auth Callback
+ */
+export type authCallbackApiAuthCallbackGetResponse200 = {
+  data: APIResponseTokenResponse
+  status: 200
+}
+
+export type authCallbackApiAuthCallbackGetResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+    
+export type authCallbackApiAuthCallbackGetResponseSuccess = (authCallbackApiAuthCallbackGetResponse200) & {
+  headers: Headers;
+};
+export type authCallbackApiAuthCallbackGetResponseError = (authCallbackApiAuthCallbackGetResponse422) & {
+  headers: Headers;
+};
+
+export type authCallbackApiAuthCallbackGetResponse = (authCallbackApiAuthCallbackGetResponseSuccess | authCallbackApiAuthCallbackGetResponseError)
+
+export const getAuthCallbackApiAuthCallbackGetUrl = (params: AuthCallbackApiAuthCallbackGetParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/auth/callback?${stringifiedParams}` : `/api/auth/callback`
+}
+
+export const authCallbackApiAuthCallbackGet = async (params: AuthCallbackApiAuthCallbackGetParams, options?: RequestInit): Promise<authCallbackApiAuthCallbackGetResponse> => {
+  
+  const res = await fetch(getAuthCallbackApiAuthCallbackGetUrl(params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+)
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  
+  const data: authCallbackApiAuthCallbackGetResponse['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as authCallbackApiAuthCallbackGetResponse
+}
+
+
+
+/**
+ * トークンリフレッシュ.
+
+Refresh Tokenで新しいトークンを取得する。
+新しいRefresh TokenもCookieに保存（Rotation）。
+
+Args:
+    response: FastAPIレスポンス（Cookie設定用）
+    refresh_token: リフレッシュトークン（Cookieから取得）
+
+Returns:
+    APIResponse[TokenResponse]: 新しいトークンレスポンス
+ * @summary Refresh Token
+ */
+export type refreshTokenApiAuthRefreshPostResponse200 = {
+  data: APIResponseTokenResponse
+  status: 200
+}
+
+export type refreshTokenApiAuthRefreshPostResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+    
+export type refreshTokenApiAuthRefreshPostResponseSuccess = (refreshTokenApiAuthRefreshPostResponse200) & {
+  headers: Headers;
+};
+export type refreshTokenApiAuthRefreshPostResponseError = (refreshTokenApiAuthRefreshPostResponse422) & {
+  headers: Headers;
+};
+
+export type refreshTokenApiAuthRefreshPostResponse = (refreshTokenApiAuthRefreshPostResponseSuccess | refreshTokenApiAuthRefreshPostResponseError)
+
+export const getRefreshTokenApiAuthRefreshPostUrl = () => {
+
+
+  
+
+  return `/api/auth/refresh`
+}
+
+export const refreshTokenApiAuthRefreshPost = async ( options?: RequestInit): Promise<refreshTokenApiAuthRefreshPostResponse> => {
+  
+  const res = await fetch(getRefreshTokenApiAuthRefreshPostUrl(),
+  {      
+    ...options,
+    method: 'POST'
+    
+    
+  }
+)
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  
+  const data: refreshTokenApiAuthRefreshPostResponse['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as refreshTokenApiAuthRefreshPostResponse
+}
+
+
+
+/**
+ * ログアウト.
+
+Refresh TokenのCookieを削除する。
+
+Args:
+    response: FastAPIレスポンス（Cookie設定用）
+    current_user: 現在のユーザー（認証チェック用）
+
+Returns:
+    APIResponse[LogoutResponse]: ログアウトメッセージ
+ * @summary Logout
+ */
+export type logoutApiAuthLogoutPostResponse200 = {
+  data: APIResponseLogoutResponse
+  status: 200
+}
+    
+export type logoutApiAuthLogoutPostResponseSuccess = (logoutApiAuthLogoutPostResponse200) & {
+  headers: Headers;
+};
+;
+
+export type logoutApiAuthLogoutPostResponse = (logoutApiAuthLogoutPostResponseSuccess)
+
+export const getLogoutApiAuthLogoutPostUrl = () => {
+
+
+  
+
+  return `/api/auth/logout`
+}
+
+export const logoutApiAuthLogoutPost = async ( options?: RequestInit): Promise<logoutApiAuthLogoutPostResponse> => {
+  
+  const res = await fetch(getLogoutApiAuthLogoutPostUrl(),
+  {      
+    ...options,
+    method: 'POST'
+    
+    
+  }
+)
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  
+  const data: logoutApiAuthLogoutPostResponse['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as logoutApiAuthLogoutPostResponse
+}
+
+
 
 /**
  * 現在のユーザー情報を取得.
@@ -651,6 +836,63 @@ export const getDashboardApiDashboardGet = async (params?: GetDashboardApiDashbo
 
 
 /**
+ * テスト用JWTトークンを発行する.
+ * @summary Create Test Token
+ */
+export type createTestTokenApiTestAuthGetResponse200 = {
+  data: TestTokenResponse
+  status: 200
+}
+
+export type createTestTokenApiTestAuthGetResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+    
+export type createTestTokenApiTestAuthGetResponseSuccess = (createTestTokenApiTestAuthGetResponse200) & {
+  headers: Headers;
+};
+export type createTestTokenApiTestAuthGetResponseError = (createTestTokenApiTestAuthGetResponse422) & {
+  headers: Headers;
+};
+
+export type createTestTokenApiTestAuthGetResponse = (createTestTokenApiTestAuthGetResponseSuccess | createTestTokenApiTestAuthGetResponseError)
+
+export const getCreateTestTokenApiTestAuthGetUrl = (params?: CreateTestTokenApiTestAuthGetParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/test-auth?${stringifiedParams}` : `/api/test-auth`
+}
+
+export const createTestTokenApiTestAuthGet = async (params?: CreateTestTokenApiTestAuthGetParams, options?: RequestInit): Promise<createTestTokenApiTestAuthGetResponse> => {
+  
+  const res = await fetch(getCreateTestTokenApiTestAuthGetUrl(params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+)
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  
+  const data: createTestTokenApiTestAuthGetResponse['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as createTestTokenApiTestAuthGetResponse
+}
+
+
+
+/**
  * ルートエンドポイント（ヘルスチェック）.
  * @summary Root
  */
@@ -735,6 +977,12 @@ export const healthHealthGet = async ( options?: RequestInit): Promise<healthHea
 }
 
 
+export const getAuthCallbackApiAuthCallbackGetResponseMock = (overrideResponse: Partial< APIResponseTokenResponse > = {}): APIResponseTokenResponse => ({data: {access_token: faker.string.alpha({length: {min: 10, max: 20}}), token_type: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), expires_in: faker.number.int({min: undefined, max: undefined})}, ...overrideResponse})
+
+export const getRefreshTokenApiAuthRefreshPostResponseMock = (overrideResponse: Partial< APIResponseTokenResponse > = {}): APIResponseTokenResponse => ({data: {access_token: faker.string.alpha({length: {min: 10, max: 20}}), token_type: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), expires_in: faker.number.int({min: undefined, max: undefined})}, ...overrideResponse})
+
+export const getLogoutApiAuthLogoutPostResponseMock = (overrideResponse: Partial< APIResponseLogoutResponse > = {}): APIResponseLogoutResponse => ({data: {message: faker.string.alpha({length: {min: 10, max: 20}})}, ...overrideResponse})
+
 export const getGetCurrentUserInfoApiUsersMeGetResponseMock = (overrideResponse: Partial< APIResponseUserResponse > = {}): APIResponseUserResponse => ({data: {id: faker.string.alpha({length: {min: 10, max: 20}}), email: faker.internet.email(), name: faker.string.alpha({length: {min: 10, max: 20}}), picture: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}),null,]), timezone: faker.string.alpha({length: {min: 10, max: 20}}), created_at: `${faker.date.past().toISOString().split('.')[0]}Z`, updated_at: `${faker.date.past().toISOString().split('.')[0]}Z`}, ...overrideResponse})
 
 export const getGetTasksApiTasksGetResponseMock = (overrideResponse: Partial< APIResponseTaskListResponse > = {}): APIResponseTaskListResponse => ({data: {tasks: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({id: faker.string.alpha({length: {min: 10, max: 20}}), name: faker.string.alpha({length: {min: 10, max: 20}}), is_archived: faker.datatype.boolean(), created_at: `${faker.date.past().toISOString().split('.')[0]}Z`, updated_at: `${faker.date.past().toISOString().split('.')[0]}Z`}))}, ...overrideResponse})
@@ -761,6 +1009,44 @@ export const getGetDashboardApiDashboardGetResponseMock = (overrideResponse: Par
         [faker.string.alphanumeric(5)]: {target_units: faker.number.float({min: 0, max: undefined, fractionDigits: 2}), actual_units: faker.number.float({min: 0, max: undefined, fractionDigits: 2}), completion_rate: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}),null,]), undefined])}
       }})), has_goals_configured: faker.datatype.boolean()}, ...overrideResponse})
 
+export const getCreateTestTokenApiTestAuthGetResponseMock = (overrideResponse: Partial< TestTokenResponse > = {}): TestTokenResponse => ({access_token: faker.string.alpha({length: {min: 10, max: 20}}), token_type: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), ...overrideResponse})
+
+
+export const getAuthCallbackApiAuthCallbackGetMockHandler = (overrideResponse?: APIResponseTokenResponse | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<APIResponseTokenResponse> | APIResponseTokenResponse), options?: RequestHandlerOptions) => {
+  return http.get('*/api/auth/callback', async (info) => {await delay(0);
+  
+    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getAuthCallbackApiAuthCallbackGetResponseMock()),
+      { status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      })
+  }, options)
+}
+
+export const getRefreshTokenApiAuthRefreshPostMockHandler = (overrideResponse?: APIResponseTokenResponse | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<APIResponseTokenResponse> | APIResponseTokenResponse), options?: RequestHandlerOptions) => {
+  return http.post('*/api/auth/refresh', async (info) => {await delay(0);
+  
+    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getRefreshTokenApiAuthRefreshPostResponseMock()),
+      { status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      })
+  }, options)
+}
+
+export const getLogoutApiAuthLogoutPostMockHandler = (overrideResponse?: APIResponseLogoutResponse | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<APIResponseLogoutResponse> | APIResponseLogoutResponse), options?: RequestHandlerOptions) => {
+  return http.post('*/api/auth/logout', async (info) => {await delay(0);
+  
+    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getLogoutApiAuthLogoutPostResponseMock()),
+      { status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      })
+  }, options)
+}
 
 export const getGetCurrentUserInfoApiUsersMeGetMockHandler = (overrideResponse?: APIResponseUserResponse | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<APIResponseUserResponse> | APIResponseUserResponse), options?: RequestHandlerOptions) => {
   return http.get('*/api/users/me', async (info) => {await delay(0);
@@ -906,6 +1192,18 @@ export const getGetDashboardApiDashboardGetMockHandler = (overrideResponse?: API
   }, options)
 }
 
+export const getCreateTestTokenApiTestAuthGetMockHandler = (overrideResponse?: TestTokenResponse | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<TestTokenResponse> | TestTokenResponse), options?: RequestHandlerOptions) => {
+  return http.get('*/api/test-auth', async (info) => {await delay(0);
+  
+    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getCreateTestTokenApiTestAuthGetResponseMock()),
+      { status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      })
+  }, options)
+}
+
 export const getRootGetMockHandler = (overrideResponse?: unknown | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<unknown> | unknown), options?: RequestHandlerOptions) => {
   return http.get('*/', async (info) => {await delay(0);
   if (typeof overrideResponse === 'function') {await overrideResponse(info); }
@@ -926,6 +1224,9 @@ export const getHealthHealthGetMockHandler = (overrideResponse?: unknown | ((inf
   }, options)
 }
 export const getTascheAPIMock = () => [
+  getAuthCallbackApiAuthCallbackGetMockHandler(),
+  getRefreshTokenApiAuthRefreshPostMockHandler(),
+  getLogoutApiAuthLogoutPostMockHandler(),
   getGetCurrentUserInfoApiUsersMeGetMockHandler(),
   getGetTasksApiTasksGetMockHandler(),
   getCreateTaskApiTasksPostMockHandler(),
@@ -938,6 +1239,7 @@ export const getTascheAPIMock = () => [
   getGetCurrentRecordsApiWeeksCurrentRecordsGetMockHandler(),
   getUpdateRecordApiWeeksCurrentRecordsDayTaskIdPutMockHandler(),
   getGetDashboardApiDashboardGetMockHandler(),
+  getCreateTestTokenApiTestAuthGetMockHandler(),
   getRootGetMockHandler(),
   getHealthHealthGetMockHandler()
 ]
