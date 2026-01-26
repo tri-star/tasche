@@ -5,6 +5,126 @@
     "version": "0.1.0"
   },
   "paths": {
+    "/api/auth/callback": {
+      "get": {
+        "tags": [
+          "認証"
+        ],
+        "summary": "Auth Callback",
+        "description": "認証コールバック.\n\nAuth0の認可コードをトークンに交換し、ユーザー情報を取得してDBに保存/更新する。\nRefresh TokenはHttpOnly Cookieに保存し、Access Tokenはレスポンスで返す。\n\nArgs:\n    request: 認証コールバックリクエスト\n    response: FastAPIレスポンス（Cookie設定用）\n    db: データベースセッション\n\nReturns:\n    APIResponse[TokenResponse]: トークンレスポンス",
+        "operationId": "auth_callback_api_auth_callback_get",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Code"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse_TokenResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/refresh": {
+      "post": {
+        "tags": [
+          "認証"
+        ],
+        "summary": "Refresh Token",
+        "description": "トークンリフレッシュ.\n\nRefresh Tokenで新しいトークンを取得する。\n新しいRefresh TokenもCookieに保存（Rotation）。\n\nArgs:\n    response: FastAPIレスポンス（Cookie設定用）\n    refresh_token: リフレッシュトークン（Cookieから取得）\n\nReturns:\n    APIResponse[TokenResponse]: 新しいトークンレスポンス",
+        "operationId": "refresh_token_api_auth_refresh_post",
+        "parameters": [
+          {
+            "name": "refresh_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Refresh Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse_TokenResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "tags": [
+          "認証"
+        ],
+        "summary": "Logout",
+        "description": "ログアウト.\n\nRefresh TokenのCookieを削除する。\n\nArgs:\n    response: FastAPIレスポンス（Cookie設定用）\n    current_user: 現在のユーザー（認証チェック用）\n\nReturns:\n    APIResponse[LogoutResponse]: ログアウトメッセージ",
+        "operationId": "logout_api_auth_logout_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse_LogoutResponse_"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/api/users/me": {
       "get": {
         "tags": [
@@ -566,6 +686,90 @@
         }
       }
     },
+    "/api/test-auth": {
+      "get": {
+        "tags": [
+          "テスト認証"
+        ],
+        "summary": "Create Test Token",
+        "description": "テスト用JWTトークンを発行する.",
+        "operationId": "create_test_token_api_test_auth_get",
+        "parameters": [
+          {
+            "name": "email",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "email"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Email"
+            }
+          },
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "User Id"
+            }
+          },
+          {
+            "name": "expires_in",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Expires In"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TestTokenResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/": {
       "get": {
         "summary": "Root",
@@ -639,6 +843,18 @@
         ],
         "title": "APIResponse[GoalsUpdateResponse]"
       },
+      "APIResponse_LogoutResponse_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/LogoutResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "APIResponse[LogoutResponse]"
+      },
       "APIResponse_RecordResponse_": {
         "properties": {
           "data": {
@@ -686,6 +902,18 @@
           "data"
         ],
         "title": "APIResponse[TaskResponse]"
+      },
+      "APIResponse_TokenResponse_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/TokenResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "APIResponse[TokenResponse]"
       },
       "APIResponse_UserResponse_": {
         "properties": {
@@ -1113,6 +1341,20 @@
         "type": "object",
         "title": "HTTPValidationError"
       },
+      "LogoutResponse": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "LogoutResponse",
+        "description": "ログアウトレスポンス."
+      },
       "RecordItem": {
         "properties": {
           "task_id": {
@@ -1348,6 +1590,25 @@
         "title": "TaskUpdate",
         "description": "タスク更新リクエスト."
       },
+      "TestTokenResponse": {
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "title": "Access Token"
+          },
+          "token_type": {
+            "type": "string",
+            "title": "Token Type",
+            "default": "Bearer"
+          }
+        },
+        "type": "object",
+        "required": [
+          "access_token"
+        ],
+        "title": "TestTokenResponse",
+        "description": "テスト用トークン発行レスポンス."
+      },
       "TodayGoal": {
         "properties": {
           "task_id": {
@@ -1394,6 +1655,30 @@
         ],
         "title": "TodayGoal",
         "description": "今日の目標."
+      },
+      "TokenResponse": {
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "title": "Access Token"
+          },
+          "token_type": {
+            "type": "string",
+            "title": "Token Type",
+            "default": "Bearer"
+          },
+          "expires_in": {
+            "type": "integer",
+            "title": "Expires In"
+          }
+        },
+        "type": "object",
+        "required": [
+          "access_token",
+          "expires_in"
+        ],
+        "title": "TokenResponse",
+        "description": "トークンレスポンス."
       },
       "UserResponse": {
         "properties": {

@@ -248,7 +248,7 @@ export function GoalWizard() {
   }
 
   return (
-    <div className="space-y-8">
+    <section className="space-y-8" aria-label="目標設定ウィザード">
       <StepIndicator currentStep={currentStep} steps={steps} />
 
       <div className="rounded-[32px] border border-emerald-100 bg-white/90 p-6 shadow-md">
@@ -299,6 +299,6 @@ export function GoalWizard() {
           />
         ) : null}
       </div>
-    </div>
+    </section>
   )
 }

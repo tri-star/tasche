@@ -47,7 +47,7 @@ export function RecordWidget({ currentDay, tasks, onRecord }: RecordWidgetProps)
   }
 
   return (
-    <Card className="relative overflow-hidden">
+    <Card className="relative overflow-hidden" role="region" aria-label="実績を記録">
       {/* 右上イラスト */}
       <img
         src="/images/dashboard/dashboard-widget-illust2.png"

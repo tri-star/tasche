@@ -27,7 +27,11 @@
       "mcp__github__get_pull_request_comments",
       "Bash(pnpm lint:*)",
       "Bash(docker compose:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "mcp__plane__get_issue_using_readable_identifier",
+      "Bash(xargs cat:*)",
+      "Bash(pnpm exec playwright install:*)",
+      "Bash(pnpm exec playwright test:*)"
     ]
   }
 }

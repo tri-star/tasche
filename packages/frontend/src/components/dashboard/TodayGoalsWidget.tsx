@@ -10,7 +10,7 @@ type TodayGoalsWidgetProps = {
 
 export function TodayGoalsWidget({ date, goals, onToggleGoal }: TodayGoalsWidgetProps) {
   return (
-    <Card className="relative overflow-hidden">
+    <Card className="relative overflow-hidden" role="region" aria-label="今日の目標">
       {/* 右上イラスト */}
       <img
         src="/images/dashboard/dashboard-widget-illust1.png"
