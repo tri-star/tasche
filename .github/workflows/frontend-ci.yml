@@ -121,7 +121,7 @@ jobs:
         run: docker compose -f compose.yaml exec -T api python scripts/seed.py
         working-directory: packages/backend
 
-      - name: Run E2E Tests (MSW mode)
+      - name: Run E2E Tests
         run: pnpm --filter @tasche/frontend test:e2e
 
       - name: Upload Playwright Report
