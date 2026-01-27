@@ -13,6 +13,7 @@ oauth.register(
     # エンドポイントを直接指定（メタデータURL取得を回避）
     authorize_url=f"https://{settings.auth0_domain}/authorize",
     access_token_url=f"https://{settings.auth0_domain}/oauth/token",
+    jwks_uri=f"https://{settings.auth0_domain}/.well-known/jwks.json",  # ID token検証用
     client_kwargs={
         "scope": "openid profile email offline_access",
         "audience": settings.auth0_audience,
