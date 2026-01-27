@@ -34,9 +34,11 @@ docker-compose up -d
 docker-compose logs -f api
 
 # ヘルスチェック
+# **正確なポート番号は .env の API_CONTAINER_PORT を確認**
 curl http://localhost:8000/health
 
 # Swagger UI
+# **正確なポート番号は .env の API_CONTAINER_PORT を確認**
 open http://localhost:8000/docs
 ```
 
@@ -64,6 +66,8 @@ docker-compose exec api python scripts/reset_db.py
 ```
 
 ## API仕様
+
+**正確なポート番号は .env の API_CONTAINER_PORT を確認**
 
 - Swagger UI: http://localhost:8000/docs
 - ReDoc: http://localhost:8000/redoc
