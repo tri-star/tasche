@@ -36,9 +36,7 @@ class Record(Base):
         ),
         nullable=False,
     )
-    actual_units: Mapped[float] = mapped_column(
-        Numeric(6, 1, asdecimal=False), nullable=False
-    )
+    actual_units: Mapped[float] = mapped_column(Numeric(6, 1, asdecimal=False), nullable=False)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
