@@ -5,7 +5,6 @@
  * OpenAPI spec version: 0.1.0
  */
 import type {
-  AuthCallbackApiAuthCallbackGetParams,
   CreateTestTokenApiTestAuthGetParams,
   GetCurrentWeekApiWeeksCurrentGetParams,
   GetDashboardApiDashboardGetParams,
@@ -47,9 +46,62 @@ import type {
 } from './model';
 
 /**
+ * ログイン開始.
+
+Auth0のauthorizeエンドポイントにリダイレクトする。
+state, PKCE (code_verifier/challenge) はauthlibが自動管理。
+
+Args:
+    request: FastAPIリクエスト
+
+Returns:
+    RedirectResponse: Auth0 authorize URLへのリダイレクト
+ * @summary Login
+ */
+export type loginApiAuthLoginGetResponse200 = {
+  data: unknown
+  status: 200
+}
+    
+export type loginApiAuthLoginGetResponseSuccess = (loginApiAuthLoginGetResponse200) & {
+  headers: Headers;
+};
+;
+
+export type loginApiAuthLoginGetResponse = (loginApiAuthLoginGetResponseSuccess)
+
+export const getLoginApiAuthLoginGetUrl = () => {
+
+
+  
+
+  return `/api/auth/login`
+}
+
+export const loginApiAuthLoginGet = async ( options?: RequestInit): Promise<loginApiAuthLoginGetResponse> => {
+  
+  const res = await fetch(getLoginApiAuthLoginGetUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+)
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  
+  const data: loginApiAuthLoginGetResponse['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as loginApiAuthLoginGetResponse
+}
+
+
+
+/**
  * 認証コールバック.
 
-Auth0の認可コードをトークンに交換し、ユーザー情報を取得してDBに保存/更新する。
+authlibがstate検証、PKCE検証、トークン交換を自動実行。
+ユーザー情報を取得してDBに保存/更新する。
 Refresh TokenはHttpOnly Cookieに保存し、Access Tokenはレスポンスで返す。
 
 Args:
@@ -65,39 +117,25 @@ export type authCallbackApiAuthCallbackGetResponse200 = {
   data: APIResponseTokenResponse
   status: 200
 }
-
-export type authCallbackApiAuthCallbackGetResponse422 = {
-  data: HTTPValidationError
-  status: 422
-}
     
 export type authCallbackApiAuthCallbackGetResponseSuccess = (authCallbackApiAuthCallbackGetResponse200) & {
   headers: Headers;
 };
-export type authCallbackApiAuthCallbackGetResponseError = (authCallbackApiAuthCallbackGetResponse422) & {
-  headers: Headers;
-};
+;
 
-export type authCallbackApiAuthCallbackGetResponse = (authCallbackApiAuthCallbackGetResponseSuccess | authCallbackApiAuthCallbackGetResponseError)
+export type authCallbackApiAuthCallbackGetResponse = (authCallbackApiAuthCallbackGetResponseSuccess)
 
-export const getAuthCallbackApiAuthCallbackGetUrl = (params: AuthCallbackApiAuthCallbackGetParams,) => {
-  const normalizedParams = new URLSearchParams();
+export const getAuthCallbackApiAuthCallbackGetUrl = () => {
 
-  Object.entries(params || {}).forEach(([key, value]) => {
-    
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : value.toString())
-    }
-  });
 
-  const stringifiedParams = normalizedParams.toString();
+  
 
-  return stringifiedParams.length > 0 ? `/api/auth/callback?${stringifiedParams}` : `/api/auth/callback`
+  return `/api/auth/callback`
 }
 
-export const authCallbackApiAuthCallbackGet = async (params: AuthCallbackApiAuthCallbackGetParams, options?: RequestInit): Promise<authCallbackApiAuthCallbackGetResponse> => {
+export const authCallbackApiAuthCallbackGet = async ( options?: RequestInit): Promise<authCallbackApiAuthCallbackGetResponse> => {
   
-  const res = await fetch(getAuthCallbackApiAuthCallbackGetUrl(params),
+  const res = await fetch(getAuthCallbackApiAuthCallbackGetUrl(),
   {      
     ...options,
     method: 'GET'
@@ -1012,6 +1050,16 @@ export const getGetDashboardApiDashboardGetResponseMock = (overrideResponse: Par
 export const getCreateTestTokenApiTestAuthGetResponseMock = (overrideResponse: Partial< TestTokenResponse > = {}): TestTokenResponse => ({access_token: faker.string.alpha({length: {min: 10, max: 20}}), token_type: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), ...overrideResponse})
 
 
+export const getLoginApiAuthLoginGetMockHandler = (overrideResponse?: unknown | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<unknown> | unknown), options?: RequestHandlerOptions) => {
+  return http.get('*/api/auth/login', async (info) => {await delay(0);
+  if (typeof overrideResponse === 'function') {await overrideResponse(info); }
+    return new HttpResponse(null,
+      { status: 200,
+        
+      })
+  }, options)
+}
+
 export const getAuthCallbackApiAuthCallbackGetMockHandler = (overrideResponse?: APIResponseTokenResponse | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<APIResponseTokenResponse> | APIResponseTokenResponse), options?: RequestHandlerOptions) => {
   return http.get('*/api/auth/callback', async (info) => {await delay(0);
   
@@ -1224,6 +1272,7 @@ export const getHealthHealthGetMockHandler = (overrideResponse?: unknown | ((inf
   }, options)
 }
 export const getTascheAPIMock = () => [
+  getLoginApiAuthLoginGetMockHandler(),
   getAuthCallbackApiAuthCallbackGetMockHandler(),
   getRefreshTokenApiAuthRefreshPostMockHandler(),
   getLogoutApiAuthLogoutPostMockHandler(),
