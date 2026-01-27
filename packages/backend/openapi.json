@@ -5,25 +5,34 @@
     "version": "0.1.0"
   },
   "paths": {
+    "/api/auth/login": {
+      "get": {
+        "tags": [
+          "認証"
+        ],
+        "summary": "Login",
+        "description": "ログイン開始.\n\nAuth0のauthorizeエンドポイントにリダイレクトする。\nstate, PKCE (code_verifier/challenge) はauthlibが自動管理。\n\nArgs:\n    request: FastAPIリクエスト\n\nReturns:\n    RedirectResponse: Auth0 authorize URLへのリダイレクト",
+        "operationId": "login_api_auth_login_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/auth/callback": {
       "get": {
         "tags": [
           "認証"
         ],
         "summary": "Auth Callback",
-        "description": "認証コールバック.\n\nAuth0の認可コードをトークンに交換し、ユーザー情報を取得してDBに保存/更新する。\nRefresh TokenはHttpOnly Cookieに保存し、Access Tokenはレスポンスで返す。\n\nArgs:\n    request: 認証コールバックリクエスト\n    response: FastAPIレスポンス（Cookie設定用）\n    db: データベースセッション\n\nReturns:\n    APIResponse[TokenResponse]: トークンレスポンス",
+        "description": "認証コールバック.\n\nauthlibがstate検証、PKCE検証、トークン交換を自動実行。\nユーザー情報を取得してDBに保存/更新する。\nRefresh TokenはHttpOnly Cookieに保存し、Access Tokenはレスポンスで返す。\n\nArgs:\n    request: 認証コールバックリクエスト\n    response: FastAPIレスポンス（Cookie設定用）\n    db: データベースセッション\n\nReturns:\n    APIResponse[TokenResponse]: トークンレスポンス",
         "operationId": "auth_callback_api_auth_callback_get",
-        "parameters": [
-          {
-            "name": "code",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Code"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -31,16 +40,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/APIResponse_TokenResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
