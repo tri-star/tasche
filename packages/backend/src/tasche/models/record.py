@@ -6,6 +6,7 @@ from sqlalchemy import CheckConstraint, DateTime, Enum, ForeignKey, Numeric, Str
 from sqlalchemy.orm import Mapped, mapped_column
 
 from tasche.db.base import Base
+from tasche.models.enums import DayOfWeek
 
 
 class Record(Base):
@@ -24,16 +25,7 @@ class Record(Base):
         String(30), ForeignKey("tasks.id"), nullable=False, index=True
     )
     day_of_week: Mapped[str] = mapped_column(
-        Enum(
-            "monday",
-            "tuesday",
-            "wednesday",
-            "thursday",
-            "friday",
-            "saturday",
-            "sunday",
-            name="day_of_week_enum",
-        ),
+        Enum(DayOfWeek, name="day_of_week_enum"),
         nullable=False,
     )
     actual_units: Mapped[float] = mapped_column(Numeric(6, 1, asdecimal=False), nullable=False)

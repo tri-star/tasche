@@ -54,6 +54,7 @@ def upgrade() -> None:
             "updated_at",
             sa.DateTime(timezone=True),
             server_default=sa.text("now()"),
+            onupdate=sa.text("now()"),
             nullable=False,
         ),
         sa.CheckConstraint("actual_units >= 0", name="ck_records_actual_units_non_negative"),
@@ -71,4 +72,5 @@ def downgrade() -> None:
     op.drop_index(op.f("ix_records_week_id"), table_name="records")
     op.drop_index(op.f("ix_records_task_id"), table_name="records")
     op.drop_table("records")
+    op.execute("DROP TYPE day_of_week_enum")
     # ### end Alembic commands ###
