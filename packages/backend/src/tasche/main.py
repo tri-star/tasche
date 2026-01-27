@@ -5,6 +5,7 @@ import logging
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from starlette.middleware.sessions import SessionMiddleware
 
 from tasche.api.v1.router import api_router
 from tasche.core.config import settings
@@ -27,6 +28,12 @@ app = FastAPI(
     version="0.1.0",
     docs_url="/docs",
     redoc_url="/redoc",
+)
+
+# SessionMiddleware（authlib用 - state管理に必要）
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=settings.session_secret_key,
 )
 
 # CORS設定（開発用）

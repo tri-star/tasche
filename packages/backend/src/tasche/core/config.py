@@ -15,9 +15,12 @@ class Settings(BaseSettings):
     auth0_client_id: str = ""
     auth0_client_secret: str = ""
 
+    # Session（authlib用）
+    session_secret_key: str = "dev-session-secret-change-in-production"
+
     # Cookie設定
     cookie_secure: bool = True
-    cookie_samesite: str = "strict"
+    cookie_samesite: str = "lax"  # Auth0リダイレクト対応
 
     # Development
     enable_test_auth: bool = False
