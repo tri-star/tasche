@@ -1,18 +1,16 @@
 """実績 API エンドポイント."""
 
 from datetime import datetime, timezone
-from typing import Literal
-
 from fastapi import APIRouter
 
 from tasche.api.deps import CurrentUser
 from tasche.schemas.common import APIResponse
 from tasche.schemas.record import (
     DailyActuals,
+    RecordCreate,
     RecordItem,
     RecordResponse,
     RecordsResponse,
-    RecordUpdate,
 )
 
 router = APIRouter()
@@ -59,22 +57,20 @@ async def get_current_records(
     return APIResponse(data=records)
 
 
-@router.put("/{day}/{task_id}", response_model=APIResponse[RecordResponse])
-async def update_record(
-    day: Literal["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"],
-    task_id: str,
-    record_update: RecordUpdate,
+@router.post("", response_model=APIResponse[RecordResponse], status_code=201)
+async def create_record(
+    record_create: RecordCreate,
     current_user: CurrentUser,
 ) -> APIResponse[RecordResponse]:
-    """特定の曜日・タスクの実績を記録・更新する."""
+    """実績を記録する."""
     # ダミーデータを返す
     record = RecordResponse(
         id="rec_01HXYZ1234567890ABCDEF",
         week_id="wk_01HXYZ1234567890ABCDEF",
-        task_id=task_id,
-        task_name=f"Task {task_id}",
-        day_of_week=day,
-        actual_units=record_update.actual_units,
+        task_id=record_create.task_id,
+        task_name=f"Task {record_create.task_id}",
+        day_of_week=record_create.day_of_week,
+        actual_units=record_create.actual_units,
         created_at=datetime.now(timezone.utc),
         updated_at=datetime.now(timezone.utc),
     )

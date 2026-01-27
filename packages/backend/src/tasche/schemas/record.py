@@ -51,7 +51,11 @@ class RecordsResponse(BaseModel):
     records: list[RecordItem] = Field(..., description="実績一覧")
 
 
-class RecordUpdate(BaseModel):
-    """実績更新リクエスト."""
+class RecordCreate(BaseModel):
+    """実績作成リクエスト."""
 
+    task_id: str = Field(..., description="タスクID")
+    day_of_week: Literal[
+        "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"
+    ] = Field(..., description="曜日")
     actual_units: float = Field(..., ge=0, description="実績ユニット数（0.1単位）", multiple_of=0.1)

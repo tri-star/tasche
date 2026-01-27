@@ -93,7 +93,7 @@ Set-Cookie: refresh_token=<token>; HttpOnly; Secure; SameSite=Strict; Path=/api/
 | 目標 | GET | /api/weeks/current/goals | 要 | 今週の目標一覧取得 |
 | 目標 | PUT | /api/weeks/current/goals | 要 | 今週の目標一括更新 |
 | 実績 | GET | /api/weeks/current/records | 要 | 今週の実績一覧取得 |
-| 実績 | PUT | /api/weeks/current/records/{day}/{task_id} | 要 | 実績記録・更新 |
+| 実績 | POST | /api/weeks/current/records | 要 | 実績記録 |
 | ダッシュボード | GET | /api/dashboard | 要 | ダッシュボード用データ取得 |
 
 ---
@@ -739,16 +739,9 @@ Authorization: Bearer <access_token>
 
 ---
 
-### PUT /api/weeks/current/records/{day}/{task_id}
+### POST /api/weeks/current/records
 
-特定の曜日・タスクの実績を記録・更新します。
-
-#### パスパラメータ
-
-| パラメータ | 型 | 説明 |
-|------------|------|------|
-| day | string | 曜日（monday, tuesday, wednesday, thursday, friday, saturday, sunday） |
-| task_id | string | タスクID |
+実績を記録します。
 
 #### リクエストヘッダー
 
@@ -761,13 +754,15 @@ Content-Type: application/json
 
 ```json
 {
+  "task_id": "tsk_01HXYZ1234567890ABCDEF",
+  "day_of_week": "wednesday",
   "actual_units": 1.5
 }
 ```
 
-**注**: `actual_units`は0.1単位で指定可能。
+**注**: `day_of_week`は `monday` 〜 `sunday` のいずれか。`actual_units`は0.1単位で指定可能。
 
-#### レスポンス（200 OK）
+#### レスポンス（201 Created）
 
 ```json
 {
