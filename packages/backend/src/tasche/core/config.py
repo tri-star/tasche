@@ -16,11 +16,16 @@ class Settings(BaseSettings):
     auth0_client_secret: str = ""
 
     # Session（authlib用）
-    session_secret_key: str = "dev-session-secret-change-in-production"
+    session_secret_key: str = ""
 
     # Cookie設定
     cookie_secure: bool = True
-    cookie_samesite: str = "lax"  # Auth0リダイレクト対応
+    # NOTE:
+    # - デフォルトを "strict" から "lax" に変更すると、全てのCookie（セッションCookieだけでなく
+    #   refresh_token などの機密度の高いCookieを含む）のSameSite属性が緩和されます。
+    # - Auth0 のリダイレクトを正しく動作させるために "lax" が必要なため、ここではあえて緩和しています。
+    # - より厳格な制御が必要なCookieは、アプリケーション側で個別にSameSite属性を上書きすることを検討してください。
+    cookie_samesite: str = "lax"
 
     # Development
     enable_test_auth: bool = False

@@ -9,6 +9,7 @@ from tasche.api.deps import CurrentUser, DbSession
 from tasche.core.config import settings
 from tasche.core.oauth import oauth
 from tasche.schemas.auth import (
+    Auth0UserInfo,
     LogoutResponse,
     TokenResponse,
 )
@@ -71,8 +72,8 @@ async def auth_callback(request: Request, response: Response, db: DbSession):
         if not userinfo:
             userinfo_dict = await auth0_service.get_userinfo(access_token)
         else:
-            # authlibから取得したuserinfoをそのまま使用
-            userinfo_dict = userinfo
+            # authlibから取得したuserinfoをPydanticモデルに変換
+            userinfo_dict = Auth0UserInfo(**userinfo)
 
         # 3. DBにユーザーを保存/更新
         await get_or_create_user_from_auth0(db, userinfo_dict)
@@ -93,7 +94,7 @@ async def auth_callback(request: Request, response: Response, db: DbSession):
         return APIResponse(
             data=TokenResponse(
                 access_token=access_token,
-                token_type="Bearer",
+                token_type=token.get("token_type", "Bearer"),
                 expires_in=token.get("expires_in", 3600),
             )
         )
