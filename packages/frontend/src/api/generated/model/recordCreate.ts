@@ -4,11 +4,16 @@
  * Tasche API
  * OpenAPI spec version: 0.1.0
  */
+import type { DayOfWeek } from './dayOfWeek';
 
 /**
- * 実績更新リクエスト.
+ * 実績作成リクエスト.
  */
-export interface RecordUpdate {
+export interface RecordCreate {
+  /** タスクID */
+  task_id: string;
+  /** 曜日 */
+  day_of_week: DayOfWeek;
   /**
    * 実績ユニット数（0.1単位）
    * @minimum 0

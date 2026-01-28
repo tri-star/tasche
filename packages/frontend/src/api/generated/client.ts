@@ -11,7 +11,7 @@ import type {
   GetTasksApiTasksGetParams,
   GoalsUpdate,
   HTTPValidationError,
-  RecordUpdate,
+  RecordCreate,
   TaskCreate,
   TaskUpdate,
   WeekUpdate
@@ -30,6 +30,9 @@ import type {
   RequestHandlerOptions
 } from 'msw';
 
+import {
+  DayOfWeek
+} from './model';
 import type {
   APIResponseDashboardResponse,
   APIResponseGoalsResponse,
@@ -763,55 +766,52 @@ export const getCurrentRecordsApiWeeksCurrentRecordsGet = async ( options?: Requ
 
 
 /**
- * 特定の曜日・タスクの実績を記録・更新する.
- * @summary Update Record
+ * 実績を記録する.
+ * @summary Create Record
  */
-export type updateRecordApiWeeksCurrentRecordsDayTaskIdPutResponse200 = {
+export type createRecordApiWeeksCurrentRecordsPostResponse201 = {
   data: APIResponseRecordResponse
-  status: 200
+  status: 201
 }
 
-export type updateRecordApiWeeksCurrentRecordsDayTaskIdPutResponse422 = {
+export type createRecordApiWeeksCurrentRecordsPostResponse422 = {
   data: HTTPValidationError
   status: 422
 }
     
-export type updateRecordApiWeeksCurrentRecordsDayTaskIdPutResponseSuccess = (updateRecordApiWeeksCurrentRecordsDayTaskIdPutResponse200) & {
+export type createRecordApiWeeksCurrentRecordsPostResponseSuccess = (createRecordApiWeeksCurrentRecordsPostResponse201) & {
   headers: Headers;
 };
-export type updateRecordApiWeeksCurrentRecordsDayTaskIdPutResponseError = (updateRecordApiWeeksCurrentRecordsDayTaskIdPutResponse422) & {
+export type createRecordApiWeeksCurrentRecordsPostResponseError = (createRecordApiWeeksCurrentRecordsPostResponse422) & {
   headers: Headers;
 };
 
-export type updateRecordApiWeeksCurrentRecordsDayTaskIdPutResponse = (updateRecordApiWeeksCurrentRecordsDayTaskIdPutResponseSuccess | updateRecordApiWeeksCurrentRecordsDayTaskIdPutResponseError)
+export type createRecordApiWeeksCurrentRecordsPostResponse = (createRecordApiWeeksCurrentRecordsPostResponseSuccess | createRecordApiWeeksCurrentRecordsPostResponseError)
 
-export const getUpdateRecordApiWeeksCurrentRecordsDayTaskIdPutUrl = (day: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday',
-    taskId: string,) => {
+export const getCreateRecordApiWeeksCurrentRecordsPostUrl = () => {
 
 
   
 
-  return `/api/weeks/current/records/${day}/${taskId}`
+  return `/api/weeks/current/records`
 }
 
-export const updateRecordApiWeeksCurrentRecordsDayTaskIdPut = async (day: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday',
-    taskId: string,
-    recordUpdate: RecordUpdate, options?: RequestInit): Promise<updateRecordApiWeeksCurrentRecordsDayTaskIdPutResponse> => {
+export const createRecordApiWeeksCurrentRecordsPost = async (recordCreate: RecordCreate, options?: RequestInit): Promise<createRecordApiWeeksCurrentRecordsPostResponse> => {
   
-  const res = await fetch(getUpdateRecordApiWeeksCurrentRecordsDayTaskIdPutUrl(day,taskId),
+  const res = await fetch(getCreateRecordApiWeeksCurrentRecordsPostUrl(),
   {      
     ...options,
-    method: 'PUT',
+    method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      recordUpdate,)
+      recordCreate,)
   }
 )
 
   const body = [204, 205, 304].includes(res.status) ? null : await res.text();
   
-  const data: updateRecordApiWeeksCurrentRecordsDayTaskIdPutResponse['data'] = body ? JSON.parse(body) : {}
-  return { data, status: res.status, headers: res.headers } as updateRecordApiWeeksCurrentRecordsDayTaskIdPutResponse
+  const data: createRecordApiWeeksCurrentRecordsPostResponse['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as createRecordApiWeeksCurrentRecordsPostResponse
 }
 
 
@@ -1041,9 +1041,9 @@ export const getUpdateCurrentGoalsApiWeeksCurrentGoalsPutResponseMock = (overrid
 
 export const getGetCurrentRecordsApiWeeksCurrentRecordsGetResponseMock = (overrideResponse: Partial< APIResponseRecordsResponse > = {}): APIResponseRecordsResponse => ({data: {week_id: faker.string.alpha({length: {min: 10, max: 20}}), unit_duration_minutes: faker.number.int({min: undefined, max: undefined}), records: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({task_id: faker.string.alpha({length: {min: 10, max: 20}}), task_name: faker.string.alpha({length: {min: 10, max: 20}}), daily_actuals: {monday: faker.number.float({min: 0, max: undefined, fractionDigits: 2}), tuesday: faker.number.float({min: 0, max: undefined, fractionDigits: 2}), wednesday: faker.number.float({min: 0, max: undefined, fractionDigits: 2}), thursday: faker.number.float({min: 0, max: undefined, fractionDigits: 2}), friday: faker.number.float({min: 0, max: undefined, fractionDigits: 2}), saturday: faker.number.float({min: 0, max: undefined, fractionDigits: 2}), sunday: faker.number.float({min: 0, max: undefined, fractionDigits: 2})}}))}, ...overrideResponse})
 
-export const getUpdateRecordApiWeeksCurrentRecordsDayTaskIdPutResponseMock = (overrideResponse: Partial< APIResponseRecordResponse > = {}): APIResponseRecordResponse => ({data: {id: faker.string.alpha({length: {min: 10, max: 20}}), week_id: faker.string.alpha({length: {min: 10, max: 20}}), task_id: faker.string.alpha({length: {min: 10, max: 20}}), task_name: faker.string.alpha({length: {min: 10, max: 20}}), day_of_week: faker.helpers.arrayElement(['monday','tuesday','wednesday','thursday','friday','saturday','sunday'] as const), actual_units: faker.number.float({min: 0, max: undefined, fractionDigits: 2}), created_at: `${faker.date.past().toISOString().split('.')[0]}Z`, updated_at: `${faker.date.past().toISOString().split('.')[0]}Z`}, ...overrideResponse})
+export const getCreateRecordApiWeeksCurrentRecordsPostResponseMock = (overrideResponse: Partial< APIResponseRecordResponse > = {}): APIResponseRecordResponse => ({data: {id: faker.string.alpha({length: {min: 10, max: 20}}), week_id: faker.string.alpha({length: {min: 10, max: 20}}), task_id: faker.string.alpha({length: {min: 10, max: 20}}), task_name: faker.string.alpha({length: {min: 10, max: 20}}), day_of_week: faker.helpers.arrayElement(Object.values(DayOfWeek)), actual_units: faker.number.float({min: 0, max: undefined, fractionDigits: 2}), created_at: `${faker.date.past().toISOString().split('.')[0]}Z`, updated_at: `${faker.date.past().toISOString().split('.')[0]}Z`}, ...overrideResponse})
 
-export const getGetDashboardApiDashboardGetResponseMock = (overrideResponse: Partial< APIResponseDashboardResponse > = {}): APIResponseDashboardResponse => ({data: {current_date: faker.date.past().toISOString().split('T')[0], current_day_of_week: faker.helpers.arrayElement(['monday','tuesday','wednesday','thursday','friday','saturday','sunday'] as const), week: {id: faker.string.alpha({length: {min: 10, max: 20}}), start_date: faker.date.past().toISOString().split('T')[0], end_date: faker.date.past().toISOString().split('T')[0], unit_duration_minutes: faker.number.int({min: undefined, max: undefined})}, today_goals: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({task_id: faker.string.alpha({length: {min: 10, max: 20}}), task_name: faker.string.alpha({length: {min: 10, max: 20}}), target_units: faker.number.float({min: 0, max: undefined, fractionDigits: 2}), actual_units: faker.number.float({min: 0, max: undefined, fractionDigits: 2}), completion_rate: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}),null,]), undefined])})), weekly_matrix: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({task_id: faker.string.alpha({length: {min: 10, max: 20}}), task_name: faker.string.alpha({length: {min: 10, max: 20}}), daily_data: {
+export const getGetDashboardApiDashboardGetResponseMock = (overrideResponse: Partial< APIResponseDashboardResponse > = {}): APIResponseDashboardResponse => ({data: {current_date: faker.date.past().toISOString().split('T')[0], current_day_of_week: faker.helpers.arrayElement(Object.values(DayOfWeek)), week: {id: faker.string.alpha({length: {min: 10, max: 20}}), start_date: faker.date.past().toISOString().split('T')[0], end_date: faker.date.past().toISOString().split('T')[0], unit_duration_minutes: faker.number.int({min: undefined, max: undefined})}, today_goals: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({task_id: faker.string.alpha({length: {min: 10, max: 20}}), task_name: faker.string.alpha({length: {min: 10, max: 20}}), target_units: faker.number.float({min: 0, max: undefined, fractionDigits: 2}), actual_units: faker.number.float({min: 0, max: undefined, fractionDigits: 2}), completion_rate: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}),null,]), undefined])})), weekly_matrix: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({task_id: faker.string.alpha({length: {min: 10, max: 20}}), task_name: faker.string.alpha({length: {min: 10, max: 20}}), daily_data: {
         [faker.string.alphanumeric(5)]: {target_units: faker.number.float({min: 0, max: undefined, fractionDigits: 2}), actual_units: faker.number.float({min: 0, max: undefined, fractionDigits: 2}), completion_rate: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}),null,]), undefined])}
       }})), has_goals_configured: faker.datatype.boolean()}, ...overrideResponse})
 
@@ -1216,13 +1216,13 @@ export const getGetCurrentRecordsApiWeeksCurrentRecordsGetMockHandler = (overrid
   }, options)
 }
 
-export const getUpdateRecordApiWeeksCurrentRecordsDayTaskIdPutMockHandler = (overrideResponse?: APIResponseRecordResponse | ((info: Parameters<Parameters<typeof http.put>[1]>[0]) => Promise<APIResponseRecordResponse> | APIResponseRecordResponse), options?: RequestHandlerOptions) => {
-  return http.put('*/api/weeks/current/records/:day/:taskId', async (info) => {await delay(0);
+export const getCreateRecordApiWeeksCurrentRecordsPostMockHandler = (overrideResponse?: APIResponseRecordResponse | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<APIResponseRecordResponse> | APIResponseRecordResponse), options?: RequestHandlerOptions) => {
+  return http.post('*/api/weeks/current/records', async (info) => {await delay(0);
   
     return new HttpResponse(JSON.stringify(overrideResponse !== undefined
     ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getUpdateRecordApiWeeksCurrentRecordsDayTaskIdPutResponseMock()),
-      { status: 200,
+    : getCreateRecordApiWeeksCurrentRecordsPostResponseMock()),
+      { status: 201,
         headers: { 'Content-Type': 'application/json' }
       })
   }, options)
@@ -1286,7 +1286,7 @@ export const getTascheAPIMock = () => [
   getGetCurrentGoalsApiWeeksCurrentGoalsGetMockHandler(),
   getUpdateCurrentGoalsApiWeeksCurrentGoalsPutMockHandler(),
   getGetCurrentRecordsApiWeeksCurrentRecordsGetMockHandler(),
-  getUpdateRecordApiWeeksCurrentRecordsDayTaskIdPutMockHandler(),
+  getCreateRecordApiWeeksCurrentRecordsPostMockHandler(),
   getGetDashboardApiDashboardGetMockHandler(),
   getCreateTestTokenApiTestAuthGetMockHandler(),
   getRootGetMockHandler(),
