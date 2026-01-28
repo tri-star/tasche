@@ -1,16 +1,16 @@
 import { useEffect, useState } from "react"
 import {
+  createRecordApiWeeksCurrentRecordsPost,
   getDashboardApiDashboardGet,
-  updateRecordApiWeeksCurrentRecordsDayTaskIdPut,
 } from "@/api/generated/client"
-import type { DashboardResponse } from "@/api/generated/model"
+import type { DashboardResponse, DayOfWeek } from "@/api/generated/model"
 import { GoalSettingFab } from "@/components/dashboard/GoalSettingFab"
 import { RecordWidget } from "@/components/dashboard/RecordWidget"
 import { TodayGoalsWidget } from "@/components/dashboard/TodayGoalsWidget"
 import { WeeklyMatrix } from "@/components/dashboard/WeeklyMatrix"
 import { DashboardLayout } from "@/components/layout/DashboardLayout"
 
-function formatDate(dateStr: string, dayOfWeek: string): string {
+function formatDate(dateStr: string, dayOfWeek: DayOfWeek): string {
   const date = new Date(dateStr)
   const dayLabels: Record<string, string> = {
     monday: "月",
@@ -46,13 +46,13 @@ export function DashboardPage() {
     fetchDashboard()
   }, [])
 
-  const handleRecord = async (day: string, taskId: string, units: number) => {
+  const handleRecord = async (day: DayOfWeek, taskId: string, units: number) => {
     try {
-      await updateRecordApiWeeksCurrentRecordsDayTaskIdPut(
-        day as "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday",
-        taskId,
-        { actual_units: units },
-      )
+      await createRecordApiWeeksCurrentRecordsPost({
+        day_of_week: day,
+        task_id: taskId,
+        actual_units: units,
+      })
       const response = await getDashboardApiDashboardGet()
       if (response.status === 200) {
         setDashboard(response.data.data)

@@ -4,7 +4,7 @@
  * Tasche API
  * OpenAPI spec version: 0.1.0
  */
-import type { RecordResponseDayOfWeek } from './recordResponseDayOfWeek';
+import type { DayOfWeek } from './dayOfWeek';
 
 /**
  * 実績レスポンス.
@@ -19,7 +19,7 @@ export interface RecordResponse {
   /** タスク名 */
   task_name: string;
   /** 曜日 */
-  day_of_week: RecordResponseDayOfWeek;
+  day_of_week: DayOfWeek;
   /**
    * 実績ユニット数（0.1単位）
    * @minimum 0

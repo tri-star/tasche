@@ -1,9 +1,10 @@
 """実績関連のスキーマ定義."""
 
 from datetime import datetime
-from typing import Literal
 
 from pydantic import BaseModel, Field
+
+from tasche.models.enums import DayOfWeek
 
 
 class DailyActuals(BaseModel):
@@ -25,9 +26,7 @@ class RecordResponse(BaseModel):
     week_id: str = Field(..., description="週ID")
     task_id: str = Field(..., description="タスクID")
     task_name: str = Field(..., description="タスク名")
-    day_of_week: Literal[
-        "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"
-    ] = Field(..., description="曜日")
+    day_of_week: DayOfWeek = Field(..., description="曜日")
     actual_units: float = Field(..., ge=0, description="実績ユニット数（0.1単位）")
     created_at: datetime = Field(..., description="作成日時（ISO 8601）")
     updated_at: datetime = Field(..., description="更新日時（ISO 8601）")
@@ -51,7 +50,9 @@ class RecordsResponse(BaseModel):
     records: list[RecordItem] = Field(..., description="実績一覧")
 
 
-class RecordUpdate(BaseModel):
-    """実績更新リクエスト."""
+class RecordCreate(BaseModel):
+    """実績作成リクエスト."""
 
+    task_id: str = Field(..., description="タスクID")
+    day_of_week: DayOfWeek = Field(..., description="曜日")
     actual_units: float = Field(..., ge=0, description="実績ユニット数（0.1単位）", multiple_of=0.1)

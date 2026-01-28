@@ -30,7 +30,7 @@ services:
       ENABLE_TEST_AUTH: "true"
       LOG_LEVEL: debug
     ports:
-      - "8000:8000"
+      - "${API_CONTAINER_PORT:-8000}:8000"
     volumes:
       - ./src:/app/src
       - ./migrations:/app/migrations

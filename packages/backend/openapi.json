@@ -550,62 +550,26 @@
             "HTTPBearer": []
           }
         ]
-      }
-    },
-    "/api/weeks/current/records/{day}/{task_id}": {
-      "put": {
+      },
+      "post": {
         "tags": [
           "実績"
         ],
-        "summary": "Update Record",
-        "description": "特定の曜日・タスクの実績を記録・更新する.",
-        "operationId": "update_record_api_weeks_current_records__day___task_id__put",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "day",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "enum": [
-                "monday",
-                "tuesday",
-                "wednesday",
-                "thursday",
-                "friday",
-                "saturday",
-                "sunday"
-              ],
-              "type": "string",
-              "title": "Day"
-            }
-          },
-          {
-            "name": "task_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Task Id"
-            }
-          }
-        ],
+        "summary": "Create Record",
+        "description": "実績を記録する.",
+        "operationId": "create_record_api_weeks_current_records_post",
         "requestBody": {
-          "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/RecordUpdate"
+                "$ref": "#/components/schemas/RecordCreate"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
-          "200": {
+          "201": {
             "description": "Successful Response",
             "content": {
               "application/json": {
@@ -625,7 +589,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/api/dashboard": {
@@ -1119,17 +1088,7 @@
             "description": "現在の日付"
           },
           "current_day_of_week": {
-            "type": "string",
-            "enum": [
-              "monday",
-              "tuesday",
-              "wednesday",
-              "thursday",
-              "friday",
-              "saturday",
-              "sunday"
-            ],
-            "title": "Current Day Of Week",
+            "$ref": "#/components/schemas/DayOfWeek",
             "description": "現在の曜日"
           },
           "week": {
@@ -1169,6 +1128,20 @@
         ],
         "title": "DashboardResponse",
         "description": "ダッシュボードレスポンス."
+      },
+      "DayOfWeek": {
+        "type": "string",
+        "enum": [
+          "monday",
+          "tuesday",
+          "wednesday",
+          "thursday",
+          "friday",
+          "saturday",
+          "sunday"
+        ],
+        "title": "DayOfWeek",
+        "description": "曜日の列挙型."
       },
       "GoalResponse": {
         "properties": {
@@ -1354,6 +1327,34 @@
         "title": "LogoutResponse",
         "description": "ログアウトレスポンス."
       },
+      "RecordCreate": {
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "title": "Task Id",
+            "description": "タスクID"
+          },
+          "day_of_week": {
+            "$ref": "#/components/schemas/DayOfWeek",
+            "description": "曜日"
+          },
+          "actual_units": {
+            "type": "number",
+            "multipleOf": 0.1,
+            "minimum": 0.0,
+            "title": "Actual Units",
+            "description": "実績ユニット数（0.1単位）"
+          }
+        },
+        "type": "object",
+        "required": [
+          "task_id",
+          "day_of_week",
+          "actual_units"
+        ],
+        "title": "RecordCreate",
+        "description": "実績作成リクエスト."
+      },
       "RecordItem": {
         "properties": {
           "task_id": {
@@ -1403,17 +1404,7 @@
             "description": "タスク名"
           },
           "day_of_week": {
-            "type": "string",
-            "enum": [
-              "monday",
-              "tuesday",
-              "wednesday",
-              "thursday",
-              "friday",
-              "saturday",
-              "sunday"
-            ],
-            "title": "Day Of Week",
+            "$ref": "#/components/schemas/DayOfWeek",
             "description": "曜日"
           },
           "actual_units": {
@@ -1448,23 +1439,6 @@
         ],
         "title": "RecordResponse",
         "description": "実績レスポンス."
-      },
-      "RecordUpdate": {
-        "properties": {
-          "actual_units": {
-            "type": "number",
-            "multipleOf": 0.1,
-            "minimum": 0.0,
-            "title": "Actual Units",
-            "description": "実績ユニット数（0.1単位）"
-          }
-        },
-        "type": "object",
-        "required": [
-          "actual_units"
-        ],
-        "title": "RecordUpdate",
-        "description": "実績更新リクエスト."
       },
       "RecordsResponse": {
         "properties": {
@@ -1912,15 +1886,7 @@
               "$ref": "#/components/schemas/DailyData"
             },
             "propertyNames": {
-              "enum": [
-                "monday",
-                "tuesday",
-                "wednesday",
-                "thursday",
-                "friday",
-                "saturday",
-                "sunday"
-              ]
+              "$ref": "#/components/schemas/DayOfWeek"
             },
             "type": "object",
             "title": "Daily Data",

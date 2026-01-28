@@ -1,5 +1,5 @@
 import { useState } from "react"
-import type { DashboardResponseCurrentDayOfWeek, TodayGoal } from "@/api/generated/model"
+import type { DayOfWeek, TodayGoal } from "@/api/generated/model"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -22,13 +22,13 @@ const DAYS_OF_WEEK = [
 ] as const
 
 type RecordWidgetProps = {
-  currentDay: DashboardResponseCurrentDayOfWeek
+  currentDay: DayOfWeek
   tasks: TodayGoal[]
-  onRecord?: (day: string, taskId: string, units: number) => void
+  onRecord?: (day: DayOfWeek, taskId: string, units: number) => void
 }
 
 export function RecordWidget({ currentDay, tasks, onRecord }: RecordWidgetProps) {
-  const [selectedDay, setSelectedDay] = useState<string>(currentDay)
+  const [selectedDay, setSelectedDay] = useState<DayOfWeek>(currentDay)
   const [selectedTask, setSelectedTask] = useState<string>("")
   const [units, setUnits] = useState<number>(1.5)
 
@@ -71,7 +71,7 @@ export function RecordWidget({ currentDay, tasks, onRecord }: RecordWidgetProps)
           <ToggleGroup
             type="single"
             value={selectedDay}
-            onValueChange={(value) => value && setSelectedDay(value)}
+            onValueChange={(value) => value && setSelectedDay(value as DayOfWeek)}
             className="justify-start gap-1"
           >
             {DAYS_OF_WEEK.map((day) => (

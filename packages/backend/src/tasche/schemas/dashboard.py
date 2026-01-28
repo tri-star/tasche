@@ -1,9 +1,10 @@
 """ダッシュボード関連のスキーマ定義."""
 
 from datetime import date
-from typing import Literal
 
 from pydantic import BaseModel, Field
+
+from tasche.models.enums import DayOfWeek
 
 
 class WeekInfo(BaseModel):
@@ -38,19 +39,14 @@ class WeeklyMatrixItem(BaseModel):
 
     task_id: str = Field(..., description="タスクID")
     task_name: str = Field(..., description="タスク名")
-    daily_data: dict[
-        Literal["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"],
-        DailyData,
-    ] = Field(..., description="曜日ごとのデータ")
+    daily_data: dict[DayOfWeek, DailyData] = Field(..., description="曜日ごとのデータ")
 
 
 class DashboardResponse(BaseModel):
     """ダッシュボードレスポンス."""
 
     current_date: date = Field(..., description="現在の日付")
-    current_day_of_week: Literal[
-        "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"
-    ] = Field(..., description="現在の曜日")
+    current_day_of_week: DayOfWeek = Field(..., description="現在の曜日")
     week: WeekInfo = Field(..., description="週情報")
     today_goals: list[TodayGoal] = Field(..., description="今日の目標一覧")
     weekly_matrix: list[WeeklyMatrixItem] = Field(..., description="週次マトリックス")

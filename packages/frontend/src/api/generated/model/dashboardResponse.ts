@@ -4,7 +4,7 @@
  * Tasche API
  * OpenAPI spec version: 0.1.0
  */
-import type { DashboardResponseCurrentDayOfWeek } from './dashboardResponseCurrentDayOfWeek';
+import type { DayOfWeek } from './dayOfWeek';
 import type { WeekInfo } from './weekInfo';
 import type { TodayGoal } from './todayGoal';
 import type { WeeklyMatrixItem } from './weeklyMatrixItem';
@@ -16,7 +16,7 @@ export interface DashboardResponse {
   /** 現在の日付 */
   current_date: string;
   /** 現在の曜日 */
-  current_day_of_week: DashboardResponseCurrentDayOfWeek;
+  current_day_of_week: DayOfWeek;
   /** 週情報 */
   week: WeekInfo;
   /** 今日の目標一覧 */

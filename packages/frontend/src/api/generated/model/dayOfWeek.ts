@@ -6,13 +6,13 @@
  */
 
 /**
- * 現在の曜日
+ * 曜日の列挙型.
  */
-export type DashboardResponseCurrentDayOfWeek = typeof DashboardResponseCurrentDayOfWeek[keyof typeof DashboardResponseCurrentDayOfWeek];
+export type DayOfWeek = typeof DayOfWeek[keyof typeof DayOfWeek];
 
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export const DashboardResponseCurrentDayOfWeek = {
+export const DayOfWeek = {
   monday: 'monday',
   tuesday: 'tuesday',
   wednesday: 'wednesday',
