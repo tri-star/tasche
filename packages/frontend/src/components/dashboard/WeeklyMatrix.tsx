@@ -1,4 +1,4 @@
-import type { DashboardResponseCurrentDayOfWeek, WeeklyMatrixItem } from "@/api/generated/model"
+import type { DayOfWeek, WeeklyMatrixItem } from "@/api/generated/model"
 import {
   Table,
   TableBody,
@@ -30,7 +30,7 @@ const DAY_LABELS: Record<string, string> = {
 
 type WeeklyMatrixProps = {
   data: WeeklyMatrixItem[]
-  currentDay: DashboardResponseCurrentDayOfWeek
+  currentDay: DayOfWeek
 }
 
 function getCompletionColorClass(rate: number | null | undefined): string {
