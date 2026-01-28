@@ -16,7 +16,6 @@ export * from './aPIResponseTaskResponse';
 export * from './aPIResponseTokenResponse';
 export * from './aPIResponseUserResponse';
 export * from './aPIResponseWeekResponse';
-export * from './authCallbackApiAuthCallbackGetParams';
 export * from './createTestTokenApiTestAuthGetParams';
 export * from './createdTask';
 export * from './dailyActuals';

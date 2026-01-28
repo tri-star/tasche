@@ -2,11 +2,14 @@
 
 import logging
 
+from authlib.integrations.base_client.errors import OAuthError
 from fastapi import APIRouter, Cookie, HTTPException, Request, Response, status
 
 from tasche.api.deps import CurrentUser, DbSession
 from tasche.core.config import settings
+from tasche.core.oauth import oauth
 from tasche.schemas.auth import (
+    Auth0UserInfo,
     LogoutResponse,
     TokenResponse,
 )
@@ -24,11 +27,29 @@ REFRESH_TOKEN_MAX_AGE = 604800  # 7日間（秒）
 AUTH_COOKIE_PATH = "/api/auth"
 
 
+@router.get("/login")
+async def login(request: Request):
+    """ログイン開始.
+
+    Auth0のauthorizeエンドポイントにリダイレクトする。
+    state, PKCE (code_verifier/challenge) はauthlibが自動管理。
+
+    Args:
+        request: FastAPIリクエスト
+
+    Returns:
+        RedirectResponse: Auth0 authorize URLへのリダイレクト
+    """
+    redirect_uri = str(request.url_for("auth_callback"))
+    return await oauth.auth0.authorize_redirect(request, redirect_uri)
+
+
 @router.get("/callback", response_model=APIResponse[TokenResponse])
-async def auth_callback(code: str, request: Request, response: Response, db: DbSession):
+async def auth_callback(request: Request, response: Response, db: DbSession):
     """認証コールバック.
 
-    Auth0の認可コードをトークンに交換し、ユーザー情報を取得してDBに保存/更新する。
+    authlibがstate検証、PKCE検証、トークン交換を自動実行。
+    ユーザー情報を取得してDBに保存/更新する。
     Refresh TokenはHttpOnly Cookieに保存し、Access Tokenはレスポンスで返す。
 
     Args:
@@ -40,24 +61,28 @@ async def auth_callback(code: str, request: Request, response: Response, db: DbS
         APIResponse[TokenResponse]: トークンレスポンス
     """
     try:
-        # 1. Auth0にcodeを送ってtokenを取得
-        redirect_uri = str(request.url_for("auth_callback"))
-        token_response = await auth0_service.exchange_code_for_tokens(
-            code,
-            redirect_uri,
-        )
+        # 1. authlibでトークン取得（state検証、PKCE検証も自動）
+        token = await oauth.auth0.authorize_access_token(request)
 
-        # 2. ユーザー情報を取得
-        userinfo = await auth0_service.get_userinfo(token_response.access_token)
+        access_token = token["access_token"]
+        refresh_token = token.get("refresh_token")
+        userinfo = token.get("userinfo")
+
+        # 2. userinfoがない場合は別途取得
+        if not userinfo:
+            userinfo_dict = await auth0_service.get_userinfo(access_token)
+        else:
+            # authlibから取得したuserinfoをPydanticモデルに変換
+            userinfo_dict = Auth0UserInfo(**userinfo)
 
         # 3. DBにユーザーを保存/更新
-        await get_or_create_user_from_auth0(db, userinfo)
+        await get_or_create_user_from_auth0(db, userinfo_dict)
 
         # 4. Refresh TokenをCookieに保存
-        if token_response.refresh_token:
+        if refresh_token:
             response.set_cookie(
                 key=REFRESH_TOKEN_COOKIE_NAME,
-                value=token_response.refresh_token,
+                value=refresh_token,
                 max_age=REFRESH_TOKEN_MAX_AGE,
                 httponly=True,
                 secure=settings.cookie_secure,
@@ -68,12 +93,18 @@ async def auth_callback(code: str, request: Request, response: Response, db: DbS
         # 5. Access Tokenをレスポンスで返す
         return APIResponse(
             data=TokenResponse(
-                access_token=token_response.access_token,
-                token_type=token_response.token_type,
-                expires_in=token_response.expires_in,
+                access_token=access_token,
+                token_type=token.get("token_type", "Bearer"),
+                expires_in=token.get("expires_in", 3600),
             )
         )
 
+    except OAuthError as e:
+        logger.error(f"OAuth error during callback: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"OAuth authentication failed: {e.error}",
+        ) from e
     except Exception as e:
         logger.error(f"Failed to authenticate: {e}", exc_info=True)
         raise HTTPException(
