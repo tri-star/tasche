@@ -31,7 +31,9 @@
       "mcp__plane__get_issue_using_readable_identifier",
       "Bash(xargs cat:*)",
       "Bash(pnpm exec playwright install:*)",
-      "Bash(pnpm exec playwright test:*)"
+      "Bash(pnpm exec playwright test:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh api:*)"
     ]
   }
 }
