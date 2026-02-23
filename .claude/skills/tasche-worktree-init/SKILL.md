@@ -3,6 +3,7 @@ name: tasche-worktree-init
 description: "Tascheプロジェクトでgit worktreeを使った並行開発を始める際に、新しいworktreeの開発環境を効率よく初期化するスキル。「worktreeを初期化して」「開発環境をセットアップして」「新しいworktreeで作業を始めたい」などのリクエストがあった場合に積極的に使用すること。ポート番号の自動決定、.envファイルの生成、Docker/DB/pnpmの初期化を一括で行う。"
 user-invokable: true
 argument-hint: "(任意) プロジェクト名 - 省略時はブランチ名から自動生成"
+model: haiku
 ---
 
 # Tasche Worktree 初期化スキル
@@ -20,6 +21,7 @@ Docker Composeプロジェクト名など）を持てるように自動初期化
 持っていることを前提としています。
 
 **packages/backend/.env.example の例:**
+
 ```
 COMPOSE_PROJECT_NAME={%COMPOSE_PROJECT_NAME%}
 DB_CONTAINER_PORT={%DB_CONTAINER_PORT%}
@@ -31,6 +33,7 @@ DATABASE_URL=postgresql+asyncpg://tasche:tasche_dev_password@localhost:{%DB_CONT
 ```
 
 **packages/frontend/.env.example の例:**
+
 ```
 VITE_DEV_PORT={%VITE_DEV_PORT%}
 VITE_API_BASE_URL=http://localhost:{%API_CONTAINER_PORT%}
@@ -46,19 +49,19 @@ VITE_USE_MSW=true
 そこからポート番号が自動計算されます。
 
 | PROJECT_INDEX | API_PORT (API_CONTAINER_PORT) | DB_PORT (DB_CONTAINER_PORT) | VITE_DEV_PORT |
-|:---:|:---:|:---:|:---:|
-| 0 | 10000 | 10001 | 10002 |
-| 1 | 10100 | 10101 | 10102 |
-| 2 | 10200 | 10201 | 10202 |
-| N | 10000 + N×100 | 10001 + N×100 | 10002 + N×100 |
+| :-----------: | :---------------------------: | :-------------------------: | :-----------: |
+|       0       |             10000             |            10001            |     10002     |
+|       1       |             10100             |            10101            |     10102     |
+|       2       |             10200             |            10201            |     10202     |
+|       N       |         10000 + N×100         |        10001 + N×100        | 10002 + N×100 |
 
 ## スキルの実行手順
 
-スクリプトは全てプロジェクトルート（`packages/` が存在するディレクトリ）をカレントディレクトリとして実行します。
+スクリプトは全てプロジェクトルート（".git"フォルダ/ファイル が存在するディレクトリ）をカレントディレクトリとして実行します。
 スキルディレクトリへのパスは環境変数 `SKILL_DIR` として保持して使いまわします。
 
 ```bash
-SKILL_DIR="/home/tristar/projects/tasche/.claude/skills/tasche-worktree-init"
+SKILL_DIR="/home/some-user/projects/some-project"
 ```
 
 ### ステップ1: 使用可能なPROJECT_INDEXを取得
@@ -84,6 +87,7 @@ BRANCH=$(git branch --show-current)
 ```
 
 **プロジェクト名の決定ルール:**
+
 - ブランチ名に課題ID（`TCH-123` 形式）が含まれる場合 → 課題IDをそのまま使用
   - 例: `feature/TCH-123-add-task` → `TCH-123`
 - 課題IDがない場合 → `feature/` プレフィックスを除いたブランチ名（長い場合は省略）
@@ -101,6 +105,7 @@ bash "$SKILL_DIR/scripts/create-env-file.sh" -i "$PROJECT_INDEX" -n "$PROJECT_NA
 ```
 
 このスクリプトは以下の2ファイルを生成します：
+
 - `packages/backend/.env`
 - `packages/frontend/.env`
 
@@ -111,6 +116,7 @@ bash "$SKILL_DIR/scripts/init-project.sh"
 ```
 
 このスクリプトはbackendとfrontendの開発環境を初期化します：
+
 - Docker Composeコンテナの起動
 - Alembicによるデータベースマイグレーション
 - シードデータの投入
@@ -120,27 +126,23 @@ bash "$SKILL_DIR/scripts/init-project.sh"
 
 このSKILL.mdと同じディレクトリの `scripts/` サブディレクトリにスクリプトが入っています。
 
-| スクリプト | 説明 |
-|---|---|
+| スクリプト                     | 説明                                          |
+| ------------------------------ | --------------------------------------------- |
 | `scripts/detect-port-index.sh` | ポートの空き状況を確認し、PROJECT_INDEXを返す |
-| `scripts/create-env-file.sh` | PROJECT_INDEXとプロジェクト名から.envを生成 |
-| `scripts/init-project.sh` | Docker/DB/pnpmの初期化を一括実行 |
+| `scripts/create-env-file.sh`   | PROJECT_INDEXとプロジェクト名から.envを生成   |
+| `scripts/init-project.sh`      | Docker/DB/pnpmの初期化を一括実行              |
 
-スクリプトを実行する際は、**プロジェクトルートをカレントディレクトリ**として
+スクリプトを実行する際は、**プロジェクトルートをカレントディレクトリ(.gitフォルダ/ファイルが存在する直近のフォルダ)**として
 スキルのスクリプトへの完全パスを指定します。例：
 
 ```bash
-SKILL_DIR="/home/tristar/projects/tasche/.claude/skills/tasche-worktree-init"
+SKILL_DIR="/home/some-user/projects/some-project/.claude/skills/tasche-worktree-init"
 # プロジェクトルートに cd してからスクリプトを実行
 cd /path/to/project/root
 PROJECT_INDEX=$(bash "$SKILL_DIR/scripts/detect-port-index.sh")
 bash "$SKILL_DIR/scripts/create-env-file.sh" -i "$PROJECT_INDEX" -n "$PROJECT_NAME"
 bash "$SKILL_DIR/scripts/init-project.sh"
 ```
-
-> スキルが worktree 環境で使われることを想定して、スキルディレクトリへのパスは
-> `/home/tristar/projects/tasche/.claude/skills/tasche-worktree-init` で固定です。
-> スキルが別の場所に移動した場合はこのパスを更新してください。
 
 ## トラブルシューティング
 

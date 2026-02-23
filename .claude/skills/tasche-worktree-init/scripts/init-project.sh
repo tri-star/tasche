@@ -60,12 +60,10 @@ cd packages/backend
 # -----------------------------------------------------------------------------
 echo ""
 echo "--- [1/3] Docker Compose コンテナを起動 ---"
-docker compose up -d
-echo "  コンテナの起動完了"
-
-# コンテナが完全に起動するまで少し待機
-echo "  データベースの起動を待機中..."
-sleep 3
+# --wait オプションでコンテナの healthcheck が HEALTHY になるまで待機する
+# (Docker Compose v2.1.1 以降が必要。compose.yaml に healthcheck が定義されていること)
+docker compose up -d --wait
+echo "  コンテナの起動完了（healthcheck確認済み）"
 
 # -----------------------------------------------------------------------------
 # ステップ2: Alembic でデータベースマイグレーションを実行
@@ -122,7 +120,7 @@ echo ""
 
 # .env から設定を読み込んでURLを表示
 if [ -f "packages/backend/.env" ]; then
-    API_PORT=$(grep '^API_CONTAINER_PORT=' packages/backend/.env | cut -d= -f2)
+    API_PORT=$(grep '^API_CONTAINER_PORT=' packages/backend/.env 2>/dev/null | cut -d= -f2 || echo "未設定")
     VITE_PORT=$(grep '^VITE_DEV_PORT=' packages/frontend/.env 2>/dev/null | cut -d= -f2 || echo "未設定")
     if [ -n "$API_PORT" ]; then
         echo "  API URL      : http://localhost:${API_PORT}"

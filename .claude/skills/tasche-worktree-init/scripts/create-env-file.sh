@@ -28,10 +28,13 @@ set -euo pipefail
 PROJECT_INDEX=""
 PROJECT_NAME=""
 
-while getopts "i:n:" opt; do
+while getopts ":i:n:" opt; do
     case "$opt" in
         i) PROJECT_INDEX="$OPTARG" ;;
         n) PROJECT_NAME="$OPTARG" ;;
+        :) echo "エラー: -$OPTARG オプションには値が必要です" >&2
+           echo "使い方: $0 -i PROJECT_INDEX [-n PROJECT_NAME]" >&2
+           exit 1 ;;
         *) echo "使い方: $0 -i PROJECT_INDEX [-n PROJECT_NAME]" >&2; exit 1 ;;
     esac
 done
@@ -43,7 +46,7 @@ if [ -z "$PROJECT_INDEX" ]; then
     exit 1
 fi
 
-# 数値チェック
+# 数値チェック（0以上の非負整数のみ有効）
 if ! [[ "$PROJECT_INDEX" =~ ^[0-9]+$ ]]; then
     echo "エラー: PROJECT_INDEX は0以上の整数を指定してください (指定値: $PROJECT_INDEX)" >&2
     exit 1
@@ -52,6 +55,16 @@ fi
 # プロジェクト名が省略された場合はデフォルト値を使用
 if [ -z "$PROJECT_NAME" ]; then
     PROJECT_NAME="tasche-${PROJECT_INDEX}"
+fi
+
+# PROJECT_NAME のバリデーション
+# Docker Compose のコンテナ名に使われるため、英数字・ハイフン・アンダースコア・ドットのみ有効
+# sedの区切り文字（/）やその他のメタ文字が含まれると、sedインジェクションによる
+# 任意コマンド実行のリスクがあるため、必ずチェックする
+if [[ ! "$PROJECT_NAME" =~ ^[a-zA-Z0-9._-]+$ ]]; then
+    echo "エラー: PROJECT_NAME に不正な文字が含まれています (指定値: $PROJECT_NAME)" >&2
+    echo "  使用可能な文字: 英数字、ハイフン(-)、アンダースコア(_)、ドット(.)" >&2
+    exit 1
 fi
 
 # -----------------------------------------------------------------------------
@@ -80,7 +93,7 @@ replace_placeholders() {
 
     if [ ! -f "$src" ]; then
         echo "エラー: テンプレートファイルが見つかりません: $src" >&2
-        return 1
+        exit 1
     fi
 
     # sedを使って {%変数名%} を実際の値に置換

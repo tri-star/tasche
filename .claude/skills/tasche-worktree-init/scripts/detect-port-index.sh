@@ -35,7 +35,9 @@ is_port_in_use() {
         ss -tlnp | grep -q ":$port " &>/dev/null
         return $?
     else
-        # どちらも使えない場合はポートに接続を試みる
+        # どちらも使えない場合はポートへの接続を試みる
+        # 注意: このフォールバックは Bash 4.x 以上の環境でのみ動作する
+        #       (Dash など一部のシェルでは /dev/tcp が未サポートのため動作しない)
         (echo >/dev/tcp/localhost/"$port") &>/dev/null
         return $?
     fi
