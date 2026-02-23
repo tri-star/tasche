@@ -86,6 +86,10 @@ jobs:
   frontend-e2e:
     name: frontend-e2e
     runs-on: ubuntu-latest
+    env:
+      COMPOSE_PROJECT_NAME: test-backend
+      DB_CONTAINER_PORT: 5432
+      API_CONTAINER_PORT: 8000
     steps:
       - uses: actions/checkout@v4
 
@@ -104,10 +108,6 @@ jobs:
 
       - name: Install Playwright Browsers
         run: pnpm --filter @tasche/frontend exec playwright install chromium --with-deps
-
-      - name: Prepare backend env
-        run: cp .env.example .env
-        working-directory: packages/backend
 
       - name: Start backend containers
         run: docker compose -f compose.yaml up -d
