@@ -1,0 +1,199 @@
+name: PR AI Review
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  id-token: write
+
+jobs:
+  pr-ai-review:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    env:
+      REPO: ${{ github.repository }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      PR_TITLE: ${{ github.event.pull_request.title }}
+      PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+      BASE_REF: ${{ github.event.pull_request.base.ref }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Fetch base branch
+        run: git fetch origin "${BASE_REF}" --depth=1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Copilot CLI
+        run: npm install -g @github/copilot
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Python dependencies
+        run: python -m pip install pyyaml
+
+      - name: Write PR body
+        run: |
+          mkdir -p tmp/review
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          event = json.loads(Path(os.environ["GITHUB_EVENT_PATH"]).read_text())
+          body = event["pull_request"].get("body") or ""
+          Path("tmp/review/pr-body.txt").write_text(body)
+          PY
+
+      - name: Build review context
+        run: |
+          python3 .github/skills/review-context/scripts/build_review_context.py \
+            --base-ref "${BASE_REF}" \
+            --repo "${REPO}" \
+            --pr-number "${PR_NUMBER}" \
+            --title "${PR_TITLE}" \
+            --body-file tmp/review/pr-body.txt \
+            --author "${PR_AUTHOR}" \
+            --output-dir tmp/review
+
+      - name: Build Copilot prompt
+        run: |
+          python3 .github/scripts/build_pr_review_prompt.py \
+            --metadata tmp/review/pr-metadata.json \
+            --body-file tmp/review/pr-body.txt \
+            --output tmp/review/prompt.txt
+
+      - name: Run Copilot review
+        env:
+          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_PAT }}
+        run: |
+          copilot \
+            -s \
+            --agent=pr-review \
+            --prompt "$(cat tmp/review/prompt.txt)" \
+            --autopilot \
+            --max-autopilot-continues=8 \
+            --allow-tool='shell(git:*), shell(python3:*), shell(rg:*), shell(cat:*), shell(sed:*), shell(ls:*)' \
+            --secret-env-vars='COPILOT_GITHUB_TOKEN,GH_TOKEN,GITHUB_TOKEN' \
+            > tmp/review/result.raw.txt
+
+      - name: Normalize review result
+        run: |
+          python3 .github/scripts/validate_pr_review_result.py \
+            --input tmp/review/result.raw.txt \
+            --output tmp/review/result.json
+          python3 .github/scripts/render_pr_review_comment.py \
+            --input tmp/review/result.json \
+            --output tmp/review/summary-comment.md
+
+      - name: Ensure AI review labels exist
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh label create "ai-verdict:mergeable" --repo "${REPO}" --color "0e8a16" --description "AI verdict: mergeable" 2>/dev/null || true
+          gh label create "ai-verdict:human-review" --repo "${REPO}" --color "d93f0b" --description "AI verdict: human review required" 2>/dev/null || true
+
+      - name: Update verdict labels
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          current_labels=$(gh pr view "${PR_NUMBER}" --repo "${REPO}" --json labels --jq '.labels[].name')
+          for label in ai-verdict:mergeable ai-verdict:human-review; do
+            if printf '%s\n' "${current_labels}" | grep -qx "${label}"; then
+              gh pr edit "${PR_NUMBER}" --repo "${REPO}" --remove-label "${label}"
+            fi
+          done
+
+          verdict=$(python3 - <<'PY'
+          import json
+          from pathlib import Path
+          print(json.loads(Path("tmp/review/result.json").read_text())["verdict"])
+          PY
+          )
+
+          if [ "${verdict}" = "mergeable" ]; then
+            gh pr edit "${PR_NUMBER}" --repo "${REPO}" --add-label "ai-verdict:mergeable"
+          else
+            gh pr edit "${PR_NUMBER}" --repo "${REPO}" --add-label "ai-verdict:human-review"
+          fi
+
+      - name: Upsert summary comment
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          comment_id=$(gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" \
+            --jq '.[] | select(.body | contains("<!-- ai-pr-review-summary -->")) | .id' | head -n 1)
+
+          body=$(cat tmp/review/summary-comment.md)
+
+          if [ -n "${comment_id}" ]; then
+            gh api --method PATCH "repos/${REPO}/issues/comments/${comment_id}" -f body="${body}" >/dev/null
+          else
+            gh api --method POST "repos/${REPO}/issues/${PR_NUMBER}/comments" -f body="${body}" >/dev/null
+          fi
+
+      - name: Replace line comments
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "repos/${REPO}/pulls/${PR_NUMBER}/comments" --paginate \
+            --jq '.[] | select(.body | contains("<!-- ai-pr-review-line -->")) | .id' |
+          while read -r comment_id; do
+            if [ -n "${comment_id}" ]; then
+              gh api --method DELETE "repos/${REPO}/pulls/comments/${comment_id}" >/dev/null
+            fi
+          done
+
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          comments = json.loads(Path("tmp/review/result.json").read_text()).get("review_comments", [])
+          Path("tmp/review/line-comments.json").write_text(json.dumps(comments))
+          PY
+
+          jq -c '.[]' tmp/review/line-comments.json | while read -r item; do
+            path=$(printf '%s' "${item}" | jq -r '.path')
+            line=$(printf '%s' "${item}" | jq -r '.line')
+            severity=$(printf '%s' "${item}" | jq -r '.severity')
+            category=$(printf '%s' "${item}" | jq -r '.category')
+            body=$(printf '%s' "${item}" | jq -r '"<!-- ai-pr-review-line -->\n[" + .severity + "/" + .category + "] " + .body')
+            gh api --method POST "repos/${REPO}/pulls/${PR_NUMBER}/comments" \
+              -f body="${body}" \
+              -f commit_id="${{ github.event.pull_request.head.sha }}" \
+              -f path="${path}" \
+              -F line="${line}" \
+              -f side="RIGHT" >/dev/null
+          done
+
+      - name: Configure AWS credentials
+        if: secrets.AWS_ROLE_ARN != '' && secrets.AI_REVIEW_S3_BUCKET != ''
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ap-northeast-1
+
+      - name: Upload review result to S3
+        if: secrets.AWS_ROLE_ARN != '' && secrets.AI_REVIEW_S3_BUCKET != ''
+        env:
+          AI_REVIEW_S3_BUCKET: ${{ secrets.AI_REVIEW_S3_BUCKET }}
+        run: |
+          run_at=$(date -u +"%Y-%m-%dT%H-%M-%SZ")
+          year=$(date -u +"%Y")
+          month=$(date -u +"%m")
+          day=$(date -u +"%d")
+          aws s3 cp tmp/review/result.json \
+            "s3://${AI_REVIEW_S3_BUCKET}/reviews/repo=${REPO//\//_}/year=${year}/month=${month}/day=${day}/pr=${PR_NUMBER}/run=${run_at}.json"

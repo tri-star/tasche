@@ -1,0 +1,35 @@
+rules:
+  - keywords:
+      - "auth"
+      - "authentication"
+      - "authorization"
+      - "permission"
+      - "role"
+      - "session"
+      - "jwt"
+    candidates:
+      - path: "packages/backend/AGENTS.md"
+        description: "backend docs の入口"
+        reason: "認証・認可に関する変更の可能性"
+
+  - keywords:
+      - "token"
+      - "theme"
+      - "color"
+      - "spacing"
+      - "design token"
+    candidates:
+      - path: "docs/project-overview.md"
+        description: "デザイントークン採用方針を含むプロジェクト概要"
+        reason: "デザイントークン関連の変更の可能性"
+
+  - keywords:
+      - "migration"
+      - "schema"
+      - "sqlalchemy"
+      - "query"
+      - "index"
+    candidates:
+      - path: "packages/backend/docs/toolsets-libraries.md"
+        description: "backend の DB/ORM 周辺の利用技術"
+        reason: "DB またはクエリ影響の可能性"

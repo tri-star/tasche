@@ -33,7 +33,8 @@
       "Bash(pnpm exec playwright install:*)",
       "Bash(pnpm exec playwright test:*)",
       "Bash(gh pr view:*)",
-      "Bash(gh api:*)"
+      "Bash(gh api:*)",
+      "Bash(python /home/tristar/.claude/plugins/cache/anthropic-agent-skills/document-skills/69c0b1a06741/skills/skill-creator/scripts/package_skill.py:*)"
     ]
   }
 }

@@ -1,0 +1,38 @@
+rules:
+  - match:
+      - "packages/backend/**"
+    candidates:
+      - path: "docs/concept.md"
+        description: "プロジェクト全体のコンセプト。目標や背景"
+      - path: "docs/hearing-memo.md"
+        description: "プロジェクト初期の要件定義記録"
+      - path: "docs/glossary.md"
+        description: "プロジェクト内で使用される用語集"
+      - path: "packages/backend/README.md"
+        description: "backendプロジェクトの概要"
+      - path: "packages/backend/docs/folder-structure.md"
+        description: "backend のフォルダ構造ガイド"
+      - path: "docs/api-design.md"
+        description: "API設計ガイド"
+
+  - match:
+      - "packages/frontend/**"
+    candidates:
+      - path: "docs/concept.md"
+        description: "プロジェクト全体のコンセプト。目標や背景"
+      - path: "docs/hearing-memo.md"
+        description: "プロジェクト初期の要件定義記録"
+      - path: "docs/glossary.md"
+        description: "プロジェクト内で使用される用語集"
+      - path: "docs/screens.md"
+        description: "画面設計"
+      - path: "docs/api-design.md"
+        description: "API設計ガイド"
+      - path: "packages/frontend/README.md"
+        description: "frontendプロジェクトの概要"
+      - path: "packages/frontend/docs/folder-structure.md"
+        description: "frontend のフォルダ構造ガイド"
+      - path: "packages/frontend/docs/pages-components-guideline.md"
+        description: "ページ・コンポーネント実装ガイド"
+      - path: "docs/components.md"
+        description: "共通コンポーネントガイド"

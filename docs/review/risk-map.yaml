@@ -1,0 +1,42 @@
+rules:
+  - paths:
+      - "packages/backend/src/taskflow/config.py"
+    risk: medium
+    reason: "backend 設定値変更は挙動影響があるが、直ちに high とまでは言えない"
+
+  - paths:
+      - "packages/backend/src/**/auth/**"
+      - "packages/backend/src/**/security/**"
+      - "packages/backend/src/**/permissions/**"
+    risk: high
+    reason: "認証・認可・セキュリティ境界"
+
+  - paths:
+      - "packages/backend/src/**/db/**"
+      - "packages/backend/src/**/migrations/**"
+      - "packages/backend/src/**/models/**"
+    risk: high
+    reason: "データ破壊、移行失敗、大規模クエリ劣化の影響が大きい"
+
+  - paths:
+      - "packages/frontend/src/routes/**"
+    risk: medium
+    reason: "主要画面導線への影響"
+
+  - paths:
+      - "packages/frontend/src/**/auth/**"
+      - "packages/frontend/src/**/session/**"
+    risk: high
+    reason: "認証フローやセッション周辺"
+
+  - paths:
+      - "tokens/**"
+    risk: medium
+    reason: "広範な UI 変更につながる可能性"
+
+  - paths:
+      - ".github/workflows/**"
+      - ".github/agents/**"
+      - ".github/skills/**"
+    risk: medium
+    reason: "CI や review workflow 自体への影響"

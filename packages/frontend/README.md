@@ -36,9 +36,10 @@ pnpm --filter frontend dev
 - `pnpm build` - プロダクションビルドを作成
 - `pnpm preview` - ビルドしたアプリケーションをプレビュー
 - `pnpm test` - テストを実行
+- `pnpm test:e2e` - E2Eテストを実行
 - `pnpm lint` - コードをチェック
 - `pnpm format` - コードをフォーマット
-- `pnpm openapi:update` - OpenAPI定義からAPIクライアントを生成
+- `pnpm openapi:update` - OpenAPI定義からAPIクライアントを生成(packages/backend/openapi.jsonを参照してクライアントを生成)
 
 ## 環境変数
 
