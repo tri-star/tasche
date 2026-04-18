@@ -179,15 +179,27 @@ jobs:
               -f side="RIGHT" >/dev/null
           done
 
+      - name: Check S3 upload config
+        id: s3-check
+        env:
+          AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+          AI_REVIEW_S3_BUCKET: ${{ secrets.AI_REVIEW_S3_BUCKET }}
+        run: |
+          if [ -n "${AWS_ROLE_ARN}" ] && [ -n "${AI_REVIEW_S3_BUCKET}" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Configure AWS credentials
-        if: secrets.AWS_ROLE_ARN != '' && secrets.AI_REVIEW_S3_BUCKET != ''
+        if: steps.s3-check.outputs.enabled == 'true'
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ap-northeast-1
 
       - name: Upload review result to S3
-        if: secrets.AWS_ROLE_ARN != '' && secrets.AI_REVIEW_S3_BUCKET != ''
+        if: steps.s3-check.outputs.enabled == 'true'
         env:
           AI_REVIEW_S3_BUCKET: ${{ secrets.AI_REVIEW_S3_BUCKET }}
         run: |
