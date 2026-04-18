@@ -38,7 +38,10 @@
       "mcp__plane__list_projects",
       "mcp__plane__list_work_items",
       "mcp__plane__retrieve_work_item",
-      "mcp__plane__list_work_item_comments"
+      "mcp__plane__list_work_item_comments",
+      "mcp__plane__list_labels",
+      "mcp__plane__get_workspace_members",
+      "mcp__plane__retrieve_work_item_by_identifier"
     ]
   }
 }
