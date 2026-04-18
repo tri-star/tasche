@@ -1,5 +1,6 @@
 import { useState } from "react"
 import type { DayOfWeek, TodayGoal } from "@/api/generated/model"
+import { DaySelector } from "@/components/common/DaySelector"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -9,25 +10,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
-
-const DAYS_OF_WEEK = [
-  { value: "monday", label: "月" },
-  { value: "tuesday", label: "火" },
-  { value: "wednesday", label: "水" },
-  { value: "thursday", label: "木" },
-  { value: "friday", label: "金" },
-  { value: "saturday", label: "土" },
-  { value: "sunday", label: "日" },
-] as const
 
 type RecordWidgetProps = {
   currentDay: DayOfWeek
+  weekStartDate: string
   tasks: TodayGoal[]
   onRecord?: (day: DayOfWeek, taskId: string, units: number) => void
 }
 
-export function RecordWidget({ currentDay, tasks, onRecord }: RecordWidgetProps) {
+export function RecordWidget({ currentDay, weekStartDate, tasks, onRecord }: RecordWidgetProps) {
   const [selectedDay, setSelectedDay] = useState<DayOfWeek>(currentDay)
   const [selectedTask, setSelectedTask] = useState<string>("")
   const [units, setUnits] = useState<number>(1.5)
@@ -68,22 +59,12 @@ export function RecordWidget({ currentDay, tasks, onRecord }: RecordWidgetProps)
       <CardContent className="space-y-4">
         <div className="relative z-10 space-y-4">
           {/* 曜日セレクタ */}
-          <ToggleGroup
-            type="single"
+          <DaySelector
+            weekStartDate={weekStartDate}
+            currentDay={currentDay}
             value={selectedDay}
-            onValueChange={(value) => value && setSelectedDay(value as DayOfWeek)}
-            className="justify-start gap-1"
-          >
-            {DAYS_OF_WEEK.map((day) => (
-              <ToggleGroupItem
-                key={day.value}
-                value={day.value}
-                className="w-9 h-9 rounded-full data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
-              >
-                {day.label}
-              </ToggleGroupItem>
-            ))}
-          </ToggleGroup>
+            onChange={setSelectedDay}
+          />
 
           {/* タスク選択 */}
           <Select value={selectedTask} onValueChange={setSelectedTask}>
