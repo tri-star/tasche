@@ -41,7 +41,14 @@
       "mcp__plane__list_work_item_comments",
       "mcp__plane__list_labels",
       "mcp__plane__get_workspace_members",
-      "mcp__plane__retrieve_work_item_by_identifier"
+      "mcp__plane__retrieve_work_item_by_identifier",
+      "Bash(gh pr *)",
+      "mcp__plane__create_work_item_link",
+      "mcp__plane__create_state",
+      "mcp__plane__update_work_item",
+      "mcp__plane__create_work_item",
+      "WebFetch(domain:api.github.com)",
+      "Skill(playwright-cli:playwright-cli)"
     ]
   }
 }
