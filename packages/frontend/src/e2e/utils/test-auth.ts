@@ -1,3 +1,5 @@
+import { getApiBaseUrl } from "./api-base-url"
+
 export type TestAuthUser = {
   email?: string
   userId?: string
@@ -7,10 +9,8 @@ type TestAuthResponse = {
   access_token?: string
 }
 
-const apiBaseURL = process.env.E2E_API_BASE_URL || "http://localhost:8000"
-
 const buildTestAuthUrl = (user?: TestAuthUser) => {
-  const url = new URL("/api/test-auth", apiBaseURL)
+  const url = new URL("/api/test-auth", getApiBaseUrl())
   const params = new URLSearchParams()
 
   if (user?.email) {
