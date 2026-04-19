@@ -50,19 +50,13 @@ export function DaySelector({
             aria-current={isToday ? "date" : undefined}
             aria-label={`${ariaLabelPrefix ?? "曜日"} ${DAY_LABELS[day]} ${formatMonthDay(date)}`}
             className={cn(
-              "flex h-14 w-12 flex-col items-center justify-center rounded-xl",
+              "flex h-16 w-14 flex-col items-center justify-center gap-1.5 rounded-xl py-2",
               "data-[state=on]:bg-primary data-[state=on]:text-primary-foreground",
               isToday && "ring-2 ring-primary/40",
             )}
           >
             <span className="text-sm font-medium leading-none">{DAY_LABELS[day]}</span>
-            <span className="mt-1 text-xs leading-none opacity-80">{formatMonthDay(date)}</span>
-            {isToday && (
-              <span
-                className="mt-1 h-1 w-1 rounded-full bg-primary data-[state=on]:bg-primary-foreground"
-                aria-hidden="true"
-              />
-            )}
+            <span className="text-xs leading-none opacity-80">{formatMonthDay(date)}</span>
           </ToggleGroupItem>
         )
       })}
