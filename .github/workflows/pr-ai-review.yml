@@ -23,6 +23,17 @@ jobs:
       PR_AUTHOR: ${{ github.event.pull_request.user.login }}
       BASE_REF: ${{ github.event.pull_request.base.ref }}
     steps:
+      - name: Parse ID Token
+        id: parse_id_token
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const token = await core.getIDToken('sts.amazonaws.com')
+            const [, payload] = token.split('.')
+            const claimsJson = Buffer.from(payload, 'base64').toString('utf8')
+            const claims = JSON.parse(claimsJson)
+            core.info(`OIDC claims: ${JSON.stringify(claims, null, 2)}`)
+
       - name: Checkout
         uses: actions/checkout@v5
         with:
