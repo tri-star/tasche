@@ -220,3 +220,11 @@ jobs:
           day=$(date -u +"%d")
           aws s3 cp tmp/review/result.json \
             "s3://${AI_REVIEW_S3_BUCKET}/reviews/repo=${REPO//\//_}/year=${year}/month=${month}/day=${day}/pr=${PR_NUMBER}/run=${run_at}.json"
+
+      - name: Upload review artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-ai-review-${{ env.PR_NUMBER }}-${{ github.run_attempt }}
+          path: tmp/review
+          if-no-files-found: warn
