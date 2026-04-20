@@ -38,5 +38,5 @@ rules:
       - ".github/workflows/**"
       - ".github/agents/**"
       - ".github/skills/**"
-    risk: medium
-    reason: "CI や review workflow 自体への影響"
+    risk: high
+    reason: "CI や review workflow 自体への影響、改ざんの可能性"
