@@ -13,14 +13,22 @@ def parse_args() -> argparse.Namespace:
 
 
 def extract_json_blob(text: str) -> dict | None:
-    start = text.find("{")
-    end = text.rfind("}")
-    if start == -1 or end == -1 or end <= start:
-        return None
-    try:
-        return json.loads(text[start : end + 1])
-    except json.JSONDecodeError:
-        return None
+    decoder = json.JSONDecoder()
+    results: list[dict] = []
+    i, n = 0, len(text)
+    while i < n:
+        if text[i] != "{":
+            i += 1
+            continue
+        try:
+            obj, end = decoder.raw_decode(text, i)
+        except json.JSONDecodeError:
+            i += 1
+            continue
+        if isinstance(obj, dict):
+            results.append(obj)
+        i = end
+    return results[-1] if results else None
 
 
 def normalize(data: dict | None) -> dict:
