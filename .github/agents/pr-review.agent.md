@@ -1,7 +1,7 @@
 ---
 name: pr-review
 description: Pull Request の安全な即時マージ可否を判定するための review agent
-model: gpt-5
+model: gpt-5.4
 ---
 
 # PR Review Agent

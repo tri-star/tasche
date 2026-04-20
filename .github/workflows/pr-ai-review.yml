@@ -94,10 +94,9 @@ jobs:
         run: |
           copilot \
             -s \
+            --no-ask-user \
             --agent=pr-review \
             --prompt "$(cat tmp/review/prompt.txt)" \
-            --autopilot \
-            --max-autopilot-continues=8 \
             --allow-tool='shell(git:*), shell(python3:*), shell(rg:*), shell(cat:*), shell(sed:*), shell(ls:*)' \
             --secret-env-vars='COPILOT_GITHUB_TOKEN,GH_TOKEN,GITHUB_TOKEN' \
             > tmp/review/result.raw.txt
@@ -220,3 +219,11 @@ jobs:
           day=$(date -u +"%d")
           aws s3 cp tmp/review/result.json \
             "s3://${AI_REVIEW_S3_BUCKET}/reviews/repo=${REPO//\//_}/year=${year}/month=${month}/day=${day}/pr=${PR_NUMBER}/run=${run_at}.json"
+
+      - name: Upload review artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-ai-review-${{ env.PR_NUMBER }}-${{ github.run_attempt }}
+          path: tmp/review
+          if-no-files-found: warn
