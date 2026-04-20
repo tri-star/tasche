@@ -1,7 +1,7 @@
 name: PR AI Review
 
 on:
-  pull_request:
+  pull_request_target:
     types:
       - opened
       - synchronize
@@ -22,6 +22,12 @@ jobs:
       PR_TITLE: ${{ github.event.pull_request.title }}
       PR_AUTHOR: ${{ github.event.pull_request.user.login }}
       BASE_REF: ${{ github.event.pull_request.base.ref }}
+      BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      HEAD_REF: ${{ github.event.pull_request.head.ref }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+      TRUSTED_REF: ${{ github.event.repository.default_branch }}
+      SAME_REPO: ${{ github.event.pull_request.head.repo.full_name == github.repository && 'true' || 'false' }}
     steps:
       - name: Parse ID Token
         id: parse_id_token
@@ -34,20 +40,30 @@ jobs:
             const claims = JSON.parse(claimsJson)
             core.info(`OIDC claims: ${JSON.stringify(claims, null, 2)}`)
 
-      - name: Checkout
+      - name: Checkout trusted workflow base
         uses: actions/checkout@v5
         with:
+          ref: ${{ env.TRUSTED_REF }}
           fetch-depth: 0
 
-      - name: Fetch base branch
-        run: git fetch origin "${BASE_REF}" --depth=1
+      - name: Fetch exact base/head commits
+        if: env.SAME_REPO == 'true'
+        run: |
+          git fetch --no-tags origin \
+            "refs/heads/${BASE_REF}:refs/remotes/origin/pr-review-base" \
+            "refs/heads/${HEAD_REF}:refs/remotes/origin/pr-review-head"
+          git fetch --no-tags origin "${BASE_SHA}" "${HEAD_SHA}"
+          git rev-parse --verify "${BASE_SHA}^{commit}"
+          git rev-parse --verify "${HEAD_SHA}^{commit}"
 
       - name: Set up Node.js
+        if: env.SAME_REPO == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 22
 
       - name: Install Copilot CLI
+        if: env.SAME_REPO == 'true'
         run: npm install -g @github/copilot
 
       - name: Set up Python
@@ -56,6 +72,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install Python dependencies
+        if: env.SAME_REPO == 'true'
         run: python -m pip install pyyaml
 
       - name: Write PR body
@@ -71,10 +88,15 @@ jobs:
           PY
 
       - name: Build review context
+        if: env.SAME_REPO == 'true'
         run: |
           python3 .github/skills/review-context/scripts/build_review_context.py \
             --base-ref "${BASE_REF}" \
+            --base-sha "${BASE_SHA}" \
+            --head-sha "${HEAD_SHA}" \
+            --trusted-ref "${TRUSTED_REF}" \
             --repo "${REPO}" \
+            --head-repo "${HEAD_REPO}" \
             --pr-number "${PR_NUMBER}" \
             --title "${PR_TITLE}" \
             --body-file tmp/review/pr-body.txt \
@@ -82,6 +104,7 @@ jobs:
             --output-dir tmp/review
 
       - name: Build Copilot prompt
+        if: env.SAME_REPO == 'true'
         run: |
           python3 .github/scripts/build_pr_review_prompt.py \
             --metadata tmp/review/pr-metadata.json \
@@ -89,6 +112,7 @@ jobs:
             --output tmp/review/prompt.txt
 
       - name: Run Copilot review
+        if: env.SAME_REPO == 'true'
         env:
           COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_PAT }}
         run: |
@@ -97,15 +121,41 @@ jobs:
             --no-ask-user \
             --agent=pr-review \
             --prompt "$(cat tmp/review/prompt.txt)" \
-            --allow-tool='shell(git:*), shell(python3:*), shell(rg:*), shell(cat:*), shell(sed:*), shell(ls:*)' \
+            --allow-tool='shell(git:diff), shell(git:show), shell(git:rev-parse), shell(rg:*), shell(cat:*), shell(sed:*), shell(ls:*)' \
             --secret-env-vars='COPILOT_GITHUB_TOKEN,GH_TOKEN,GITHUB_TOKEN' \
             > tmp/review/result.raw.txt
 
+      - name: Create fallback result for fork PR
+        if: env.SAME_REPO != 'true'
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          result = {
+              "verdict": "human-review",
+              "confidence": 1,
+              "reasons": [
+                  "Fork PR は trusted workflow で PR head を安全に参照し切れないため、AI review を実行せず human-review とした。"
+              ],
+              "violated_docs": [],
+              "referenced_paths": [".github/workflows/pr-ai-review.yml"],
+              "review_comments": [],
+          }
+          Path("tmp/review/result.json").write_text(
+              json.dumps(result, indent=2, ensure_ascii=False)
+          )
+          PY
+
       - name: Normalize review result
+        if: env.SAME_REPO == 'true'
         run: |
           python3 .github/scripts/validate_pr_review_result.py \
             --input tmp/review/result.raw.txt \
             --output tmp/review/result.json
+
+      - name: Render summary comment
+        run: |
           python3 .github/scripts/render_pr_review_comment.py \
             --input tmp/review/result.json \
             --output tmp/review/summary-comment.md
@@ -195,7 +245,7 @@ jobs:
           AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
           AI_REVIEW_S3_BUCKET: ${{ secrets.AI_REVIEW_S3_BUCKET }}
         run: |
-          if [ -n "${AWS_ROLE_ARN}" ] && [ -n "${AI_REVIEW_S3_BUCKET}" ]; then
+          if [ "${SAME_REPO}" = "true" ] && [ -n "${AWS_ROLE_ARN}" ] && [ -n "${AI_REVIEW_S3_BUCKET}" ]; then
             echo "enabled=true" >> "$GITHUB_OUTPUT"
           else
             echo "enabled=false" >> "$GITHUB_OUTPUT"

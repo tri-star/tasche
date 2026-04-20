@@ -20,7 +20,11 @@ REQUIRED_DOCS = [
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--base-ref", required=True)
+    parser.add_argument("--base-sha", required=True)
+    parser.add_argument("--head-sha", required=True)
+    parser.add_argument("--trusted-ref", required=True)
     parser.add_argument("--repo", required=True)
+    parser.add_argument("--head-repo", required=True)
     parser.add_argument("--pr-number", type=int, required=True)
     parser.add_argument("--title", required=True)
     parser.add_argument("--body-file", required=True)
@@ -45,13 +49,13 @@ def load_yaml(path: Path) -> dict:
         return yaml.safe_load(fh) or {}
 
 
-def changed_files(base_ref: str) -> list[str]:
-    output = run_git(["diff", "--name-only", f"origin/{base_ref}...HEAD"])
+def changed_files(base_sha: str, head_sha: str) -> list[str]:
+    output = run_git(["diff", "--name-only", f"{base_sha}...{head_sha}"])
     return [line for line in output.splitlines() if line.strip()]
 
 
-def diff_patch(base_ref: str) -> str:
-    return run_git(["diff", f"origin/{base_ref}...HEAD"])
+def diff_patch(base_sha: str, head_sha: str) -> str:
+    return run_git(["diff", f"{base_sha}...{head_sha}"])
 
 
 def match_glob(path: str, patterns: list[str]) -> bool:
@@ -128,8 +132,8 @@ def main() -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
 
     body = Path(args.body_file).read_text() if Path(args.body_file).exists() else ""
-    files = changed_files(args.base_ref)
-    patch = diff_patch(args.base_ref)
+    files = changed_files(args.base_sha, args.head_sha)
+    patch = diff_patch(args.base_sha, args.head_sha)
 
     path_routing = load_yaml(ROOT / "docs/review/context-routing.yaml")
     keyword_routing = load_yaml(ROOT / "docs/review/keyword-routing.yaml")
@@ -146,12 +150,26 @@ def main() -> None:
         "body": body,
         "author": args.author,
         "base_ref": args.base_ref,
-        "head_sha": run_git(["rev-parse", "HEAD"]).strip(),
+        "base_sha": args.base_sha,
+        "head_sha": args.head_sha,
+        "trusted_ref": args.trusted_ref,
+        "head_repo": args.head_repo,
+        "same_repo": args.head_repo == args.repo,
         "changed_files": files,
     }
     context = {
         "risk_map_hits": risk_hits,
         "candidate_files": candidates[:20],
+        "file_access": {
+            "trusted_workspace_ref": args.trusted_ref,
+            "pr_file_command": f"git show {args.head_sha}:<path>",
+            "base_file_command": f"git show {args.base_sha}:<path>",
+            "notes": [
+                "workspace 上のファイルは trusted ref の内容",
+                "changed file の PR 版は git show で参照する",
+                "unchanged file の周辺文脈は workspace から読んでよい",
+            ],
+        },
         "routing_sources": [
             "docs/review/context-routing.yaml",
             "docs/review/keyword-routing.yaml",
