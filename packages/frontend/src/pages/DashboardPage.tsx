@@ -96,6 +96,7 @@ export function DashboardPage() {
           />
           <RecordWidget
             currentDay={dashboard.current_day_of_week}
+            weekStartDate={dashboard.week.start_date}
             tasks={dashboard.today_goals}
             onRecord={handleRecord}
           />

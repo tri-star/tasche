@@ -3,12 +3,12 @@ import type { APIResponseDashboardResponse } from "@/api/generated/model"
 
 const mockDashboardData: APIResponseDashboardResponse = {
   data: {
-    current_date: "2026-01-12",
-    current_day_of_week: "monday",
+    current_date: "2026-04-19",
+    current_day_of_week: "sunday",
     week: {
       id: "wk_01HXYZ1234567890ABCDEF",
-      start_date: "2026-01-12",
-      end_date: "2026-01-18",
+      start_date: "2026-04-13",
+      end_date: "2026-04-19",
       unit_duration_minutes: 30,
     },
     today_goals: [

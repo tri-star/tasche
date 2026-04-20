@@ -90,6 +90,9 @@ jobs:
       COMPOSE_PROJECT_NAME: test-backend
       DB_CONTAINER_PORT: 5432
       API_CONTAINER_PORT: 8000
+      VITE_DEV_PORT: 5173
+      VITE_API_BASE_URL: http://localhost:8000
+      PLAYWRIGHT_HTML_OPEN: never
     steps:
       - uses: actions/checkout@v4
 

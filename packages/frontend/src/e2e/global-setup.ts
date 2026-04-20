@@ -1,9 +1,11 @@
+import { getApiBaseUrl } from "./utils/api-base-url"
+
 /**
  * グローバルセットアップ（実APIモード用）
  * バックエンド疎通確認のみを行う
  */
 async function globalSetup() {
-  const apiBaseURL = process.env.E2E_API_BASE_URL || "http://localhost:8000"
+  const apiBaseURL = getApiBaseUrl()
 
   console.log("🔧 E2E Global Setup: 実APIモード")
   console.log(`📡 API Base URL: ${apiBaseURL}`)
