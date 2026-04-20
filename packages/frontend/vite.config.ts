@@ -23,7 +23,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "")
   const apiBaseUrl = env.VITE_API_BASE_URL || "http://localhost:8000"
   const useMsw = env.VITE_USE_MSW === "true"
-  const devPort = env.VITE_DEV_PORT ? parseInt(env.VITE_DEV_PORT) : 5173
+  const devPort = env.VITE_DEV_PORT ? parseInt(env.VITE_DEV_PORT, 10) : 5173
 
   return {
     plugins: [react(), mswPlugin(useMsw)],
