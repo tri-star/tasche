@@ -48,7 +48,12 @@
       "mcp__plane__update_work_item",
       "mcp__plane__create_work_item",
       "WebFetch(domain:api.github.com)",
-      "Skill(playwright-cli:playwright-cli)"
+      "Skill(playwright-cli:playwright-cli)",
+      "WebFetch(domain:github.com)",
+      "WebSearch",
+      "WebFetch(domain:docs.github.com)",
+      "WebFetch(domain:deepwiki.com)",
+      "mcp__deepwiki__ask_question"
     ]
   }
 }
