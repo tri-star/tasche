@@ -27,7 +27,8 @@ jobs:
       HEAD_SHA: ${{ github.event.pull_request.head.sha }}
       HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
       TRUSTED_REF: ${{ github.event.repository.default_branch }}
-      SAME_REPO: ${{ github.event.pull_request.head.repo.full_name == github.repository && 'true' || 'false' }}
+      SAME_REPO: ${{ github.event.pull_request.head.repo.full_name ==
+        github.repository && 'true' || 'false' }}
     steps:
       - name: Parse ID Token
         id: parse_id_token
@@ -268,7 +269,7 @@ jobs:
           month=$(date -u +"%m")
           day=$(date -u +"%d")
           aws s3 cp tmp/review/result.json \
-            "s3://${AI_REVIEW_S3_BUCKET}/reviews/repo=${REPO//\//_}/year=${year}/month=${month}/day=${day}/pr=${PR_NUMBER}/run=${run_at}.json"
+            "s3://${AI_REVIEW_S3_BUCKET}/reviews/repo_partition=${REPO//\//_}/year=${year}/month=${month}/day=${day}/pr=${PR_NUMBER}/run=${run_at}.json"
 
       - name: Upload review artifacts
         if: always()
