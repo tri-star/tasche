@@ -56,3 +56,21 @@ class InvalidRefreshTokenError(AuthenticationError):
         """初期化."""
         self.detail = detail
         super().__init__(detail)
+
+
+class InvalidAuthorizationCodeError(AuthenticationError):
+    """認可コードが無効（Google OAuth エラー、ID Token 検証失敗など）."""
+
+    def __init__(self, detail: str = "Invalid authorization code"):
+        """初期化."""
+        self.detail = detail
+        super().__init__(detail)
+
+
+class ValidationError(TascheException):
+    """バリデーションエラー."""
+
+    def __init__(self, detail: str = "Validation error"):
+        """初期化."""
+        self.detail = detail
+        super().__init__(detail)

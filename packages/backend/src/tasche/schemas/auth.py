@@ -1,27 +1,31 @@
 """認証スキーマ."""
 
+from typing import Literal
+
 from pydantic import BaseModel, EmailStr
 
 
-class TestTokenResponse(BaseModel):
-    """テスト用トークン発行レスポンス."""
+class AuthorizeResponse(BaseModel):
+    """Google認可URLレスポンス."""
 
-    access_token: str
-    token_type: str = "Bearer"
+    authorization_url: str
+    state: str
 
 
-class AuthCallbackRequest(BaseModel):
-    """認証コールバックリクエスト."""
+class GoogleCallbackRequest(BaseModel):
+    """Googleコールバックリクエスト."""
 
     code: str
+    code_verifier: str
     redirect_uri: str
+    state: str  # 受け取るが backend は検証しない（frontend の責務）
 
 
 class TokenResponse(BaseModel):
     """トークンレスポンス."""
 
     access_token: str
-    token_type: str = "Bearer"
+    token_type: Literal["Bearer"] = "Bearer"
     expires_in: int
 
 
@@ -31,20 +35,8 @@ class LogoutResponse(BaseModel):
     message: str
 
 
-class Auth0TokenResponse(BaseModel):
-    """Auth0 トークンレスポンス（内部用）."""
+class StubLoginRequest(BaseModel):
+    """スタブログインリクエスト."""
 
-    access_token: str
-    refresh_token: str | None = None
-    id_token: str
-    token_type: str
-    expires_in: int
-
-
-class Auth0UserInfo(BaseModel):
-    """Auth0 ユーザー情報（内部用）."""
-
-    sub: str  # Auth0 user_id
     email: EmailStr
     name: str | None = None
-    picture: str | None = None

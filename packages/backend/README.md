@@ -9,7 +9,7 @@ Tasche MVP のバックエンド API（FastAPI + PostgreSQL）
 - **Linter/Formatter**: ruff
 - **ORM**: SQLAlchemy (async)
 - **Database**: PostgreSQL (Neon for production, Docker for local)
-- **Authentication**: Auth0 (JWT)
+- **Authentication**: Google OAuth 2.0 (BFF型 + PKCE) / 自前発行 JWT (Authlib)
 - **Migration**: Alembic
 - **Local Development**: Docker Compose
 
@@ -148,18 +148,18 @@ packages/backend/
 │   ├── db/            # データベース
 │   ├── models/        # SQLAlchemy モデル
 │   ├── schemas/       # Pydantic スキーマ
-│   └── services/      # ビジネスロジック
+│   ├── services/      # ビジネスロジック
+│   └── tests/         # テスト（pytest）
 ├── migrations/        # Alembic マイグレーション
-└── tests/            # テスト (future)
+└── pyproject.toml
 ```
 
 ## MVP 範囲
 
-Phase 1〜3で以下を実装：
-
 1. **Phase 1**: Docker起動、ヘルスチェック
 2. **Phase 2**: DB接続、User モデル
 3. **Phase 3**: テスト用JWT認証、`/api/users/me`
+4. **Phase 4**: Google OAuth 2.0 認証（`/api/auth/google/authorize`, `/api/auth/google/callback`, `/api/auth/refresh`, `/api/auth/logout`, `/api/auth/stub-login`）、Refresh Token Rotation
 
 将来実装予定：
 
@@ -168,4 +168,3 @@ Phase 1〜3で以下を実装：
 - 目標API (`/api/weeks/current/goals`)
 - 実績API (`/api/weeks/current/records`)
 - ダッシュボードAPI (`/api/dashboard`)
-- Auth0 本実装

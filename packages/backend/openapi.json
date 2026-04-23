@@ -5,34 +5,86 @@
     "version": "0.1.0"
   },
   "paths": {
-    "/api/auth/login": {
+    "/api/auth/google/authorize": {
       "get": {
         "tags": [
           "認証"
         ],
-        "summary": "Login",
-        "description": "ログイン開始.\n\nAuth0のauthorizeエンドポイントにリダイレクトする。\nstate, PKCE (code_verifier/challenge) はauthlibが自動管理。\n\nArgs:\n    request: FastAPIリクエスト\n\nReturns:\n    RedirectResponse: Auth0 authorize URLへのリダイレクト",
-        "operationId": "login_api_auth_login_get",
+        "summary": "Google Authorize",
+        "description": "Google 認可 URL を組み立てて返す.\n\nArgs:\n    code_challenge: frontend が生成した PKCE challenge（S256）\n    redirect_uri: frontend のコールバック URL（許可リストで検証）\n    code_challenge_method: S256 のみ受理（省略時も S256）\n\nReturns:\n    APIResponse[AuthorizeResponse]: authorization_url と state",
+        "operationId": "google_authorize_api_auth_google_authorize_get",
+        "parameters": [
+          {
+            "name": "code_challenge",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Code Challenge"
+            }
+          },
+          {
+            "name": "redirect_uri",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Redirect Uri"
+            }
+          },
+          {
+            "name": "code_challenge_method",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "S256",
+              "title": "Code Challenge Method"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse_AuthorizeResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
               }
             }
           }
         }
       }
     },
-    "/api/auth/callback": {
-      "get": {
+    "/api/auth/google/callback": {
+      "post": {
         "tags": [
           "認証"
         ],
-        "summary": "Auth Callback",
-        "description": "認証コールバック.\n\nauthlibがstate検証、PKCE検証、トークン交換を自動実行。\nユーザー情報を取得してDBに保存/更新する。\nRefresh TokenはHttpOnly Cookieに保存し、Access Tokenはレスポンスで返す。\n\nArgs:\n    request: 認証コールバックリクエスト\n    response: FastAPIレスポンス（Cookie設定用）\n    db: データベースセッション\n\nReturns:\n    APIResponse[TokenResponse]: トークンレスポンス",
-        "operationId": "auth_callback_api_auth_callback_get",
+        "summary": "Google Callback",
+        "description": "Google コールバック処理.\n\ncode と code_verifier を受け取り、Google にトークン交換 → ID Token 検証\n→ ユーザー upsert → 自前 JWT 発行。\n\nArgs:\n    body: GoogleCallbackRequest（code, code_verifier, redirect_uri, state）\n    response: FastAPI Response（Cookie 設定用）\n    db: データベースセッション\n\nReturns:\n    APIResponse[TokenResponse]: アクセストークン",
+        "operationId": "google_callback_api_auth_google_callback_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GoogleCallbackRequest"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -40,6 +92,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/APIResponse_TokenResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -52,9 +114,9 @@
         "tags": [
           "認証"
         ],
-        "summary": "Refresh Token",
-        "description": "トークンリフレッシュ.\n\nRefresh Tokenで新しいトークンを取得する。\n新しいRefresh TokenもCookieに保存（Rotation）。\n\nArgs:\n    response: FastAPIレスポンス（Cookie設定用）\n    refresh_token: リフレッシュトークン（Cookieから取得）\n\nReturns:\n    APIResponse[TokenResponse]: 新しいトークンレスポンス",
-        "operationId": "refresh_token_api_auth_refresh_post",
+        "summary": "Refresh",
+        "description": "アクセストークンを再発行し、リフレッシュトークンをローテーションする.\n\nArgs:\n    response: FastAPI Response（Cookie 設定用）\n    db: データベースセッション\n    refresh_token: リフレッシュトークン（Cookie から取得）\n\nReturns:\n    APIResponse[TokenResponse]: 新しいアクセストークン",
+        "operationId": "refresh_api_auth_refresh_post",
         "parameters": [
           {
             "name": "refresh_token",
@@ -103,8 +165,26 @@
           "認証"
         ],
         "summary": "Logout",
-        "description": "ログアウト.\n\nRefresh TokenのCookieを削除する。\n\nArgs:\n    response: FastAPIレスポンス（Cookie設定用）\n    current_user: 現在のユーザー（認証チェック用）\n\nReturns:\n    APIResponse[LogoutResponse]: ログアウトメッセージ",
+        "description": "ログアウト（Refresh Token を revoke し Cookie を削除する）.\n\nCookie が無くても 200 を返す（冪等）。\n\nArgs:\n    response: FastAPI Response（Cookie 削除用）\n    db: データベースセッション\n    refresh_token: リフレッシュトークン（Cookie から取得、無くても可）\n\nReturns:\n    APIResponse[LogoutResponse]: ログアウト完了メッセージ",
         "operationId": "logout_api_auth_logout_post",
+        "parameters": [
+          {
+            "name": "refresh_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Refresh Token"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -115,13 +195,60 @@
                 }
               }
             }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
+        }
+      }
+    },
+    "/api/auth/stub-login": {
+      "post": {
+        "tags": [
+          "認証"
+        ],
+        "summary": "Stub Login Endpoint",
+        "description": "スタブログイン（開発・テスト環境のみ）.\n\nGoogle 認証なしでログインし、スタブ JWT を発行する。\n\nArgs:\n    body: StubLoginRequest（email, name）\n    response: FastAPI Response（Cookie 設定用）\n    db: データベースセッション\n\nReturns:\n    APIResponse[TokenResponse]: スタブアクセストークン",
+        "operationId": "stub_login_endpoint_api_auth_stub_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StubLoginRequest"
+              }
+            }
+          },
+          "required": true
         },
-        "security": [
-          {
-            "HTTPBearer": []
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse_TokenResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
-        ]
+        }
       }
     },
     "/api/users/me": {
@@ -654,90 +781,6 @@
         }
       }
     },
-    "/api/test-auth": {
-      "get": {
-        "tags": [
-          "テスト認証"
-        ],
-        "summary": "Create Test Token",
-        "description": "テスト用JWTトークンを発行する.",
-        "operationId": "create_test_token_api_test_auth_get",
-        "parameters": [
-          {
-            "name": "email",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "email"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Email"
-            }
-          },
-          {
-            "name": "user_id",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "User Id"
-            }
-          },
-          {
-            "name": "expires_in",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "integer",
-                  "minimum": 1
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Expires In"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TestTokenResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/": {
       "get": {
         "summary": "Root",
@@ -775,6 +818,18 @@
   },
   "components": {
     "schemas": {
+      "APIResponse_AuthorizeResponse_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/AuthorizeResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "APIResponse[AuthorizeResponse]"
+      },
       "APIResponse_DashboardResponse_": {
         "properties": {
           "data": {
@@ -906,6 +961,25 @@
           "data"
         ],
         "title": "APIResponse[WeekResponse]"
+      },
+      "AuthorizeResponse": {
+        "properties": {
+          "authorization_url": {
+            "type": "string",
+            "title": "Authorization Url"
+          },
+          "state": {
+            "type": "string",
+            "title": "State"
+          }
+        },
+        "type": "object",
+        "required": [
+          "authorization_url",
+          "state"
+        ],
+        "title": "AuthorizeResponse",
+        "description": "Google認可URLレスポンス."
       },
       "CreatedTask": {
         "properties": {
@@ -1300,6 +1374,35 @@
         "title": "GoalsUpdateResponse",
         "description": "目標一括更新レスポンス."
       },
+      "GoogleCallbackRequest": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "code_verifier": {
+            "type": "string",
+            "title": "Code Verifier"
+          },
+          "redirect_uri": {
+            "type": "string",
+            "title": "Redirect Uri"
+          },
+          "state": {
+            "type": "string",
+            "title": "State"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "code_verifier",
+          "redirect_uri",
+          "state"
+        ],
+        "title": "GoogleCallbackRequest",
+        "description": "Googleコールバックリクエスト."
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -1470,6 +1573,32 @@
         "title": "RecordsResponse",
         "description": "実績一覧レスポンス."
       },
+      "StubLoginRequest": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email"
+        ],
+        "title": "StubLoginRequest",
+        "description": "スタブログインリクエスト."
+      },
       "TaskCreate": {
         "properties": {
           "name": {
@@ -1563,25 +1692,6 @@
         "title": "TaskUpdate",
         "description": "タスク更新リクエスト."
       },
-      "TestTokenResponse": {
-        "properties": {
-          "access_token": {
-            "type": "string",
-            "title": "Access Token"
-          },
-          "token_type": {
-            "type": "string",
-            "title": "Token Type",
-            "default": "Bearer"
-          }
-        },
-        "type": "object",
-        "required": [
-          "access_token"
-        ],
-        "title": "TestTokenResponse",
-        "description": "テスト用トークン発行レスポンス."
-      },
       "TodayGoal": {
         "properties": {
           "task_id": {
@@ -1637,6 +1747,7 @@
           },
           "token_type": {
             "type": "string",
+            "const": "Bearer",
             "title": "Token Type",
             "default": "Bearer"
           },
@@ -1730,6 +1841,13 @@
           "type": {
             "type": "string",
             "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
           }
         },
         "type": "object",

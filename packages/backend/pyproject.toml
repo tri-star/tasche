@@ -27,6 +27,8 @@ dev = [
     "pytest-asyncio>=0.24.0",
     "httpx>=0.28.0",
     "aiosqlite>=0.20.0",
+    "respx>=0.21.0",
+    "cryptography>=43.0.0",
 ]
 
 [build-system]
@@ -40,10 +42,15 @@ packages = ["src/tasche"]
 dev-dependencies = [
     "ruff>=0.8.0",
     "pytest>=8.3.0",
+    "pytest-asyncio>=0.24.0",
+    "httpx>=0.28.0",
+    "aiosqlite>=0.20.0",
+    "respx>=0.21.0",
+    "cryptography>=43.0.0",
 ]
 
 [tool.pytest.ini_options]
-testpaths = ["src/tasche"]
+testpaths = ["src/tasche/tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
