@@ -9,6 +9,7 @@ export default {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        pill: "999px",
       },
       colors: {
         background: "hsl(var(--background))",
@@ -44,6 +45,24 @@ export default {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
+        tasche: {
+          green: "#7FBF8F",
+          greenSoft: "#B7D8BE",
+          greenLeaf: "#8BB592",
+          ivory: "#F7F7EF",
+          text: "#2C3A33",
+          textSub: "#7A8C84",
+          textMuted: "#A8B5AE",
+          gold: "#E8B866",
+        },
+      },
+      fontFamily: {
+        sans: ['"Noto Sans JP"', "system-ui", "sans-serif"],
+        logo: ['"Quicksand"', '"Noto Sans JP"', "sans-serif"],
+      },
+      boxShadow: {
+        "login-btn": "0 1px 2px rgba(60,80,70,.06), 0 4px 16px rgba(60,80,70,.08)",
+        "login-btn-hover": "0 2px 4px rgba(60,80,70,.08), 0 8px 24px rgba(60,80,70,.12)",
       },
     },
   },

@@ -1,10 +1,18 @@
 import { render, screen, waitFor } from "@testing-library/react"
+import { createMemoryRouter, RouterProvider } from "react-router-dom"
 import { describe, expect, it } from "vitest"
 import { DashboardPage } from "./DashboardPage"
 
+function renderWithRouter() {
+  const router = createMemoryRouter([{ path: "/", element: <DashboardPage /> }], {
+    initialEntries: ["/"],
+  })
+  return render(<RouterProvider router={router} />)
+}
+
 describe("DashboardPage", () => {
   it("ダッシュボードページが正常にレンダリングされる", async () => {
-    render(<DashboardPage />)
+    renderWithRouter()
 
     expect(screen.getByText("読み込み中...")).toBeInTheDocument()
 
@@ -20,7 +28,7 @@ describe("DashboardPage", () => {
   })
 
   it("サイドバーのナビゲーションが表示される", async () => {
-    render(<DashboardPage />)
+    renderWithRouter()
 
     await waitFor(() => {
       expect(screen.queryByText("読み込み中...")).not.toBeInTheDocument()

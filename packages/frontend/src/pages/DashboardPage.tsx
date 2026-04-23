@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { useNavigate } from "react-router-dom"
 import {
   createRecordApiWeeksCurrentRecordsPost,
   getDashboardApiDashboardGet,
@@ -25,6 +26,7 @@ function formatDate(dateStr: string, dayOfWeek: DayOfWeek): string {
 }
 
 export function DashboardPage() {
+  const navigate = useNavigate()
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -63,7 +65,7 @@ export function DashboardPage() {
   }
 
   const handleGoalSetting = () => {
-    window.location.href = "/goals"
+    navigate("/goals")
   }
 
   if (loading) {
