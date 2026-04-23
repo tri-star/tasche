@@ -5,6 +5,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './aPIResponseAuthorizeResponse';
 export * from './aPIResponseDashboardResponse';
 export * from './aPIResponseGoalsResponse';
 export * from './aPIResponseGoalsUpdateResponse';
@@ -16,7 +17,7 @@ export * from './aPIResponseTaskResponse';
 export * from './aPIResponseTokenResponse';
 export * from './aPIResponseUserResponse';
 export * from './aPIResponseWeekResponse';
-export * from './createTestTokenApiTestAuthGetParams';
+export * from './authorizeResponse';
 export * from './createdTask';
 export * from './dailyActuals';
 export * from './dailyData';
@@ -34,23 +35,27 @@ export * from './goalUpdateItemTaskId';
 export * from './goalsResponse';
 export * from './goalsUpdate';
 export * from './goalsUpdateResponse';
+export * from './googleAuthorizeApiAuthGoogleAuthorizeGetParams';
+export * from './googleCallbackRequest';
 export * from './hTTPValidationError';
 export * from './logoutResponse';
 export * from './recordCreate';
 export * from './recordItem';
 export * from './recordResponse';
 export * from './recordsResponse';
+export * from './stubLoginRequest';
+export * from './stubLoginRequestName';
 export * from './taskCreate';
 export * from './taskListResponse';
 export * from './taskResponse';
 export * from './taskUpdate';
-export * from './testTokenResponse';
 export * from './todayGoal';
 export * from './todayGoalCompletionRate';
 export * from './tokenResponse';
 export * from './userResponse';
 export * from './userResponsePicture';
 export * from './validationError';
+export * from './validationErrorCtx';
 export * from './validationErrorLocItem';
 export * from './weekInfo';
 export * from './weekResponse';
