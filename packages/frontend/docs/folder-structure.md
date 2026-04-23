@@ -1,11 +1,34 @@
 # フォルダ構造
 
-- `packages/frontend/src/`
-  - `components/` - UIコンポーネント
-    - `ui/` - shadcn/uiベースコンポーネント
-    - `dashboard/` - ダッシュボード関連
-    - `goals/` - 目標設定関連
-    - `layout/` - レイアウト
-  - `pages/` - ページコンポーネント
-  - `api/generated/` - OpenAPI自動生成APIクライアント
-  - `mocks/` - MSWハンドラー
+- `packages/frontend/`
+  - `public/`
+    - `images/login/` - ログイン画面用 SVG（`bg-blobs.svg`, `deco-bl.svg`, `deco-br.svg`, `deco-tl.svg`, `deco-tr.svg`, `logo-bag.svg`, `google-mark.svg`）
+  - `src/`
+    - `auth/` - 認証基盤モジュール
+      - `types.ts` - `AuthUser` / `TokenResponse` 型定義
+      - `atoms.ts` - Jotai atom（`accessTokenAtom`, `authStatusAtom`, `currentUserAtom`）
+      - `pkce.ts` - PKCE ペア / state 生成（oauth4webapi）
+      - `storage.ts` - `sessionStorage` へ OAuth pending 情報を保管（10 分 TTL）
+      - `authClient.ts` - 401 → refresh 自動リトライ + 並行直列化付き fetch ラッパ
+      - `authClientSingleton.ts` - orval mutator 用シングルトン
+      - `authFetch.ts` - orval mutator 関数（全 API コールが authFetch 経由になる）
+      - `useAuth.ts` - ログイン / ログアウト / コールバック処理フック
+      - `useBootstrapAuth.ts` - 起動時に `/api/auth/refresh` を 1 回試みるフック（StrictMode 対応）
+    - `components/` - UIコンポーネント
+      - `ui/` - shadcn/uiベースコンポーネント
+      - `common/` - アプリ共通コンポーネント
+      - `dashboard/` - ダッシュボード関連
+      - `goals/` - 目標設定関連
+      - `layout/` - レイアウト
+      - `login/` - ログイン画面専用コンポーネント（`LoginLayout`, `LoginBackground`, `TascheLogo`, `GoogleLoginButton`, `StubLoginButton`, `LoginFooter`）
+      - `routing/` - ルーティング関連コンポーネント（`ProtectedRoute` — 未認証時 `/login` へリダイレクト）
+    - `pages/` - ページコンポーネント
+      - `LoginPage.tsx` - ログイン画面
+      - `AuthCallbackPage.tsx` - Google OAuth コールバック処理ページ（`/auth/callback`）
+      - `DashboardPage.tsx` - ダッシュボード
+      - その他各ページ
+    - `router.tsx` - react-router のルート定義（`createBrowserRouter`）
+    - `api/generated/` - OpenAPI自動生成APIクライアント（orval、mutator: `authFetch`）
+    - `mocks/` - MSWハンドラー
+      - `handlers/auth.ts` - `/api/auth/*` のモックハンドラ
+      - `handlers/users.ts` - `/api/users/me` のモックハンドラ

@@ -25,6 +25,15 @@ src/components/
 │   ├── ThemeToggle.tsx
 │   ├── DaySelector.tsx
 │   └── ...
+├── login/               # ログイン画面専用コンポーネント
+│   ├── LoginLayout.tsx       # ページ全体レイアウト
+│   ├── LoginBackground.tsx   # 背景ブロブ + 四隅装飾 SVG 配置
+│   ├── TascheLogo.tsx        # バッグロゴ + Tasche テキスト
+│   ├── GoogleLoginButton.tsx # Google でログイン ボタン
+│   ├── StubLoginButton.tsx   # スタブログインボタン（開発/E2E 専用）
+│   └── LoginFooter.tsx       # フッターリンク
+├── routing/             # ルーティング関連
+│   └── ProtectedRoute.tsx    # 未認証時 /login へリダイレクト
 ├── dashboard/           # ダッシュボード用
 │   ├── TodayGoalWidget.tsx
 │   ├── WeeklyMatrix.tsx
@@ -293,6 +302,12 @@ npx shadcn@latest add form
 | TaskCombobox | カスタム |
 | DaySelector | カスタム |
 | GoalWizardStepper | カスタム |
+| LoginLayout | ログイン |
+| LoginBackground | ログイン |
+| TascheLogo | ログイン |
+| GoogleLoginButton | ログイン |
+| StubLoginButton | ログイン |
+| ProtectedRoute | ルーティング |
 | Header | 共通 |
 | ThemeProvider | 共通 |
 

@@ -101,6 +101,7 @@ Tasche MVP（Minimum Viable Product）は、習慣化支援の核となる機能
 | フレームワーク     | React + Vite                         |
 | クライアント状態管理 | Jotai                               |
 | サーバー状態管理   | TanStack Query (React Query)         |
+| ルーティング       | React Router                         |
 | スタイリング       | Tailwind CSS                         |
 | UIコンポーネント   | shadcn/ui（Radix UIベース）          |
 | ホスティング       | CloudFront + S3                      |
