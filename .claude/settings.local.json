@@ -55,7 +55,9 @@
       "Bash(pnpm *)",
       "Bash(E2E_USE_MSW=true pnpm test:e2e --reporter=list)",
       "Bash(git status *)",
-      "Bash(git diff *)"
+      "Bash(git diff *)",
+      "Bash(git checkout *)",
+      "Bash(git pull *)"
     ]
   }
 }
