@@ -1,0 +1,1 @@
+- [Tasche プロジェクトのコーディングパターンと再発問題](project_tasche_patterns.md) — トランザクション管理・JWKS競合・ログ欠落・DRY違反の既知パターン。services層のコミット境界とセキュリティログを重点確認。
