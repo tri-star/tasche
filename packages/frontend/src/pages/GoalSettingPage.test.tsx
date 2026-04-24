@@ -1,8 +1,32 @@
 import { render, screen } from "@testing-library/react"
-import { describe, expect, it } from "vitest"
+import { beforeEach, describe, expect, it, vi } from "vitest"
 import { GoalSettingPage } from "./GoalSettingPage"
 
+const mockGetTasks = vi.fn()
+const mockGetCurrentGoals = vi.fn()
+
+vi.mock("@/api/generated/client", () => ({
+  getTasksApiTasksGet: () => mockGetTasks(),
+  getCurrentGoalsApiWeeksCurrentGoalsGet: () => mockGetCurrentGoals(),
+  updateTaskApiTasksTaskIdPut: vi.fn(),
+  deleteTaskApiTasksTaskIdDelete: vi.fn(),
+  updateCurrentGoalsApiWeeksCurrentGoalsPut: vi.fn(),
+}))
+
 describe("GoalSettingPage", () => {
+  beforeEach(() => {
+    mockGetTasks.mockResolvedValue({
+      data: { data: { tasks: [] } },
+      status: 200,
+      headers: new Headers(),
+    })
+    mockGetCurrentGoals.mockResolvedValue({
+      data: { data: { week_id: "week-1", unit_duration_minutes: 25, goals: [] } },
+      status: 200,
+      headers: new Headers(),
+    })
+  })
+
   it("step1が表示される", async () => {
     render(<GoalSettingPage />)
 
