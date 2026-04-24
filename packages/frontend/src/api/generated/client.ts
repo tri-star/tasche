@@ -5,13 +5,15 @@
  * OpenAPI spec version: 0.1.0
  */
 import type {
-  CreateTestTokenApiTestAuthGetParams,
   GetCurrentWeekApiWeeksCurrentGetParams,
   GetDashboardApiDashboardGetParams,
   GetTasksApiTasksGetParams,
   GoalsUpdate,
+  GoogleAuthorizeApiAuthGoogleAuthorizeGetParams,
+  GoogleCallbackRequest,
   HTTPValidationError,
   RecordCreate,
+  StubLoginRequest,
   TaskCreate,
   TaskUpdate,
   WeekUpdate
@@ -34,6 +36,7 @@ import {
   DayOfWeek
 } from './model';
 import type {
+  APIResponseAuthorizeResponse,
   APIResponseDashboardResponse,
   APIResponseGoalsResponse,
   APIResponseGoalsUpdateResponse,
@@ -44,151 +47,157 @@ import type {
   APIResponseTaskResponse,
   APIResponseTokenResponse,
   APIResponseUserResponse,
-  APIResponseWeekResponse,
-  TestTokenResponse
+  APIResponseWeekResponse
 } from './model';
 
+import { authFetch } from '../../auth/authFetch';
 /**
- * ログイン開始.
-
-Auth0のauthorizeエンドポイントにリダイレクトする。
-state, PKCE (code_verifier/challenge) はauthlibが自動管理。
+ * Google 認可 URL を組み立てて返す.
 
 Args:
-    request: FastAPIリクエスト
+    code_challenge: frontend が生成した PKCE challenge（S256）
+    redirect_uri: frontend のコールバック URL（許可リストで検証）
+    code_challenge_method: S256 のみ受理（省略時も S256）
 
 Returns:
-    RedirectResponse: Auth0 authorize URLへのリダイレクト
- * @summary Login
+    APIResponse[AuthorizeResponse]: authorization_url と state
+ * @summary Google Authorize
  */
-export type loginApiAuthLoginGetResponse200 = {
-  data: unknown
-  status: 200
-}
-    
-export type loginApiAuthLoginGetResponseSuccess = (loginApiAuthLoginGetResponse200) & {
-  headers: Headers;
-};
-;
-
-export type loginApiAuthLoginGetResponse = (loginApiAuthLoginGetResponseSuccess)
-
-export const getLoginApiAuthLoginGetUrl = () => {
-
-
-  
-
-  return `/api/auth/login`
-}
-
-export const loginApiAuthLoginGet = async ( options?: RequestInit): Promise<loginApiAuthLoginGetResponse> => {
-  
-  const res = await fetch(getLoginApiAuthLoginGetUrl(),
-  {      
-    ...options,
-    method: 'GET'
-    
-    
-  }
-)
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-  
-  const data: loginApiAuthLoginGetResponse['data'] = body ? JSON.parse(body) : {}
-  return { data, status: res.status, headers: res.headers } as loginApiAuthLoginGetResponse
-}
-
-
-
-/**
- * 認証コールバック.
-
-authlibがstate検証、PKCE検証、トークン交換を自動実行。
-ユーザー情報を取得してDBに保存/更新する。
-Refresh TokenはHttpOnly Cookieに保存し、Access Tokenはレスポンスで返す。
-
-Args:
-    request: 認証コールバックリクエスト
-    response: FastAPIレスポンス（Cookie設定用）
-    db: データベースセッション
-
-Returns:
-    APIResponse[TokenResponse]: トークンレスポンス
- * @summary Auth Callback
- */
-export type authCallbackApiAuthCallbackGetResponse200 = {
-  data: APIResponseTokenResponse
-  status: 200
-}
-    
-export type authCallbackApiAuthCallbackGetResponseSuccess = (authCallbackApiAuthCallbackGetResponse200) & {
-  headers: Headers;
-};
-;
-
-export type authCallbackApiAuthCallbackGetResponse = (authCallbackApiAuthCallbackGetResponseSuccess)
-
-export const getAuthCallbackApiAuthCallbackGetUrl = () => {
-
-
-  
-
-  return `/api/auth/callback`
-}
-
-export const authCallbackApiAuthCallbackGet = async ( options?: RequestInit): Promise<authCallbackApiAuthCallbackGetResponse> => {
-  
-  const res = await fetch(getAuthCallbackApiAuthCallbackGetUrl(),
-  {      
-    ...options,
-    method: 'GET'
-    
-    
-  }
-)
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-  
-  const data: authCallbackApiAuthCallbackGetResponse['data'] = body ? JSON.parse(body) : {}
-  return { data, status: res.status, headers: res.headers } as authCallbackApiAuthCallbackGetResponse
-}
-
-
-
-/**
- * トークンリフレッシュ.
-
-Refresh Tokenで新しいトークンを取得する。
-新しいRefresh TokenもCookieに保存（Rotation）。
-
-Args:
-    response: FastAPIレスポンス（Cookie設定用）
-    refresh_token: リフレッシュトークン（Cookieから取得）
-
-Returns:
-    APIResponse[TokenResponse]: 新しいトークンレスポンス
- * @summary Refresh Token
- */
-export type refreshTokenApiAuthRefreshPostResponse200 = {
-  data: APIResponseTokenResponse
+export type googleAuthorizeApiAuthGoogleAuthorizeGetResponse200 = {
+  data: APIResponseAuthorizeResponse
   status: 200
 }
 
-export type refreshTokenApiAuthRefreshPostResponse422 = {
+export type googleAuthorizeApiAuthGoogleAuthorizeGetResponse422 = {
   data: HTTPValidationError
   status: 422
 }
     
-export type refreshTokenApiAuthRefreshPostResponseSuccess = (refreshTokenApiAuthRefreshPostResponse200) & {
+export type googleAuthorizeApiAuthGoogleAuthorizeGetResponseSuccess = (googleAuthorizeApiAuthGoogleAuthorizeGetResponse200) & {
   headers: Headers;
 };
-export type refreshTokenApiAuthRefreshPostResponseError = (refreshTokenApiAuthRefreshPostResponse422) & {
+export type googleAuthorizeApiAuthGoogleAuthorizeGetResponseError = (googleAuthorizeApiAuthGoogleAuthorizeGetResponse422) & {
   headers: Headers;
 };
 
-export type refreshTokenApiAuthRefreshPostResponse = (refreshTokenApiAuthRefreshPostResponseSuccess | refreshTokenApiAuthRefreshPostResponseError)
+export type googleAuthorizeApiAuthGoogleAuthorizeGetResponse = (googleAuthorizeApiAuthGoogleAuthorizeGetResponseSuccess | googleAuthorizeApiAuthGoogleAuthorizeGetResponseError)
 
-export const getRefreshTokenApiAuthRefreshPostUrl = () => {
+export const getGoogleAuthorizeApiAuthGoogleAuthorizeGetUrl = (params: GoogleAuthorizeApiAuthGoogleAuthorizeGetParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/auth/google/authorize?${stringifiedParams}` : `/api/auth/google/authorize`
+}
+
+export const googleAuthorizeApiAuthGoogleAuthorizeGet = async (params: GoogleAuthorizeApiAuthGoogleAuthorizeGetParams, options?: RequestInit): Promise<googleAuthorizeApiAuthGoogleAuthorizeGetResponse> => {
+  
+  return authFetch<googleAuthorizeApiAuthGoogleAuthorizeGetResponse>(getGoogleAuthorizeApiAuthGoogleAuthorizeGetUrl(params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * Google コールバック処理.
+
+code と code_verifier を受け取り、Google にトークン交換 → ID Token 検証
+→ ユーザー upsert → 自前 JWT 発行。
+
+Args:
+    body: GoogleCallbackRequest（code, code_verifier, redirect_uri, state）
+    response: FastAPI Response（Cookie 設定用）
+    db: データベースセッション
+
+Returns:
+    APIResponse[TokenResponse]: アクセストークン
+ * @summary Google Callback
+ */
+export type googleCallbackApiAuthGoogleCallbackPostResponse200 = {
+  data: APIResponseTokenResponse
+  status: 200
+}
+
+export type googleCallbackApiAuthGoogleCallbackPostResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+    
+export type googleCallbackApiAuthGoogleCallbackPostResponseSuccess = (googleCallbackApiAuthGoogleCallbackPostResponse200) & {
+  headers: Headers;
+};
+export type googleCallbackApiAuthGoogleCallbackPostResponseError = (googleCallbackApiAuthGoogleCallbackPostResponse422) & {
+  headers: Headers;
+};
+
+export type googleCallbackApiAuthGoogleCallbackPostResponse = (googleCallbackApiAuthGoogleCallbackPostResponseSuccess | googleCallbackApiAuthGoogleCallbackPostResponseError)
+
+export const getGoogleCallbackApiAuthGoogleCallbackPostUrl = () => {
+
+
+  
+
+  return `/api/auth/google/callback`
+}
+
+export const googleCallbackApiAuthGoogleCallbackPost = async (googleCallbackRequest: GoogleCallbackRequest, options?: RequestInit): Promise<googleCallbackApiAuthGoogleCallbackPostResponse> => {
+  
+  return authFetch<googleCallbackApiAuthGoogleCallbackPostResponse>(getGoogleCallbackApiAuthGoogleCallbackPostUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      googleCallbackRequest,)
+  }
+);}
+
+
+
+/**
+ * アクセストークンを再発行し、リフレッシュトークンをローテーションする.
+
+Args:
+    response: FastAPI Response（Cookie 設定用）
+    db: データベースセッション
+    refresh_token: リフレッシュトークン（Cookie から取得）
+
+Returns:
+    APIResponse[TokenResponse]: 新しいアクセストークン
+ * @summary Refresh
+ */
+export type refreshApiAuthRefreshPostResponse200 = {
+  data: APIResponseTokenResponse
+  status: 200
+}
+
+export type refreshApiAuthRefreshPostResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+    
+export type refreshApiAuthRefreshPostResponseSuccess = (refreshApiAuthRefreshPostResponse200) & {
+  headers: Headers;
+};
+export type refreshApiAuthRefreshPostResponseError = (refreshApiAuthRefreshPostResponse422) & {
+  headers: Headers;
+};
+
+export type refreshApiAuthRefreshPostResponse = (refreshApiAuthRefreshPostResponseSuccess | refreshApiAuthRefreshPostResponseError)
+
+export const getRefreshApiAuthRefreshPostUrl = () => {
 
 
   
@@ -196,49 +205,51 @@ export const getRefreshTokenApiAuthRefreshPostUrl = () => {
   return `/api/auth/refresh`
 }
 
-export const refreshTokenApiAuthRefreshPost = async ( options?: RequestInit): Promise<refreshTokenApiAuthRefreshPostResponse> => {
+export const refreshApiAuthRefreshPost = async ( options?: RequestInit): Promise<refreshApiAuthRefreshPostResponse> => {
   
-  const res = await fetch(getRefreshTokenApiAuthRefreshPostUrl(),
+  return authFetch<refreshApiAuthRefreshPostResponse>(getRefreshApiAuthRefreshPostUrl(),
   {      
     ...options,
     method: 'POST'
     
     
   }
-)
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-  
-  const data: refreshTokenApiAuthRefreshPostResponse['data'] = body ? JSON.parse(body) : {}
-  return { data, status: res.status, headers: res.headers } as refreshTokenApiAuthRefreshPostResponse
-}
+);}
 
 
 
 /**
- * ログアウト.
+ * ログアウト（Refresh Token を revoke し Cookie を削除する）.
 
-Refresh TokenのCookieを削除する。
+Cookie が無くても 200 を返す（冪等）。
 
 Args:
-    response: FastAPIレスポンス（Cookie設定用）
-    current_user: 現在のユーザー（認証チェック用）
+    response: FastAPI Response（Cookie 削除用）
+    db: データベースセッション
+    refresh_token: リフレッシュトークン（Cookie から取得、無くても可）
 
 Returns:
-    APIResponse[LogoutResponse]: ログアウトメッセージ
+    APIResponse[LogoutResponse]: ログアウト完了メッセージ
  * @summary Logout
  */
 export type logoutApiAuthLogoutPostResponse200 = {
   data: APIResponseLogoutResponse
   status: 200
 }
+
+export type logoutApiAuthLogoutPostResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
     
 export type logoutApiAuthLogoutPostResponseSuccess = (logoutApiAuthLogoutPostResponse200) & {
   headers: Headers;
 };
-;
+export type logoutApiAuthLogoutPostResponseError = (logoutApiAuthLogoutPostResponse422) & {
+  headers: Headers;
+};
 
-export type logoutApiAuthLogoutPostResponse = (logoutApiAuthLogoutPostResponseSuccess)
+export type logoutApiAuthLogoutPostResponse = (logoutApiAuthLogoutPostResponseSuccess | logoutApiAuthLogoutPostResponseError)
 
 export const getLogoutApiAuthLogoutPostUrl = () => {
 
@@ -250,20 +261,69 @@ export const getLogoutApiAuthLogoutPostUrl = () => {
 
 export const logoutApiAuthLogoutPost = async ( options?: RequestInit): Promise<logoutApiAuthLogoutPostResponse> => {
   
-  const res = await fetch(getLogoutApiAuthLogoutPostUrl(),
+  return authFetch<logoutApiAuthLogoutPostResponse>(getLogoutApiAuthLogoutPostUrl(),
   {      
     ...options,
     method: 'POST'
     
     
   }
-)
+);}
 
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-  
-  const data: logoutApiAuthLogoutPostResponse['data'] = body ? JSON.parse(body) : {}
-  return { data, status: res.status, headers: res.headers } as logoutApiAuthLogoutPostResponse
+
+
+/**
+ * スタブログイン（開発・テスト環境のみ）.
+
+Google 認証なしでログインし、スタブ JWT を発行する。
+
+Args:
+    body: StubLoginRequest（email, name）
+    response: FastAPI Response（Cookie 設定用）
+    db: データベースセッション
+
+Returns:
+    APIResponse[TokenResponse]: スタブアクセストークン
+ * @summary Stub Login Endpoint
+ */
+export type stubLoginEndpointApiAuthStubLoginPostResponse200 = {
+  data: APIResponseTokenResponse
+  status: 200
 }
+
+export type stubLoginEndpointApiAuthStubLoginPostResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+    
+export type stubLoginEndpointApiAuthStubLoginPostResponseSuccess = (stubLoginEndpointApiAuthStubLoginPostResponse200) & {
+  headers: Headers;
+};
+export type stubLoginEndpointApiAuthStubLoginPostResponseError = (stubLoginEndpointApiAuthStubLoginPostResponse422) & {
+  headers: Headers;
+};
+
+export type stubLoginEndpointApiAuthStubLoginPostResponse = (stubLoginEndpointApiAuthStubLoginPostResponseSuccess | stubLoginEndpointApiAuthStubLoginPostResponseError)
+
+export const getStubLoginEndpointApiAuthStubLoginPostUrl = () => {
+
+
+  
+
+  return `/api/auth/stub-login`
+}
+
+export const stubLoginEndpointApiAuthStubLoginPost = async (stubLoginRequest: StubLoginRequest, options?: RequestInit): Promise<stubLoginEndpointApiAuthStubLoginPostResponse> => {
+  
+  return authFetch<stubLoginEndpointApiAuthStubLoginPostResponse>(getStubLoginEndpointApiAuthStubLoginPostUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      stubLoginRequest,)
+  }
+);}
 
 
 
@@ -293,20 +353,14 @@ export const getGetCurrentUserInfoApiUsersMeGetUrl = () => {
 
 export const getCurrentUserInfoApiUsersMeGet = async ( options?: RequestInit): Promise<getCurrentUserInfoApiUsersMeGetResponse> => {
   
-  const res = await fetch(getGetCurrentUserInfoApiUsersMeGetUrl(),
+  return authFetch<getCurrentUserInfoApiUsersMeGetResponse>(getGetCurrentUserInfoApiUsersMeGetUrl(),
   {      
     ...options,
     method: 'GET'
     
     
   }
-)
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-  
-  const data: getCurrentUserInfoApiUsersMeGetResponse['data'] = body ? JSON.parse(body) : {}
-  return { data, status: res.status, headers: res.headers } as getCurrentUserInfoApiUsersMeGetResponse
-}
+);}
 
 
 
@@ -350,20 +404,14 @@ export const getGetTasksApiTasksGetUrl = (params?: GetTasksApiTasksGetParams,) =
 
 export const getTasksApiTasksGet = async (params?: GetTasksApiTasksGetParams, options?: RequestInit): Promise<getTasksApiTasksGetResponse> => {
   
-  const res = await fetch(getGetTasksApiTasksGetUrl(params),
+  return authFetch<getTasksApiTasksGetResponse>(getGetTasksApiTasksGetUrl(params),
   {      
     ...options,
     method: 'GET'
     
     
   }
-)
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-  
-  const data: getTasksApiTasksGetResponse['data'] = body ? JSON.parse(body) : {}
-  return { data, status: res.status, headers: res.headers } as getTasksApiTasksGetResponse
-}
+);}
 
 
 
@@ -400,7 +448,7 @@ export const getCreateTaskApiTasksPostUrl = () => {
 
 export const createTaskApiTasksPost = async (taskCreate: TaskCreate, options?: RequestInit): Promise<createTaskApiTasksPostResponse> => {
   
-  const res = await fetch(getCreateTaskApiTasksPostUrl(),
+  return authFetch<createTaskApiTasksPostResponse>(getCreateTaskApiTasksPostUrl(),
   {      
     ...options,
     method: 'POST',
@@ -408,13 +456,7 @@ export const createTaskApiTasksPost = async (taskCreate: TaskCreate, options?: R
     body: JSON.stringify(
       taskCreate,)
   }
-)
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-  
-  const data: createTaskApiTasksPostResponse['data'] = body ? JSON.parse(body) : {}
-  return { data, status: res.status, headers: res.headers } as createTaskApiTasksPostResponse
-}
+);}
 
 
 
@@ -452,7 +494,7 @@ export const getUpdateTaskApiTasksTaskIdPutUrl = (taskId: string,) => {
 export const updateTaskApiTasksTaskIdPut = async (taskId: string,
     taskUpdate: TaskUpdate, options?: RequestInit): Promise<updateTaskApiTasksTaskIdPutResponse> => {
   
-  const res = await fetch(getUpdateTaskApiTasksTaskIdPutUrl(taskId),
+  return authFetch<updateTaskApiTasksTaskIdPutResponse>(getUpdateTaskApiTasksTaskIdPutUrl(taskId),
   {      
     ...options,
     method: 'PUT',
@@ -460,13 +502,7 @@ export const updateTaskApiTasksTaskIdPut = async (taskId: string,
     body: JSON.stringify(
       taskUpdate,)
   }
-)
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-  
-  const data: updateTaskApiTasksTaskIdPutResponse['data'] = body ? JSON.parse(body) : {}
-  return { data, status: res.status, headers: res.headers } as updateTaskApiTasksTaskIdPutResponse
-}
+);}
 
 
 
@@ -503,20 +539,14 @@ export const getDeleteTaskApiTasksTaskIdDeleteUrl = (taskId: string,) => {
 
 export const deleteTaskApiTasksTaskIdDelete = async (taskId: string, options?: RequestInit): Promise<deleteTaskApiTasksTaskIdDeleteResponse> => {
   
-  const res = await fetch(getDeleteTaskApiTasksTaskIdDeleteUrl(taskId),
+  return authFetch<deleteTaskApiTasksTaskIdDeleteResponse>(getDeleteTaskApiTasksTaskIdDeleteUrl(taskId),
   {      
     ...options,
     method: 'DELETE'
     
     
   }
-)
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-  
-  const data: deleteTaskApiTasksTaskIdDeleteResponse['data'] = body ? JSON.parse(body) : {}
-  return { data, status: res.status, headers: res.headers } as deleteTaskApiTasksTaskIdDeleteResponse
-}
+);}
 
 
 
@@ -560,20 +590,14 @@ export const getGetCurrentWeekApiWeeksCurrentGetUrl = (params?: GetCurrentWeekAp
 
 export const getCurrentWeekApiWeeksCurrentGet = async (params?: GetCurrentWeekApiWeeksCurrentGetParams, options?: RequestInit): Promise<getCurrentWeekApiWeeksCurrentGetResponse> => {
   
-  const res = await fetch(getGetCurrentWeekApiWeeksCurrentGetUrl(params),
+  return authFetch<getCurrentWeekApiWeeksCurrentGetResponse>(getGetCurrentWeekApiWeeksCurrentGetUrl(params),
   {      
     ...options,
     method: 'GET'
     
     
   }
-)
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-  
-  const data: getCurrentWeekApiWeeksCurrentGetResponse['data'] = body ? JSON.parse(body) : {}
-  return { data, status: res.status, headers: res.headers } as getCurrentWeekApiWeeksCurrentGetResponse
-}
+);}
 
 
 
@@ -610,7 +634,7 @@ export const getUpdateCurrentWeekApiWeeksCurrentPutUrl = () => {
 
 export const updateCurrentWeekApiWeeksCurrentPut = async (weekUpdate: WeekUpdate, options?: RequestInit): Promise<updateCurrentWeekApiWeeksCurrentPutResponse> => {
   
-  const res = await fetch(getUpdateCurrentWeekApiWeeksCurrentPutUrl(),
+  return authFetch<updateCurrentWeekApiWeeksCurrentPutResponse>(getUpdateCurrentWeekApiWeeksCurrentPutUrl(),
   {      
     ...options,
     method: 'PUT',
@@ -618,13 +642,7 @@ export const updateCurrentWeekApiWeeksCurrentPut = async (weekUpdate: WeekUpdate
     body: JSON.stringify(
       weekUpdate,)
   }
-)
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-  
-  const data: updateCurrentWeekApiWeeksCurrentPutResponse['data'] = body ? JSON.parse(body) : {}
-  return { data, status: res.status, headers: res.headers } as updateCurrentWeekApiWeeksCurrentPutResponse
-}
+);}
 
 
 
@@ -654,20 +672,14 @@ export const getGetCurrentGoalsApiWeeksCurrentGoalsGetUrl = () => {
 
 export const getCurrentGoalsApiWeeksCurrentGoalsGet = async ( options?: RequestInit): Promise<getCurrentGoalsApiWeeksCurrentGoalsGetResponse> => {
   
-  const res = await fetch(getGetCurrentGoalsApiWeeksCurrentGoalsGetUrl(),
+  return authFetch<getCurrentGoalsApiWeeksCurrentGoalsGetResponse>(getGetCurrentGoalsApiWeeksCurrentGoalsGetUrl(),
   {      
     ...options,
     method: 'GET'
     
     
   }
-)
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-  
-  const data: getCurrentGoalsApiWeeksCurrentGoalsGetResponse['data'] = body ? JSON.parse(body) : {}
-  return { data, status: res.status, headers: res.headers } as getCurrentGoalsApiWeeksCurrentGoalsGetResponse
-}
+);}
 
 
 
@@ -704,7 +716,7 @@ export const getUpdateCurrentGoalsApiWeeksCurrentGoalsPutUrl = () => {
 
 export const updateCurrentGoalsApiWeeksCurrentGoalsPut = async (goalsUpdate: GoalsUpdate, options?: RequestInit): Promise<updateCurrentGoalsApiWeeksCurrentGoalsPutResponse> => {
   
-  const res = await fetch(getUpdateCurrentGoalsApiWeeksCurrentGoalsPutUrl(),
+  return authFetch<updateCurrentGoalsApiWeeksCurrentGoalsPutResponse>(getUpdateCurrentGoalsApiWeeksCurrentGoalsPutUrl(),
   {      
     ...options,
     method: 'PUT',
@@ -712,13 +724,7 @@ export const updateCurrentGoalsApiWeeksCurrentGoalsPut = async (goalsUpdate: Goa
     body: JSON.stringify(
       goalsUpdate,)
   }
-)
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-  
-  const data: updateCurrentGoalsApiWeeksCurrentGoalsPutResponse['data'] = body ? JSON.parse(body) : {}
-  return { data, status: res.status, headers: res.headers } as updateCurrentGoalsApiWeeksCurrentGoalsPutResponse
-}
+);}
 
 
 
@@ -748,20 +754,14 @@ export const getGetCurrentRecordsApiWeeksCurrentRecordsGetUrl = () => {
 
 export const getCurrentRecordsApiWeeksCurrentRecordsGet = async ( options?: RequestInit): Promise<getCurrentRecordsApiWeeksCurrentRecordsGetResponse> => {
   
-  const res = await fetch(getGetCurrentRecordsApiWeeksCurrentRecordsGetUrl(),
+  return authFetch<getCurrentRecordsApiWeeksCurrentRecordsGetResponse>(getGetCurrentRecordsApiWeeksCurrentRecordsGetUrl(),
   {      
     ...options,
     method: 'GET'
     
     
   }
-)
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-  
-  const data: getCurrentRecordsApiWeeksCurrentRecordsGetResponse['data'] = body ? JSON.parse(body) : {}
-  return { data, status: res.status, headers: res.headers } as getCurrentRecordsApiWeeksCurrentRecordsGetResponse
-}
+);}
 
 
 
@@ -798,7 +798,7 @@ export const getCreateRecordApiWeeksCurrentRecordsPostUrl = () => {
 
 export const createRecordApiWeeksCurrentRecordsPost = async (recordCreate: RecordCreate, options?: RequestInit): Promise<createRecordApiWeeksCurrentRecordsPostResponse> => {
   
-  const res = await fetch(getCreateRecordApiWeeksCurrentRecordsPostUrl(),
+  return authFetch<createRecordApiWeeksCurrentRecordsPostResponse>(getCreateRecordApiWeeksCurrentRecordsPostUrl(),
   {      
     ...options,
     method: 'POST',
@@ -806,13 +806,7 @@ export const createRecordApiWeeksCurrentRecordsPost = async (recordCreate: Recor
     body: JSON.stringify(
       recordCreate,)
   }
-)
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-  
-  const data: createRecordApiWeeksCurrentRecordsPostResponse['data'] = body ? JSON.parse(body) : {}
-  return { data, status: res.status, headers: res.headers } as createRecordApiWeeksCurrentRecordsPostResponse
-}
+);}
 
 
 
@@ -856,77 +850,14 @@ export const getGetDashboardApiDashboardGetUrl = (params?: GetDashboardApiDashbo
 
 export const getDashboardApiDashboardGet = async (params?: GetDashboardApiDashboardGetParams, options?: RequestInit): Promise<getDashboardApiDashboardGetResponse> => {
   
-  const res = await fetch(getGetDashboardApiDashboardGetUrl(params),
+  return authFetch<getDashboardApiDashboardGetResponse>(getGetDashboardApiDashboardGetUrl(params),
   {      
     ...options,
     method: 'GET'
     
     
   }
-)
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-  
-  const data: getDashboardApiDashboardGetResponse['data'] = body ? JSON.parse(body) : {}
-  return { data, status: res.status, headers: res.headers } as getDashboardApiDashboardGetResponse
-}
-
-
-
-/**
- * テスト用JWTトークンを発行する.
- * @summary Create Test Token
- */
-export type createTestTokenApiTestAuthGetResponse200 = {
-  data: TestTokenResponse
-  status: 200
-}
-
-export type createTestTokenApiTestAuthGetResponse422 = {
-  data: HTTPValidationError
-  status: 422
-}
-    
-export type createTestTokenApiTestAuthGetResponseSuccess = (createTestTokenApiTestAuthGetResponse200) & {
-  headers: Headers;
-};
-export type createTestTokenApiTestAuthGetResponseError = (createTestTokenApiTestAuthGetResponse422) & {
-  headers: Headers;
-};
-
-export type createTestTokenApiTestAuthGetResponse = (createTestTokenApiTestAuthGetResponseSuccess | createTestTokenApiTestAuthGetResponseError)
-
-export const getCreateTestTokenApiTestAuthGetUrl = (params?: CreateTestTokenApiTestAuthGetParams,) => {
-  const normalizedParams = new URLSearchParams();
-
-  Object.entries(params || {}).forEach(([key, value]) => {
-    
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : value.toString())
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0 ? `/api/test-auth?${stringifiedParams}` : `/api/test-auth`
-}
-
-export const createTestTokenApiTestAuthGet = async (params?: CreateTestTokenApiTestAuthGetParams, options?: RequestInit): Promise<createTestTokenApiTestAuthGetResponse> => {
-  
-  const res = await fetch(getCreateTestTokenApiTestAuthGetUrl(params),
-  {      
-    ...options,
-    method: 'GET'
-    
-    
-  }
-)
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-  
-  const data: createTestTokenApiTestAuthGetResponse['data'] = body ? JSON.parse(body) : {}
-  return { data, status: res.status, headers: res.headers } as createTestTokenApiTestAuthGetResponse
-}
+);}
 
 
 
@@ -956,20 +887,14 @@ export const getRootGetUrl = () => {
 
 export const rootGet = async ( options?: RequestInit): Promise<rootGetResponse> => {
   
-  const res = await fetch(getRootGetUrl(),
+  return authFetch<rootGetResponse>(getRootGetUrl(),
   {      
     ...options,
     method: 'GET'
     
     
   }
-)
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-  
-  const data: rootGetResponse['data'] = body ? JSON.parse(body) : {}
-  return { data, status: res.status, headers: res.headers } as rootGetResponse
-}
+);}
 
 
 
@@ -999,27 +924,25 @@ export const getHealthHealthGetUrl = () => {
 
 export const healthHealthGet = async ( options?: RequestInit): Promise<healthHealthGetResponse> => {
   
-  const res = await fetch(getHealthHealthGetUrl(),
+  return authFetch<healthHealthGetResponse>(getHealthHealthGetUrl(),
   {      
     ...options,
     method: 'GET'
     
     
   }
-)
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-  
-  const data: healthHealthGetResponse['data'] = body ? JSON.parse(body) : {}
-  return { data, status: res.status, headers: res.headers } as healthHealthGetResponse
-}
+);}
 
 
-export const getAuthCallbackApiAuthCallbackGetResponseMock = (overrideResponse: Partial< APIResponseTokenResponse > = {}): APIResponseTokenResponse => ({data: {access_token: faker.string.alpha({length: {min: 10, max: 20}}), token_type: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), expires_in: faker.number.int({min: undefined, max: undefined})}, ...overrideResponse})
+export const getGoogleAuthorizeApiAuthGoogleAuthorizeGetResponseMock = (overrideResponse: Partial< APIResponseAuthorizeResponse > = {}): APIResponseAuthorizeResponse => ({data: {authorization_url: faker.string.alpha({length: {min: 10, max: 20}}), state: faker.string.alpha({length: {min: 10, max: 20}})}, ...overrideResponse})
 
-export const getRefreshTokenApiAuthRefreshPostResponseMock = (overrideResponse: Partial< APIResponseTokenResponse > = {}): APIResponseTokenResponse => ({data: {access_token: faker.string.alpha({length: {min: 10, max: 20}}), token_type: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), expires_in: faker.number.int({min: undefined, max: undefined})}, ...overrideResponse})
+export const getGoogleCallbackApiAuthGoogleCallbackPostResponseMock = (overrideResponse: Partial< APIResponseTokenResponse > = {}): APIResponseTokenResponse => ({data: {access_token: faker.string.alpha({length: {min: 10, max: 20}}), token_type: faker.helpers.arrayElement(['Bearer', undefined]), expires_in: faker.number.int({min: undefined, max: undefined})}, ...overrideResponse})
+
+export const getRefreshApiAuthRefreshPostResponseMock = (overrideResponse: Partial< APIResponseTokenResponse > = {}): APIResponseTokenResponse => ({data: {access_token: faker.string.alpha({length: {min: 10, max: 20}}), token_type: faker.helpers.arrayElement(['Bearer', undefined]), expires_in: faker.number.int({min: undefined, max: undefined})}, ...overrideResponse})
 
 export const getLogoutApiAuthLogoutPostResponseMock = (overrideResponse: Partial< APIResponseLogoutResponse > = {}): APIResponseLogoutResponse => ({data: {message: faker.string.alpha({length: {min: 10, max: 20}})}, ...overrideResponse})
+
+export const getStubLoginEndpointApiAuthStubLoginPostResponseMock = (overrideResponse: Partial< APIResponseTokenResponse > = {}): APIResponseTokenResponse => ({data: {access_token: faker.string.alpha({length: {min: 10, max: 20}}), token_type: faker.helpers.arrayElement(['Bearer', undefined]), expires_in: faker.number.int({min: undefined, max: undefined})}, ...overrideResponse})
 
 export const getGetCurrentUserInfoApiUsersMeGetResponseMock = (overrideResponse: Partial< APIResponseUserResponse > = {}): APIResponseUserResponse => ({data: {id: faker.string.alpha({length: {min: 10, max: 20}}), email: faker.internet.email(), name: faker.string.alpha({length: {min: 10, max: 20}}), picture: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}),null,]), timezone: faker.string.alpha({length: {min: 10, max: 20}}), created_at: `${faker.date.past().toISOString().split('.')[0]}Z`, updated_at: `${faker.date.past().toISOString().split('.')[0]}Z`}, ...overrideResponse})
 
@@ -1047,37 +970,37 @@ export const getGetDashboardApiDashboardGetResponseMock = (overrideResponse: Par
         [faker.string.alphanumeric(5)]: {target_units: faker.number.float({min: 0, max: undefined, fractionDigits: 2}), actual_units: faker.number.float({min: 0, max: undefined, fractionDigits: 2}), completion_rate: faker.helpers.arrayElement([faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}),null,]), undefined])}
       }})), has_goals_configured: faker.datatype.boolean()}, ...overrideResponse})
 
-export const getCreateTestTokenApiTestAuthGetResponseMock = (overrideResponse: Partial< TestTokenResponse > = {}): TestTokenResponse => ({access_token: faker.string.alpha({length: {min: 10, max: 20}}), token_type: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), ...overrideResponse})
 
-
-export const getLoginApiAuthLoginGetMockHandler = (overrideResponse?: unknown | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<unknown> | unknown), options?: RequestHandlerOptions) => {
-  return http.get('*/api/auth/login', async (info) => {await delay(0);
-  if (typeof overrideResponse === 'function') {await overrideResponse(info); }
-    return new HttpResponse(null,
-      { status: 200,
-        
-      })
-  }, options)
-}
-
-export const getAuthCallbackApiAuthCallbackGetMockHandler = (overrideResponse?: APIResponseTokenResponse | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<APIResponseTokenResponse> | APIResponseTokenResponse), options?: RequestHandlerOptions) => {
-  return http.get('*/api/auth/callback', async (info) => {await delay(0);
+export const getGoogleAuthorizeApiAuthGoogleAuthorizeGetMockHandler = (overrideResponse?: APIResponseAuthorizeResponse | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<APIResponseAuthorizeResponse> | APIResponseAuthorizeResponse), options?: RequestHandlerOptions) => {
+  return http.get('*/api/auth/google/authorize', async (info) => {await delay(0);
   
     return new HttpResponse(JSON.stringify(overrideResponse !== undefined
     ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getAuthCallbackApiAuthCallbackGetResponseMock()),
+    : getGoogleAuthorizeApiAuthGoogleAuthorizeGetResponseMock()),
       { status: 200,
         headers: { 'Content-Type': 'application/json' }
       })
   }, options)
 }
 
-export const getRefreshTokenApiAuthRefreshPostMockHandler = (overrideResponse?: APIResponseTokenResponse | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<APIResponseTokenResponse> | APIResponseTokenResponse), options?: RequestHandlerOptions) => {
+export const getGoogleCallbackApiAuthGoogleCallbackPostMockHandler = (overrideResponse?: APIResponseTokenResponse | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<APIResponseTokenResponse> | APIResponseTokenResponse), options?: RequestHandlerOptions) => {
+  return http.post('*/api/auth/google/callback', async (info) => {await delay(0);
+  
+    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getGoogleCallbackApiAuthGoogleCallbackPostResponseMock()),
+      { status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      })
+  }, options)
+}
+
+export const getRefreshApiAuthRefreshPostMockHandler = (overrideResponse?: APIResponseTokenResponse | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<APIResponseTokenResponse> | APIResponseTokenResponse), options?: RequestHandlerOptions) => {
   return http.post('*/api/auth/refresh', async (info) => {await delay(0);
   
     return new HttpResponse(JSON.stringify(overrideResponse !== undefined
     ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getRefreshTokenApiAuthRefreshPostResponseMock()),
+    : getRefreshApiAuthRefreshPostResponseMock()),
       { status: 200,
         headers: { 'Content-Type': 'application/json' }
       })
@@ -1090,6 +1013,18 @@ export const getLogoutApiAuthLogoutPostMockHandler = (overrideResponse?: APIResp
     return new HttpResponse(JSON.stringify(overrideResponse !== undefined
     ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
     : getLogoutApiAuthLogoutPostResponseMock()),
+      { status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      })
+  }, options)
+}
+
+export const getStubLoginEndpointApiAuthStubLoginPostMockHandler = (overrideResponse?: APIResponseTokenResponse | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<APIResponseTokenResponse> | APIResponseTokenResponse), options?: RequestHandlerOptions) => {
+  return http.post('*/api/auth/stub-login', async (info) => {await delay(0);
+  
+    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getStubLoginEndpointApiAuthStubLoginPostResponseMock()),
       { status: 200,
         headers: { 'Content-Type': 'application/json' }
       })
@@ -1240,18 +1175,6 @@ export const getGetDashboardApiDashboardGetMockHandler = (overrideResponse?: API
   }, options)
 }
 
-export const getCreateTestTokenApiTestAuthGetMockHandler = (overrideResponse?: TestTokenResponse | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<TestTokenResponse> | TestTokenResponse), options?: RequestHandlerOptions) => {
-  return http.get('*/api/test-auth', async (info) => {await delay(0);
-  
-    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getCreateTestTokenApiTestAuthGetResponseMock()),
-      { status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      })
-  }, options)
-}
-
 export const getRootGetMockHandler = (overrideResponse?: unknown | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<unknown> | unknown), options?: RequestHandlerOptions) => {
   return http.get('*/', async (info) => {await delay(0);
   if (typeof overrideResponse === 'function') {await overrideResponse(info); }
@@ -1272,10 +1195,11 @@ export const getHealthHealthGetMockHandler = (overrideResponse?: unknown | ((inf
   }, options)
 }
 export const getTascheAPIMock = () => [
-  getLoginApiAuthLoginGetMockHandler(),
-  getAuthCallbackApiAuthCallbackGetMockHandler(),
-  getRefreshTokenApiAuthRefreshPostMockHandler(),
+  getGoogleAuthorizeApiAuthGoogleAuthorizeGetMockHandler(),
+  getGoogleCallbackApiAuthGoogleCallbackPostMockHandler(),
+  getRefreshApiAuthRefreshPostMockHandler(),
   getLogoutApiAuthLogoutPostMockHandler(),
+  getStubLoginEndpointApiAuthStubLoginPostMockHandler(),
   getGetCurrentUserInfoApiUsersMeGetMockHandler(),
   getGetTasksApiTasksGetMockHandler(),
   getCreateTaskApiTasksPostMockHandler(),
@@ -1288,7 +1212,6 @@ export const getTascheAPIMock = () => [
   getGetCurrentRecordsApiWeeksCurrentRecordsGetMockHandler(),
   getCreateRecordApiWeeksCurrentRecordsPostMockHandler(),
   getGetDashboardApiDashboardGetMockHandler(),
-  getCreateTestTokenApiTestAuthGetMockHandler(),
   getRootGetMockHandler(),
   getHealthHealthGetMockHandler()
 ]

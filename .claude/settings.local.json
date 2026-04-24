@@ -51,7 +51,11 @@
       "WebSearch",
       "WebFetch(domain:docs.github.com)",
       "WebFetch(domain:deepwiki.com)",
-      "mcp__deepwiki__ask_question"
+      "mcp__deepwiki__ask_question",
+      "Bash(pnpm *)",
+      "Bash(E2E_USE_MSW=true pnpm test:e2e --reporter=list)",
+      "Bash(git status *)",
+      "Bash(git diff *)"
     ]
   }
 }

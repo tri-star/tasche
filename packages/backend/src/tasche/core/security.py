@@ -1,143 +1,80 @@
-"""JWT 検証（Auth0 + テスト用フォールバック）."""
+"""JWT 発行・検証（自前 HS256 + スタブフォールバック）."""
 
-import time
+from datetime import datetime, timezone
 
-import httpx
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 
 from tasche.core.config import settings
+from tasche.core.env import is_auth_stub_enabled
+from tasche.core.exceptions import InvalidTokenError
 
 security = HTTPBearer()
 
-# JWKSキャッシュ（TTL付き）
-_jwks_cache: dict | None = None
-_jwks_cache_time: float | None = None
-JWKS_CACHE_TTL = 3600  # キャッシュの有効期限（秒）: 1時間
+
+def issue_access_token(*, user_id: str, email: str) -> tuple[str, int]:
+    """自前 JWT（HS256）を発行する.
+
+    Returns:
+        (access_token, expires_in_seconds)
+    """
+    now = int(datetime.now(tz=timezone.utc).timestamp())
+    exp = now + settings.jwt_access_token_expires_seconds
+    payload = {"sub": user_id, "email": email, "iat": now, "exp": exp}
+    token = jwt.encode(payload, settings.jwt_secret, algorithm=settings.jwt_algorithm)
+    return token, settings.jwt_access_token_expires_seconds
 
 
-async def get_jwks() -> dict:
-    """Auth0 JWKSを取得（キャッシュ付き、TTL: 1時間）."""
-    global _jwks_cache, _jwks_cache_time
+def issue_stub_access_token(*, user_id: str, email: str) -> tuple[str, int]:
+    """スタブ用 HS256 JWT を発行する（stub=True クレーム付き）.
 
-    current_time = time.time()
-
-    # キャッシュが有効な場合は再利用
-    if (
-        _jwks_cache is not None
-        and _jwks_cache_time is not None
-        and (current_time - _jwks_cache_time) < JWKS_CACHE_TTL
-    ):
-        return _jwks_cache
-
-    # JWKSエンドポイントから公開鍵を取得
-    jwks_url = f"https://{settings.auth0_domain}/.well-known/jwks.json"
-    async with httpx.AsyncClient() as client:
-        response = await client.get(jwks_url)
-        response.raise_for_status()
-        _jwks_cache = response.json()
-        _jwks_cache_time = current_time
-        return _jwks_cache
+    Returns:
+        (access_token, expires_in_seconds)
+    """
+    now = int(datetime.now(tz=timezone.utc).timestamp())
+    exp = now + settings.jwt_access_token_expires_seconds
+    payload = {"sub": user_id, "email": email, "iat": now, "exp": exp, "stub": True}
+    token = jwt.encode(payload, settings.auth_stub_jwt_secret, algorithm="HS256")
+    return token, settings.jwt_access_token_expires_seconds
 
 
-def decode_test_jwt(token: str) -> dict:
-    """テスト用 JWT デコード."""
-    try:
-        payload = jwt.decode(
-            token,
-            settings.test_jwt_secret,
-            algorithms=["HS256"],
-        )
-        return payload
-    except JWTError as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Invalid test token: {e}",
-        ) from e
+def _decode_app_jwt(token: str) -> dict:
+    """自前 JWT をデコード・検証する."""
+    return jwt.decode(token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
 
 
-async def decode_auth0_jwt(token: str) -> dict:
-    """Auth0 JWT デコード（RS256検証）."""
-    try:
-        # JWTヘッダーからkidを取得
-        unverified_header = jwt.get_unverified_header(token)
-        kid = unverified_header.get("kid")
-        if not kid:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Token does not contain 'kid' in header",
-            )
-
-        # JWKSから対応する公開鍵を取得
-        jwks = await get_jwks()
-        rsa_key = None
-        for key in jwks.get("keys", []):
-            if key.get("kid") == kid:
-                rsa_key = {
-                    "kty": key["kty"],
-                    "kid": key["kid"],
-                    "use": key["use"],
-                    "n": key["n"],
-                    "e": key["e"],
-                }
-                break
-
-        if not rsa_key:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Unable to find appropriate key",
-            )
-
-        # RS256でトークンを検証
-        issuer = f"https://{settings.auth0_domain}/"
-        payload = jwt.decode(
-            token,
-            rsa_key,
-            algorithms=["RS256"],
-            audience=settings.auth0_audience,
-            issuer=issuer,
-        )
-        return payload
-    except JWTError as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Invalid Auth0 token: {e}",
-        ) from e
-    except httpx.HTTPError as e:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=f"Failed to fetch JWKS: {e}",
-        ) from e
+def _decode_stub_jwt(token: str) -> dict:
+    """スタブ JWT をデコード・検証する（stub クレーム必須）."""
+    payload = jwt.decode(token, settings.auth_stub_jwt_secret, algorithms=["HS256"])
+    if not payload.get("stub"):
+        raise JWTError("not a stub token")
+    return payload
 
 
 async def get_current_user_sub(
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ) -> str:
-    """現在のユーザーのsubを取得（Auth0 or テスト用）."""
+    """現在のユーザーの sub（内部ユーザーID）を取得する.
+
+    1. 自前 JWT で検証試行。成功なら sub を返す。
+    2. 失敗時、is_auth_stub_enabled() == True ならスタブ JWT で検証試行。
+    3. いずれも失敗なら InvalidTokenError を raise。
+    """
     token = credentials.credentials
 
-    # テスト認証が有効な場合、テスト用トークンを優先
-    if settings.enable_test_auth:
-        try:
-            payload = decode_test_jwt(token)
-            sub = payload.get("sub", "")
-            if not sub:
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Token does not contain 'sub' claim",
-                )
-            return sub
-        except HTTPException:
-            # テスト用JWT検証失敗時は、そのままエラーを返す（Auth0にフォールバックしない）
-            raise
+    try:
+        payload = _decode_app_jwt(token)
+    except JWTError:
+        if is_auth_stub_enabled(settings.app_env, settings.auth_stub_enabled):
+            try:
+                payload = _decode_stub_jwt(token)
+            except JWTError as e:
+                raise InvalidTokenError("Invalid token") from e
+        else:
+            raise InvalidTokenError("Invalid token")
 
-    # Auth0 JWT 検証
-    payload = await decode_auth0_jwt(token)
-    sub = payload.get("sub", "")
+    sub = payload.get("sub")
     if not sub:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token does not contain 'sub' claim",
-        )
+        raise InvalidTokenError("Token does not contain 'sub' claim")
     return sub

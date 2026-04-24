@@ -1,13 +1,11 @@
-import "./App.css"
-import { DashboardPage } from "@/pages/DashboardPage"
-import { GoalSettingPage } from "@/pages/GoalSettingPage"
+import { RouterProvider } from "react-router-dom"
+import { useBootstrapAuth } from "@/auth/useBootstrapAuth"
+import { router } from "@/router"
 
-function App() {
-  if (window.location.pathname.startsWith("/goals")) {
-    return <GoalSettingPage />
-  }
-
-  return <DashboardPage />
+function AppInner() {
+  // 起動時に /api/auth/refresh を1回試みてログイン状態を復元する
+  useBootstrapAuth()
+  return <RouterProvider router={router} />
 }
 
-export default App
+export default AppInner

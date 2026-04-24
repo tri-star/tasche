@@ -1,191 +1,210 @@
-"""認証エンドポイント."""
+"""認証エンドポイント（Google OAuth 2.0 + スタブログイン）."""
 
 import logging
 
-from authlib.integrations.base_client.errors import OAuthError
-from fastapi import APIRouter, Cookie, HTTPException, Request, Response, status
+from fastapi import APIRouter, Cookie, Response
 
-from tasche.api.deps import CurrentUser, DbSession
+from tasche.api.deps import DbSession
 from tasche.core.config import settings
-from tasche.core.oauth import oauth
+from tasche.core.cookies import REFRESH_TOKEN_COOKIE, clear_refresh_cookie, set_refresh_cookie
+from tasche.core.env import is_auth_stub_enabled
+from tasche.core.exceptions import ValidationError
 from tasche.schemas.auth import (
-    Auth0UserInfo,
+    AuthorizeResponse,
+    GoogleCallbackRequest,
     LogoutResponse,
+    StubLoginRequest,
     TokenResponse,
 )
 from tasche.schemas.common import APIResponse
-from tasche.services.auth import auth0_service
-from tasche.services.user import get_or_create_user_from_auth0
+from tasche.services.auth import (
+    build_authorize_url,
+    handle_google_callback,
+    revoke_refresh_token,
+    rotate_refresh_token,
+    stub_login,
+)
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-# Cookie設定の定数
-REFRESH_TOKEN_COOKIE_NAME = "refresh_token"
-REFRESH_TOKEN_MAX_AGE = 604800  # 7日間（秒）
-AUTH_COOKIE_PATH = "/api/auth"
 
-
-@router.get("/login")
-async def login(request: Request):
-    """ログイン開始.
-
-    Auth0のauthorizeエンドポイントにリダイレクトする。
-    state, PKCE (code_verifier/challenge) はauthlibが自動管理。
+@router.get("/google/authorize", response_model=APIResponse[AuthorizeResponse])
+async def google_authorize(
+    code_challenge: str,
+    redirect_uri: str,
+    code_challenge_method: str = "S256",
+):
+    """Google 認可 URL を組み立てて返す.
 
     Args:
-        request: FastAPIリクエスト
+        code_challenge: frontend が生成した PKCE challenge（S256）
+        redirect_uri: frontend のコールバック URL（許可リストで検証）
+        code_challenge_method: S256 のみ受理（省略時も S256）
 
     Returns:
-        RedirectResponse: Auth0 authorize URLへのリダイレクト
+        APIResponse[AuthorizeResponse]: authorization_url と state
     """
-    redirect_uri = str(request.url_for("auth_callback"))
-    return await oauth.auth0.authorize_redirect(request, redirect_uri)
+    # code_challenge_method チェック
+    if code_challenge_method != "S256":
+        raise ValidationError("code_challenge_method must be S256")
+
+    # redirect_uri 許可リスト検証
+    if redirect_uri not in settings.google_oauth_redirect_uri_list:
+        logger.warning("redirect_uri not allowed: %r", redirect_uri)
+        raise ValidationError("redirect_uri is not allowed")
+
+    authorization_url, state = await build_authorize_url(
+        redirect_uri=redirect_uri,
+        code_challenge=code_challenge,
+        code_challenge_method=code_challenge_method,
+    )
+
+    return APIResponse(
+        data=AuthorizeResponse(
+            authorization_url=authorization_url,
+            state=state,
+        )
+    )
 
 
-@router.get("/callback", response_model=APIResponse[TokenResponse])
-async def auth_callback(request: Request, response: Response, db: DbSession):
-    """認証コールバック.
+@router.post("/google/callback", response_model=APIResponse[TokenResponse])
+async def google_callback(
+    body: GoogleCallbackRequest,
+    response: Response,
+    db: DbSession,
+):
+    """Google コールバック処理.
 
-    authlibがstate検証、PKCE検証、トークン交換を自動実行。
-    ユーザー情報を取得してDBに保存/更新する。
-    Refresh TokenはHttpOnly Cookieに保存し、Access Tokenはレスポンスで返す。
+    code と code_verifier を受け取り、Google にトークン交換 → ID Token 検証
+    → ユーザー upsert → 自前 JWT 発行。
 
     Args:
-        request: 認証コールバックリクエスト
-        response: FastAPIレスポンス（Cookie設定用）
+        body: GoogleCallbackRequest（code, code_verifier, redirect_uri, state）
+        response: FastAPI Response（Cookie 設定用）
         db: データベースセッション
 
     Returns:
-        APIResponse[TokenResponse]: トークンレスポンス
+        APIResponse[TokenResponse]: アクセストークン
     """
-    try:
-        # 1. authlibでトークン取得（state検証、PKCE検証も自動）
-        token = await oauth.auth0.authorize_access_token(request)
+    # redirect_uri 許可リスト検証
+    if body.redirect_uri not in settings.google_oauth_redirect_uri_list:
+        logger.warning("redirect_uri not allowed: %r", body.redirect_uri)
+        raise ValidationError("redirect_uri is not allowed")
 
-        access_token = token["access_token"]
-        refresh_token = token.get("refresh_token")
-        userinfo = token.get("userinfo")
+    _user, access_token, raw_refresh_token = await handle_google_callback(
+        db,
+        code=body.code,
+        code_verifier=body.code_verifier,
+        redirect_uri=body.redirect_uri,
+    )
 
-        # 2. userinfoがない場合は別途取得
-        if not userinfo:
-            userinfo_dict = await auth0_service.get_userinfo(access_token)
-        else:
-            # authlibから取得したuserinfoをPydanticモデルに変換
-            userinfo_dict = Auth0UserInfo(**userinfo)
+    set_refresh_cookie(response, raw_refresh_token)
 
-        # 3. DBにユーザーを保存/更新
-        await get_or_create_user_from_auth0(db, userinfo_dict)
-
-        # 4. Refresh TokenをCookieに保存
-        if refresh_token:
-            response.set_cookie(
-                key=REFRESH_TOKEN_COOKIE_NAME,
-                value=refresh_token,
-                max_age=REFRESH_TOKEN_MAX_AGE,
-                httponly=True,
-                secure=settings.cookie_secure,
-                samesite=settings.cookie_samesite,
-                path=AUTH_COOKIE_PATH,
-            )
-
-        # 5. Access Tokenをレスポンスで返す
-        return APIResponse(
-            data=TokenResponse(
-                access_token=access_token,
-                token_type=token.get("token_type", "Bearer"),
-                expires_in=token.get("expires_in", 3600),
-            )
+    return APIResponse(
+        data=TokenResponse(
+            access_token=access_token,
+            token_type="Bearer",
+            expires_in=settings.jwt_access_token_expires_seconds,
         )
-
-    except OAuthError as e:
-        logger.error(f"OAuth error during callback: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"OAuth authentication failed: {e.error}",
-        ) from e
-    except Exception as e:
-        logger.error(f"Failed to authenticate: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Failed to authenticate.",
-        ) from e
+    )
 
 
 @router.post("/refresh", response_model=APIResponse[TokenResponse])
-async def refresh_token(
+async def refresh(
     response: Response,
-    refresh_token: str | None = Cookie(None, alias=REFRESH_TOKEN_COOKIE_NAME),
+    db: DbSession,
+    refresh_token: str | None = Cookie(None, alias=REFRESH_TOKEN_COOKIE),
 ):
-    """トークンリフレッシュ.
-
-    Refresh Tokenで新しいトークンを取得する。
-    新しいRefresh TokenもCookieに保存（Rotation）。
+    """アクセストークンを再発行し、リフレッシュトークンをローテーションする.
 
     Args:
-        response: FastAPIレスポンス（Cookie設定用）
-        refresh_token: リフレッシュトークン（Cookieから取得）
+        response: FastAPI Response（Cookie 設定用）
+        db: データベースセッション
+        refresh_token: リフレッシュトークン（Cookie から取得）
 
     Returns:
-        APIResponse[TokenResponse]: 新しいトークンレスポンス
+        APIResponse[TokenResponse]: 新しいアクセストークン
     """
+    from tasche.core.exceptions import InvalidRefreshTokenError
+
     if not refresh_token:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Refresh token not found",
+        raise InvalidRefreshTokenError("Refresh token not found in cookie")
+
+    _user, access_token, new_raw_refresh_token = await rotate_refresh_token(
+        db,
+        raw_token=refresh_token,
+    )
+
+    set_refresh_cookie(response, new_raw_refresh_token)
+
+    return APIResponse(
+        data=TokenResponse(
+            access_token=access_token,
+            token_type="Bearer",
+            expires_in=settings.jwt_access_token_expires_seconds,
         )
-
-    try:
-        # 1. Auth0で新しいtokenを取得
-        token_response = await auth0_service.refresh_tokens(refresh_token)
-
-        # 2. 新しいRefresh TokenをCookieに保存（Rotation）
-        if token_response.refresh_token:
-            response.set_cookie(
-                key=REFRESH_TOKEN_COOKIE_NAME,
-                value=token_response.refresh_token,
-                max_age=REFRESH_TOKEN_MAX_AGE,
-                httponly=True,
-                secure=settings.cookie_secure,
-                samesite=settings.cookie_samesite,
-                path=AUTH_COOKIE_PATH,
-            )
-
-        # 3. 新しいAccess Tokenをレスポンスで返す
-        return APIResponse(
-            data=TokenResponse(
-                access_token=token_response.access_token,
-                token_type=token_response.token_type,
-                expires_in=token_response.expires_in,
-            )
-        )
-
-    except Exception as e:
-        logger.error(f"Failed to refresh token: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Failed to refresh token.",
-        ) from e
+    )
 
 
 @router.post("/logout", response_model=APIResponse[LogoutResponse])
-async def logout(response: Response, current_user: CurrentUser):
-    """ログアウト.
+async def logout(
+    response: Response,
+    db: DbSession,
+    refresh_token: str | None = Cookie(None, alias=REFRESH_TOKEN_COOKIE),
+):
+    """ログアウト（Refresh Token を revoke し Cookie を削除する）.
 
-    Refresh TokenのCookieを削除する。
+    Cookie が無くても 200 を返す（冪等）。
 
     Args:
-        response: FastAPIレスポンス（Cookie設定用）
-        current_user: 現在のユーザー（認証チェック用）
+        response: FastAPI Response（Cookie 削除用）
+        db: データベースセッション
+        refresh_token: リフレッシュトークン（Cookie から取得、無くても可）
 
     Returns:
-        APIResponse[LogoutResponse]: ログアウトメッセージ
+        APIResponse[LogoutResponse]: ログアウト完了メッセージ
     """
-    # Cookieを削除
-    response.delete_cookie(
-        key=REFRESH_TOKEN_COOKIE_NAME,
-        path="/api/auth",
-    )
+    await revoke_refresh_token(db, raw_token=refresh_token)
+    clear_refresh_cookie(response)
 
     return APIResponse(data=LogoutResponse(message="ログアウトしました"))
+
+
+# スタブログインエンドポイントは is_auth_stub_enabled() が true の場合のみ登録
+if is_auth_stub_enabled(settings.app_env, settings.auth_stub_enabled):
+
+    @router.post("/stub-login", response_model=APIResponse[TokenResponse])
+    async def stub_login_endpoint(
+        body: StubLoginRequest,
+        response: Response,
+        db: DbSession,
+    ):
+        """スタブログイン（開発・テスト環境のみ）.
+
+        Google 認証なしでログインし、スタブ JWT を発行する。
+
+        Args:
+            body: StubLoginRequest（email, name）
+            response: FastAPI Response（Cookie 設定用）
+            db: データベースセッション
+
+        Returns:
+            APIResponse[TokenResponse]: スタブアクセストークン
+        """
+        _user, access_token, raw_refresh_token = await stub_login(
+            db,
+            email=str(body.email),
+            name=body.name,
+        )
+
+        set_refresh_cookie(response, raw_refresh_token)
+
+        return APIResponse(
+            data=TokenResponse(
+                access_token=access_token,
+                token_type="Bearer",
+                expires_in=settings.jwt_access_token_expires_seconds,
+            )
+        )

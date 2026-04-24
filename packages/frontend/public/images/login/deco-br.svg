@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 260" fill="none">
+  <!-- Small plant behind books -->
+  <path d="M 290 260 C 288 220, 292 170, 290 90"
+        stroke="#7FA888" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M 290 220 Q 252 208, 246 180 Q 274 192, 290 220 Z"
+        fill="#B7D8BE" stroke="#8BB592" stroke-width="1.5"/>
+  <path d="M 290 185 Q 328 173, 334 145 Q 306 157, 290 185 Z"
+        fill="#C5DEB5" stroke="#8BB592" stroke-width="1.5"/>
+  <path d="M 290 148 Q 258 136, 254 108 Q 278 120, 290 148 Z"
+        fill="#B7D8BE" stroke="#8BB592" stroke-width="1.5"/>
+  <path d="M 290 112 Q 320 100, 324 74 Q 300 86, 290 112 Z"
+        fill="#C5DEB5" stroke="#8BB592" stroke-width="1.5"/>
+
+  <!-- Bottom book: olive green -->
+  <rect x="6" y="6" width="262" height="44" rx="4" fill="#000" opacity=".06"
+        transform="translate(4 212)"/>
+  <rect x="0" y="0" width="262" height="44" rx="4"
+        fill="#8BB58E" stroke="#6A9574" stroke-width="2.5"
+        transform="translate(4 212)"/>
+  <rect x="10" y="6" width="250" height="4" fill="#F5F0DE"
+        transform="translate(4 212)"/>
+  <rect x="10" y="34" width="250" height="4" fill="#F5F0DE"
+        transform="translate(4 212)"/>
+  <rect x="100" y="18" width="62" height="8" rx="2" fill="#F5F0DE" opacity=".85"
+        transform="translate(4 212)"/>
+
+  <!-- Middle book: tan -->
+  <rect x="6" y="6" width="224" height="44" rx="4" fill="#000" opacity=".06"
+        transform="translate(22 162)"/>
+  <rect x="0" y="0" width="224" height="44" rx="4"
+        fill="#D4B585" stroke="#A88860" stroke-width="2.5"
+        transform="translate(22 162)"/>
+  <rect x="8" y="6" width="212" height="4" fill="#F5F0DE"
+        transform="translate(22 162)"/>
+  <rect x="8" y="34" width="212" height="4" fill="#F5F0DE"
+        transform="translate(22 162)"/>
+  <rect x="82" y="18" width="60" height="8" rx="2" fill="#F5F0DE" opacity=".85"
+        transform="translate(22 162)"/>
+
+  <!-- Top book: light green, slight tilt -->
+  <g transform="translate(46 112) rotate(-3 90 22)">
+    <rect x="4" y="6" width="186" height="44" rx="4" fill="#000" opacity=".06"/>
+    <rect x="0" y="0" width="186" height="44" rx="4"
+          fill="#A8C495" stroke="#82A678" stroke-width="2.5"/>
+    <rect x="8" y="6" width="174" height="4" fill="#F5F0DE"/>
+    <rect x="8" y="34" width="174" height="4" fill="#F5F0DE"/>
+    <rect x="66" y="18" width="52" height="8" rx="2" fill="#F5F0DE" opacity=".85"/>
+  </g>
+
+  <!-- Pencil on top book -->
+  <g transform="translate(24 88) rotate(-18 100 8)">
+    <rect x="3" y="5" width="224" height="16" rx="3" fill="#000" opacity=".08"/>
+    <rect x="0" y="0" width="184" height="16" rx="2"
+          fill="#E8B762" stroke="#B88A3D" stroke-width="2"/>
+    <line x1="0" y1="5" x2="184" y2="5" stroke="#C99744" stroke-width="1" opacity=".6"/>
+    <line x1="0" y1="11" x2="184" y2="11" stroke="#C99744" stroke-width="1" opacity=".6"/>
+    <!-- Ferrule -->
+    <rect x="184" y="0" width="16" height="16"
+          fill="#D4C8B8" stroke="#A89B88" stroke-width="2"/>
+    <line x1="188" y1="2" x2="188" y2="14" stroke="#A89B88" stroke-width=".8"/>
+    <line x1="192" y1="2" x2="192" y2="14" stroke="#A89B88" stroke-width=".8"/>
+    <!-- Eraser -->
+    <rect x="200" y="0" width="22" height="16" rx="2"
+          fill="#E09188" stroke="#B86E66" stroke-width="2"/>
+    <!-- Tip -->
+    <path d="M0 0 L-18 8 L0 16 Z"
+          fill="#F0D9A8" stroke="#B88A3D" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M-6 4 L-18 8 L-6 12 Z" fill="#3A3530"/>
+  </g>
+
+  <!-- Sparkles -->
+  <path d="M 22 65 C 22 70, 25 73, 30 73 C 25 73, 22 76, 22 81
+           C 22 76, 19 73, 14 73 C 19 73, 22 70, 22 65 Z"
+        fill="#E8B866"/>
+  <path d="M 48 40 C 48 43, 50 45, 53 45 C 50 45, 48 47, 48 50
+           C 48 47, 46 45, 43 45 C 46 45, 48 43, 48 40 Z"
+        fill="#E8B866" opacity=".75"/>
+  <path d="M 8 100 C 8 103, 10 105, 13 105 C 10 105, 8 107, 8 110
+           C 8 107, 6 105, 3 105 C 6 105, 8 103, 8 100 Z"
+        fill="#E8B866" opacity=".8"/>
+</svg>

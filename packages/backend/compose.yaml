@@ -23,11 +23,19 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://tasche:tasche_dev_password@db:5432/tasche
       TEST_DATABASE_URL: postgresql+asyncpg://tasche:tasche_dev_password@db:5432/tasche_test
-      AUTH0_DOMAIN: ${AUTH0_DOMAIN:-dummy.auth0.com}
-      AUTH0_AUDIENCE: ${AUTH0_AUDIENCE:-dummy-audience}
-      AUTH0_CLIENT_ID: ${AUTH0_CLIENT_ID:-dummy-client-id}
-      AUTH0_CLIENT_SECRET: ${AUTH0_CLIENT_SECRET:-dummy-client-secret}
-      ENABLE_TEST_AUTH: "true"
+      APP_ENV: local
+      GOOGLE_OAUTH_CLIENT_ID: ${GOOGLE_OAUTH_CLIENT_ID:-dummy-client-id}
+      GOOGLE_OAUTH_CLIENT_SECRET: ${GOOGLE_OAUTH_CLIENT_SECRET:-dummy-client-secret}
+      GOOGLE_OAUTH_REDIRECT_URIS: ${GOOGLE_OAUTH_REDIRECT_URIS:-http://localhost:5173/auth/callback}
+      JWT_SECRET: ${JWT_SECRET:-change_me_in_production_0123456789abcdef}
+      JWT_ALGORITHM: HS256
+      JWT_ACCESS_TOKEN_EXPIRES_SECONDS: "900"
+      JWT_REFRESH_TOKEN_EXPIRES_SECONDS: "604800"
+      COOKIE_SECURE: "false"
+      COOKIE_SAMESITE: lax
+      COOKIE_DOMAIN: ""
+      AUTH_STUB_ENABLED: "true"
+      AUTH_STUB_JWT_SECRET: ${AUTH_STUB_JWT_SECRET:-dev_stub_secret_change_in_production_12345678}
       LOG_LEVEL: debug
     ports:
       - "${API_CONTAINER_PORT:-8000}:8000"

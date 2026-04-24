@@ -142,6 +142,8 @@ jobs:
               "violated_docs": [],
               "referenced_paths": [".github/workflows/pr-ai-review.yml"],
               "review_comments": [],
+              "summary_comments": [],
+              "posted_summary_comments": [],
           }
           Path("tmp/review/result.json").write_text(
               json.dumps(result, indent=2, ensure_ascii=False)
@@ -206,6 +208,55 @@ jobs:
           else
             gh api --method POST "repos/${REPO}/issues/${PR_NUMBER}/comments" -f body="${body}" >/dev/null
           fi
+
+      - name: Post persistent summary comments
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 .github/scripts/render_persistent_summary_comments.py \
+            --input tmp/review/result.json \
+            --output tmp/review/persistent-summary-comments.json \
+            --repo "${REPO}" \
+            --pr-number "${PR_NUMBER}" \
+            --head-sha "${HEAD_SHA}" \
+            --run-id "${GITHUB_RUN_ID}" \
+            --run-attempt "${GITHUB_RUN_ATTEMPT}"
+
+          : > tmp/review/posted-summary-comments.jsonl
+          jq -c '.[]' tmp/review/persistent-summary-comments.json | while read -r item; do
+            body=$(printf '%s' "${item}" | jq -r '.body')
+            response=$(gh api --method POST "repos/${REPO}/issues/${PR_NUMBER}/comments" -f body="${body}")
+            jq -n \
+              --argjson item "${item}" \
+              --argjson response "${response}" \
+              '{
+                summary_index: $item.summary_index,
+                comment_id: $response.id,
+                node_id: $response.node_id,
+                html_url: $response.html_url,
+                severity: $item.severity,
+                category: $item.category
+              }' >> tmp/review/posted-summary-comments.jsonl
+          done
+
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          result_path = Path("tmp/review/result.json")
+          posted_path = Path("tmp/review/posted-summary-comments.jsonl")
+
+          result = json.loads(result_path.read_text())
+          posted = []
+          if posted_path.exists():
+              posted = [
+                  json.loads(line)
+                  for line in posted_path.read_text().splitlines()
+                  if line.strip()
+              ]
+          result["posted_summary_comments"] = posted
+          result_path.write_text(json.dumps(result, indent=2, ensure_ascii=False))
+          PY
 
       - name: Replace line comments
         env:

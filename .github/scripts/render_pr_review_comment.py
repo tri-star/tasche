@@ -25,6 +25,7 @@ def main() -> None:
     violated_docs = data.get("violated_docs", [])
     referenced_paths = data.get("referenced_paths", [])
     review_comments = data.get("review_comments", [])
+    summary_comments = data.get("summary_comments", [])
 
     lines = [
         MARKER,
@@ -42,6 +43,19 @@ def main() -> None:
     lines.append("")
     lines.append("### Referenced Paths")
     lines.extend([f"- `{path}`" for path in referenced_paths] or ["- None"])
+    lines.append("")
+    lines.append("### Summary Comments")
+    lines.extend(
+        [
+            f"- [{comment['severity']}/{comment['category']}] {comment['body']}"
+            for comment in summary_comments
+            if isinstance(comment, dict)
+            and isinstance(comment.get("severity"), str)
+            and isinstance(comment.get("category"), str)
+            and isinstance(comment.get("body"), str)
+        ]
+        or ["- None"]
+    )
     lines.append("")
     lines.append("### Line Comments")
     lines.append(f"- {len(review_comments)} comment(s) prepared")

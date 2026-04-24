@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tasche - ログイン</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --green:      #7FBF8F;
+    --ivory:      #F7F7EF;
+    --text:       #2C3A33;
+    --text-sub:   #7A8C84;
+    --text-muted: #A8B5AE;
+  }
+
+  html, body { height: 100%; overflow-x: hidden; }
+
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--ivory);
+    color: var(--text);
+    min-height: 100vh;
+    position: relative;
+  }
+
+  /* ── Background blobs (fixed, slice-scaled) ── */
+  .bg-blobs {
+    position: fixed;
+    inset: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+  }
+
+  /* ── Corner illustration wrappers ── */
+  .deco {
+    position: fixed;
+    pointer-events: none;
+    z-index: 1;
+  }
+  /* Each inner SVG fills its wrapper */
+  .deco svg { display: block; width: 100%; height: 100%; }
+
+  /* Bottom-left: clipboard + plant */
+  .deco-bl {
+    bottom: 0; left: 0;
+    width: min(280px, 22vw);
+    height: min(380px, 42vh);
+  }
+  /* Bottom-right: books + pencil */
+  .deco-br {
+    bottom: 0; right: 0;
+    width: min(340px, 26vw);
+    height: min(260px, 30vh);
+  }
+  /* Top-left sparkles */
+  .deco-tl {
+    top: 0; left: 0;
+    width: min(200px, 16vw);
+    height: min(160px, 20vh);
+  }
+  /* Top-right sparkles */
+  .deco-tr {
+    top: 0; right: 0;
+    width: min(200px, 16vw);
+    height: min(160px, 20vh);
+  }
+
+  /* ── Page layout ── */
+  .page {
+    position: relative;
+    z-index: 2;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px;
+  }
+
+  .spacer-top { flex: 1; min-height: 40px; }
+  .spacer-bot { flex: 1; min-height: 40px; }
+
+  .main {
+    width: 100%;
+    max-width: 440px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .logo-icon { width: 68px; height: auto; margin-bottom: 8px; }
+
+  .logo-text {
+    font-family: 'Quicksand', 'Noto Sans JP', sans-serif;
+    font-size: 52px;
+    font-weight: 600;
+    color: var(--green);
+    letter-spacing: 0.01em;
+    line-height: 1;
+    margin-bottom: 32px;
+  }
+
+  .heading {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 18px;
+    letter-spacing: 0.02em;
+  }
+
+  .sub {
+    font-size: 14px;
+    color: var(--text-sub);
+    line-height: 1.8;
+    margin-bottom: 36px;
+  }
+
+  .google-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    width: 320px;
+    max-width: 100%;
+    padding: 16px 24px;
+    background: #fff;
+    border: none;
+    border-radius: 999px;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text);
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(60,80,70,.06), 0 4px 16px rgba(60,80,70,.08);
+    transition: transform .15s ease, box-shadow .15s ease;
+    text-decoration: none;
+    letter-spacing: 0.02em;
+  }
+  .google-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(60,80,70,.08), 0 8px 24px rgba(60,80,70,.12);
+  }
+  .google-btn:active { transform: translateY(0); }
+  .google-icon { width: 22px; height: 22px; flex-shrink: 0; }
+
+  .footer {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    padding: 24px 16px 16px;
+    text-align: center;
+    font-size: 12.5px;
+    color: var(--text-muted);
+  }
+  .footer-links {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+  }
+  .footer-links a { color: var(--text-sub); text-decoration: none; transition: color .15s; }
+  .footer-links a:hover { color: var(--green); }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════
+     1. Background blobs only — slice-scaled SVG
+     ═══════════════════════════════════════════════ -->
+<svg class="bg-blobs" viewBox="0 0 1440 900"
+     preserveAspectRatio="xMidYMid slice" overflow="hidden" aria-hidden="true">
+  <defs>
+    <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%"   stop-color="#C9E4CF" stop-opacity=".75"/>
+      <stop offset="100%" stop-color="#E7F2EA" stop-opacity=".55"/>
+    </linearGradient>
+    <linearGradient id="g2" x1="1" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#D8EADB" stop-opacity=".7"/>
+      <stop offset="100%" stop-color="#EEF6F0" stop-opacity=".5"/>
+    </linearGradient>
+  </defs>
+  <!-- Top-right large blob -->
+  <path d="M1440 0 L1440 360 C1310 380,1190 320,1080 270 C970 220,880 210,800 170
+           C720 130,700 50,790 0 Z" fill="url(#g1)"/>
+  <!-- Top-right inner blob -->
+  <path d="M1440 0 L1440 190 C1360 210,1280 170,1220 130
+           C1160 90,1140 40,1180 0 Z" fill="#B7D8BE" opacity=".35"/>
+  <!-- Top-left blob -->
+  <path d="M0 0 L260 0 C230 70,160 100,90 85 C40 75,10 45,0 90 Z"
+        fill="url(#g2)"/>
+  <!-- Bottom-left blob -->
+  <path d="M0 900 L0 700 C60 680,140 700,220 740
+           C300 780,340 830,320 900 Z" fill="#DCEEDF" opacity=".55"/>
+  <!-- Bottom-right blob -->
+  <path d="M1440 900 L1440 680 C1340 660,1230 700,1140 760
+           C1070 810,1060 870,1100 900 Z" fill="#DCEEDF" opacity=".55"/>
+</svg>
+
+
+<!-- ═══════════════════════════════════════════════
+     2. Bottom-left: plant + clipboard
+     ═══════════════════════════════════════════════ -->
+<div class="deco deco-bl" aria-hidden="true">
+  <svg viewBox="0 0 280 380" fill="none" xmlns="http://www.w3.org/2000/svg">
+
+    <!-- Plant behind clipboard -->
+    <!-- Stem -->
+    <path d="M 80 380 C 78 320, 82 240, 80 100"
+          stroke="#7FA888" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <!-- Leaves alternating -->
+    <path d="M 80 320 Q 30 305, 22 270 Q 62 285, 80 320 Z"
+          fill="#B7D8BE" stroke="#8BB592" stroke-width="1.5"/>
+    <path d="M 80 280 Q 130 265, 138 230 Q 98 245, 80 280 Z"
+          fill="#B7D8BE" stroke="#8BB592" stroke-width="1.5"/>
+    <path d="M 80 230 Q 28 215, 20 178 Q 60 195, 80 230 Z"
+          fill="#C5DEB5" stroke="#8BB592" stroke-width="1.5"/>
+    <path d="M 80 185 Q 132 170, 140 133 Q 100 150, 80 185 Z"
+          fill="#C5DEB5" stroke="#8BB592" stroke-width="1.5"/>
+    <path d="M 80 138 Q 38 124, 34 92 Q 68 106, 80 138 Z"
+          fill="#B7D8BE" stroke="#8BB592" stroke-width="1.5"/>
+    <path d="M 80 100 Q 118 86, 122 58 Q 90 72, 80 100 Z"
+          fill="#B7D8BE" stroke="#8BB592" stroke-width="1.5"/>
+    <!-- Veins -->
+    <path d="M 76 316 Q 50 305, 28 276" stroke="#8BB592" stroke-width="1" fill="none" opacity=".7"/>
+    <path d="M 84 276 Q 110 265, 132 238" stroke="#8BB592" stroke-width="1" fill="none" opacity=".7"/>
+    <path d="M 76 226 Q 50 214, 26 184" stroke="#8BB592" stroke-width="1" fill="none" opacity=".7"/>
+    <path d="M 84 181 Q 112 168, 136 140" stroke="#8BB592" stroke-width="1" fill="none" opacity=".7"/>
+
+    <!-- Clipboard body shadow -->
+    <rect x="60" y="166" width="186" height="248" rx="10" fill="#000" opacity=".05"
+          transform="rotate(-6 60 166) translate(5 10)"/>
+    <!-- Clipboard board -->
+    <g transform="rotate(-6 148 290)">
+      <rect x="60" y="166" width="186" height="248" rx="10"
+            fill="#F4EBD2" stroke="#D6B27C" stroke-width="3"/>
+      <!-- Clip base -->
+      <rect x="117" y="160" width="72" height="28" rx="5"
+            fill="#C8CED1" stroke="#9AA3A8" stroke-width="2"/>
+      <!-- Clip top -->
+      <rect x="130" y="152" width="46" height="18" rx="4"
+            fill="#E0E4E6" stroke="#9AA3A8" stroke-width="2"/>
+      <circle cx="153" cy="175" r="3" fill="#9AA3A8"/>
+
+      <!-- Row 1: checked -->
+      <rect x="80" y="220" width="22" height="22" rx="4"
+            fill="#fff" stroke="#7FBF8F" stroke-width="2.5"/>
+      <path d="M 85 231 L 90 236 L 98 226"
+            stroke="#5FAA78" stroke-width="2.8" fill="none"
+            stroke-linecap="round" stroke-linejoin="round"/>
+      <line x1="112" y1="231" x2="228" y2="231"
+            stroke="#D6B27C" stroke-width="2" stroke-linecap="round" opacity=".6"/>
+
+      <!-- Row 2: checked -->
+      <rect x="80" y="264" width="22" height="22" rx="4"
+            fill="#fff" stroke="#7FBF8F" stroke-width="2.5"/>
+      <path d="M 85 275 L 90 280 L 98 270"
+            stroke="#5FAA78" stroke-width="2.8" fill="none"
+            stroke-linecap="round" stroke-linejoin="round"/>
+      <line x1="112" y1="275" x2="228" y2="275"
+            stroke="#D6B27C" stroke-width="2" stroke-linecap="round" opacity=".6"/>
+
+      <!-- Row 3: unchecked -->
+      <rect x="80" y="308" width="22" height="22" rx="4"
+            fill="#fff" stroke="#7FBF8F" stroke-width="2.5"/>
+      <line x1="112" y1="319" x2="228" y2="319"
+            stroke="#D6B27C" stroke-width="2" stroke-linecap="round" opacity=".6"/>
+
+      <!-- Row 4: unchecked -->
+      <rect x="80" y="352" width="22" height="22" rx="4"
+            fill="#fff" stroke="#7FBF8F" stroke-width="2.5"/>
+      <line x1="112" y1="363" x2="210" y2="363"
+            stroke="#D6B27C" stroke-width="2" stroke-linecap="round" opacity=".6"/>
+    </g>
+
+    <!-- Sparkles near left side -->
+    <path d="M 195 125 C 195 130, 198 133, 203 133 C 198 133, 195 136, 195 141
+             C 195 136, 192 133, 187 133 C 192 133, 195 130, 195 125 Z"
+          fill="#E8B866"/>
+    <path d="M 168 96 C 168 99, 170 101, 173 101 C 170 101, 168 103, 168 106
+             C 168 103, 166 101, 163 101 C 166 101, 168 99, 168 96 Z"
+          fill="#E8B866" opacity=".8"/>
+    <path d="M 230 108 C 230 112, 233 115, 237 115 C 233 115, 230 118, 230 122
+             C 230 118, 227 115, 223 115 C 227 115, 230 112, 230 108 Z"
+          fill="#E8B866" opacity=".7"/>
+  </svg>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════
+     3. Bottom-right: books + pencil + plant
+     ═══════════════════════════════════════════════ -->
+<div class="deco deco-br" aria-hidden="true">
+  <svg viewBox="0 0 340 260" fill="none" xmlns="http://www.w3.org/2000/svg">
+
+    <!-- Small plant behind books -->
+    <path d="M 290 260 C 288 220, 292 170, 290 90"
+          stroke="#7FA888" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <path d="M 290 220 Q 252 208, 246 180 Q 274 192, 290 220 Z"
+          fill="#B7D8BE" stroke="#8BB592" stroke-width="1.5"/>
+    <path d="M 290 185 Q 328 173, 334 145 Q 306 157, 290 185 Z"
+          fill="#C5DEB5" stroke="#8BB592" stroke-width="1.5"/>
+    <path d="M 290 148 Q 258 136, 254 108 Q 278 120, 290 148 Z"
+          fill="#B7D8BE" stroke="#8BB592" stroke-width="1.5"/>
+    <path d="M 290 112 Q 320 100, 324 74 Q 300 86, 290 112 Z"
+          fill="#C5DEB5" stroke="#8BB592" stroke-width="1.5"/>
+
+    <!-- Bottom book: olive green -->
+    <rect x="6" y="6" width="262" height="44" rx="4" fill="#000" opacity=".06"
+          transform="translate(4 212)"/>
+    <rect x="0" y="0" width="262" height="44" rx="4"
+          fill="#8BB58E" stroke="#6A9574" stroke-width="2.5"
+          transform="translate(4 212)"/>
+    <rect x="10" y="6" width="250" height="4" fill="#F5F0DE"
+          transform="translate(4 212)"/>
+    <rect x="10" y="34" width="250" height="4" fill="#F5F0DE"
+          transform="translate(4 212)"/>
+    <rect x="100" y="18" width="62" height="8" rx="2" fill="#F5F0DE" opacity=".85"
+          transform="translate(4 212)"/>
+
+    <!-- Middle book: tan -->
+    <rect x="6" y="6" width="224" height="44" rx="4" fill="#000" opacity=".06"
+          transform="translate(22 162)"/>
+    <rect x="0" y="0" width="224" height="44" rx="4"
+          fill="#D4B585" stroke="#A88860" stroke-width="2.5"
+          transform="translate(22 162)"/>
+    <rect x="8" y="6" width="212" height="4" fill="#F5F0DE"
+          transform="translate(22 162)"/>
+    <rect x="8" y="34" width="212" height="4" fill="#F5F0DE"
+          transform="translate(22 162)"/>
+    <rect x="82" y="18" width="60" height="8" rx="2" fill="#F5F0DE" opacity=".85"
+          transform="translate(22 162)"/>
+
+    <!-- Top book: light green, slight tilt -->
+    <g transform="translate(46 112) rotate(-3 90 22)">
+      <rect x="4" y="6" width="186" height="44" rx="4" fill="#000" opacity=".06"/>
+      <rect x="0" y="0" width="186" height="44" rx="4"
+            fill="#A8C495" stroke="#82A678" stroke-width="2.5"/>
+      <rect x="8" y="6" width="174" height="4" fill="#F5F0DE"/>
+      <rect x="8" y="34" width="174" height="4" fill="#F5F0DE"/>
+      <rect x="66" y="18" width="52" height="8" rx="2" fill="#F5F0DE" opacity=".85"/>
+    </g>
+
+    <!-- Pencil on top book -->
+    <g transform="translate(24 88) rotate(-18 100 8)">
+      <rect x="3" y="5" width="224" height="16" rx="3" fill="#000" opacity=".08"/>
+      <rect x="0" y="0" width="184" height="16" rx="2"
+            fill="#E8B762" stroke="#B88A3D" stroke-width="2"/>
+      <line x1="0" y1="5" x2="184" y2="5" stroke="#C99744" stroke-width="1" opacity=".6"/>
+      <line x1="0" y1="11" x2="184" y2="11" stroke="#C99744" stroke-width="1" opacity=".6"/>
+      <!-- Ferrule -->
+      <rect x="184" y="0" width="16" height="16"
+            fill="#D4C8B8" stroke="#A89B88" stroke-width="2"/>
+      <line x1="188" y1="2" x2="188" y2="14" stroke="#A89B88" stroke-width=".8"/>
+      <line x1="192" y1="2" x2="192" y2="14" stroke="#A89B88" stroke-width=".8"/>
+      <!-- Eraser -->
+      <rect x="200" y="0" width="22" height="16" rx="2"
+            fill="#E09188" stroke="#B86E66" stroke-width="2"/>
+      <!-- Tip -->
+      <path d="M0 0 L-18 8 L0 16 Z"
+            fill="#F0D9A8" stroke="#B88A3D" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M-6 4 L-18 8 L-6 12 Z" fill="#3A3530"/>
+    </g>
+
+    <!-- Sparkles -->
+    <path d="M 22 65 C 22 70, 25 73, 30 73 C 25 73, 22 76, 22 81
+             C 22 76, 19 73, 14 73 C 19 73, 22 70, 22 65 Z"
+          fill="#E8B866"/>
+    <path d="M 48 40 C 48 43, 50 45, 53 45 C 50 45, 48 47, 48 50
+             C 48 47, 46 45, 43 45 C 46 45, 48 43, 48 40 Z"
+          fill="#E8B866" opacity=".75"/>
+    <path d="M 8 100 C 8 103, 10 105, 13 105 C 10 105, 8 107, 8 110
+             C 8 107, 6 105, 3 105 C 6 105, 8 103, 8 100 Z"
+          fill="#E8B866" opacity=".8"/>
+  </svg>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════
+     4. Top-left sparkles
+     ═══════════════════════════════════════════════ -->
+<div class="deco deco-tl" aria-hidden="true">
+  <svg viewBox="0 0 200 160" fill="none">
+    <path d="M 50 110 C 50 116, 54 120, 60 120 C 54 120, 50 124, 50 130
+             C 50 124, 46 120, 40 120 C 46 120, 50 116, 50 110 Z"
+          fill="#E8B866" opacity=".75"/>
+    <path d="M 80 80 C 80 84, 82 86, 86 86 C 82 86, 80 88, 80 92
+             C 80 88, 78 86, 74 86 C 78 86, 80 84, 80 80 Z"
+          fill="#E8B866" opacity=".65"/>
+    <path d="M 30 60 C 30 63, 32 65, 35 65 C 32 65, 30 67, 30 70
+             C 30 67, 28 65, 25 65 C 28 65, 30 63, 30 60 Z"
+          fill="#E8B866" opacity=".7"/>
+  </svg>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════
+     5. Top-right sparkles
+     ═══════════════════════════════════════════════ -->
+<div class="deco deco-tr" aria-hidden="true">
+  <svg viewBox="0 0 200 160" fill="none">
+    <path d="M 150 110 C 150 116, 154 120, 160 120 C 154 120, 150 124, 150 130
+             C 150 124, 146 120, 140 120 C 146 120, 150 116, 150 110 Z"
+          fill="#E8B866" opacity=".8"/>
+    <path d="M 120 75 C 120 79, 122 81, 126 81 C 122 81, 120 83, 120 87
+             C 120 83, 118 81, 114 81 C 118 81, 120 79, 120 75 Z"
+          fill="#E8B866" opacity=".65"/>
+    <path d="M 170 55 C 170 58, 172 60, 175 60 C 172 60, 170 62, 170 65
+             C 170 62, 168 60, 165 60 C 168 60, 170 58, 170 55 Z"
+          fill="#E8B866" opacity=".7"/>
+  </svg>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════
+     6. Main content
+     ═══════════════════════════════════════════════ -->
+<div class="page">
+  <div class="spacer-top"></div>
+
+  <div class="main">
+    <!-- Bag icon -->
+    <svg class="logo-icon" viewBox="0 0 80 80" fill="none" aria-hidden="true">
+      <path d="M28 32 C28 20,52 20,52 32"
+            stroke="#7FBF8F" stroke-width="3.5" stroke-linecap="round"/>
+      <path d="M18 30 L62 30 C66 30,68 33,68 37 L66 66
+               C66 70,63 72,59 72 L21 72 C17 72,14 70,14 66 L12 37
+               C12 33,14 30,18 30 Z"
+            fill="#B7D8BE" stroke="#7FBF8F" stroke-width="3"/>
+      <path d="M28 30 L52 30 L52 44 C52 47,49 50,46 50
+               L34 50 C31 50,28 47,28 44 Z"
+            fill="#E7F2EA" stroke="#7FBF8F" stroke-width="2.5"/>
+      <circle cx="40" cy="48" r="2.5" fill="#7FBF8F"/>
+    </svg>
+
+    <div class="logo-text">Tasche</div>
+
+    <p class="sub">
+      Tasche をご利用いただくには<br>
+      Google アカウントでログインしてください。
+    </p>
+
+    <a href="#" class="google-btn" role="button">
+      <svg class="google-icon" viewBox="0 0 48 48" aria-hidden="true">
+        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+      </svg>
+      Google でログイン
+    </a>
+  </div>
+
+  <div class="spacer-bot"></div>
+
+  <footer class="footer">
+    <div class="footer-links">
+      <a href="#">プライバシーポリシー</a>
+      <a href="#">利用規約</a>
+      <a href="#">お問い合わせ</a>
+    </div>
+    <div style="color:var(--text-muted)">© 2026 Tasche</div>
+  </footer>
+</div>
+
+</body>
+</html>

@@ -9,7 +9,7 @@
 | 項目 | 仕様 |
 |------|------|
 | ベースURL | `/api` |
-| 認証方式 | JWT Bearer Token（Auth0発行） |
+| 認証方式 | JWT Bearer Token（自前発行・Google OAuth 2.0 連携） |
 | データ形式 | JSON |
 | 文字コード | UTF-8 |
 
@@ -32,16 +32,18 @@ SPAでのセキュリティを考慮し、以下の方式を採用します：
 
 **Cookie設定（Refresh Token用）:**
 ```
-Set-Cookie: refresh_token=<token>; HttpOnly; Secure; SameSite=Strict; Path=/api/auth; Max-Age=604800
+Set-Cookie: refresh_token=<token>; HttpOnly; Secure; SameSite=Lax; Path=/api/auth; Max-Age=604800
 ```
 
 | 属性 | 値 | 説明 |
 |------|------|------|
 | HttpOnly | true | JavaScriptからアクセス不可 |
-| Secure | true | HTTPS接続時のみ送信 |
-| SameSite | Strict | 同一サイトからのリクエストのみ送信 |
+| Secure | 環境依存 | 本番環境: true（HTTPS時のみ送信） / ローカル・E2E等の開発環境: false |
+| SameSite | Lax | OAuth リダイレクト時も Cookie を送信可能にする |
 | Path | /api/auth | 認証APIのみにCookieを送信 |
 | Max-Age | 604800 | 7日間有効 |
+
+**Secure 属性の切り替え**: `COOKIE_SECURE` 環境変数で制御。ローカル開発と E2E テスト環境では `false`、本番環境では `true` とする。
 
 ### 共通レスポンス形式
 
@@ -80,9 +82,11 @@ Set-Cookie: refresh_token=<token>; HttpOnly; Secure; SameSite=Strict; Path=/api/
 
 | カテゴリ | メソッド | エンドポイント | 認証 | 説明 |
 |----------|----------|----------------|------|------|
-| 認証 | POST | /api/auth/callback | 不要 | Auth0コールバック処理 |
+| 認証 | GET  | /api/auth/google/authorize | 不要 | Google 認可URLを生成して返却（state/PKCE付き） |
+| 認証 | POST | /api/auth/google/callback | 不要 | Google 認可コードの交換・JWT発行 |
 | 認証 | POST | /api/auth/refresh | 不要 | トークンリフレッシュ |
 | 認証 | POST | /api/auth/logout | 要 | ログアウト |
+| 認証 | POST | /api/auth/stub-login | 不要 | スタブ用ログイン（`AUTH_STUB_ENABLED=true` かつ非本番環境のみ有効） |
 | ユーザー | GET | /api/users/me | 要 | 現在のユーザー情報取得 |
 | タスク | GET | /api/tasks | 要 | タスク一覧取得 |
 | タスク | POST | /api/tasks | 要 | タスク作成 |
@@ -100,16 +104,50 @@ Set-Cookie: refresh_token=<token>; HttpOnly; Secure; SameSite=Strict; Path=/api/
 
 ## 認証 API
 
-### POST /api/auth/callback
+本プロジェクトでは **BFF 型 Google OAuth 2.0 構成 + PKCE** を採用します。
+フロントエンドが `code_verifier` を生成し、`code_challenge` を含む認可URLをリクエスト→Googleから受け取った `code` をバックエンドに送信→バックエンドが `code_verifier` と共に Google のトークンエンドポイントでトークン交換を行い、ID Token を検証して自前の JWT を発行します。Google の access/refresh トークンはバックエンド内にのみ保持し、フロントエンドには公開しません。
 
-Auth0からのコールバックを処理し、アプリケーション用のトークンを発行します。
+### GET /api/auth/google/authorize
+
+Google OAuth 2.0 認可 URL を生成して返却します。
+
+#### クエリパラメータ
+
+| パラメータ | 型 | 必須 | 説明 |
+|------------|------|------|------|
+| code_challenge | string | Yes | PKCE の code_challenge（SHA256 + Base64URL） |
+| code_challenge_method | string | No | `S256` 固定（省略時は `S256`） |
+| redirect_uri | string | Yes | フロントエンドのコールバック URL |
+
+#### レスポンス（200 OK）
+
+```json
+{
+  "data": {
+    "authorization_url": "https://accounts.google.com/o/oauth2/v2/auth?client_id=...&redirect_uri=...&response_type=code&scope=openid+email+profile&state=...&code_challenge=...&code_challenge_method=S256",
+    "state": "opaque_state_value"
+  }
+}
+```
+
+**注**:
+- `state` は CSRF 対策としてフロントエンドで保持し、コールバック時に検証する
+- `code_challenge` はフロントで生成した `code_verifier` から SHA256 + Base64URL で算出した値
+
+---
+
+### POST /api/auth/google/callback
+
+Google OAuth 2.0 の認可コードを受け取り、`code_verifier` と共にトークン交換を実施し、自前の JWT を発行します。
 
 #### リクエスト
 
 ```json
 {
-  "code": "authorization_code_from_auth0",
-  "redirect_uri": "https://example.com/callback"
+  "code": "authorization_code_from_google",
+  "code_verifier": "pkce_code_verifier_from_frontend",
+  "redirect_uri": "https://example.com/callback",
+  "state": "opaque_state_value"
 }
 ```
 
@@ -121,17 +159,32 @@ Auth0からのコールバックを処理し、アプリケーション用のト
   "data": {
     "access_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
     "token_type": "Bearer",
-    "expires_in": 3600
+    "expires_in": 900
   }
 }
 ```
 
 **レスポンスヘッダー（Refresh Token）:**
 ```
-Set-Cookie: refresh_token=<token>; HttpOnly; Secure; SameSite=Strict; Path=/api/auth; Max-Age=604800
+Set-Cookie: refresh_token=<token>; HttpOnly; Secure; SameSite=Lax; Path=/api/auth; Max-Age=604800
 ```
 
-**注**: Refresh TokenはHttpOnly Cookieとして設定され、レスポンスボディには含まれません。
+**注**:
+- access_token は自前発行 JWT（有効期限15分）、フロントのインメモリ保管を想定
+- Refresh Token は不透明トークン（DB で管理・ローテーション）、HttpOnly Cookie として設定
+- `Secure` 属性は環境依存（ローカル/E2E は false、本番は true）
+- Google の access/refresh/id_token はバックエンドで一時利用のみとし、フロントには露出させない
+
+#### エラーレスポンス（400 Bad Request）
+
+```json
+{
+  "error": {
+    "code": "INVALID_AUTHORIZATION_CODE",
+    "message": "認可コードの検証に失敗しました"
+  }
+}
+```
 
 ---
 
@@ -155,14 +208,14 @@ Cookie: refresh_token=<token>
   "data": {
     "access_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
     "token_type": "Bearer",
-    "expires_in": 3600
+    "expires_in": 900
   }
 }
 ```
 
 **レスポンスヘッダー（Refresh Token Rotation）:**
 ```
-Set-Cookie: refresh_token=<new_token>; HttpOnly; Secure; SameSite=Strict; Path=/api/auth; Max-Age=604800
+Set-Cookie: refresh_token=<new_token>; HttpOnly; Secure; SameSite=Lax; Path=/api/auth; Max-Age=604800
 ```
 
 **注**: セキュリティ向上のため、Refresh Token Rotation（リフレッシュ時に新しいトークンを発行）を実装します。
@@ -204,8 +257,52 @@ Cookie: refresh_token=<token>
 
 **レスポンスヘッダー（Cookie削除）:**
 ```
-Set-Cookie: refresh_token=; HttpOnly; Secure; SameSite=Strict; Path=/api/auth; Max-Age=0
+Set-Cookie: refresh_token=; HttpOnly; Secure; SameSite=Lax; Path=/api/auth; Max-Age=0
 ```
+
+---
+
+### POST /api/auth/stub-login
+
+**E2E テスト / ローカル開発用のスタブログインエンドポイント**。
+
+本エンドポイントは `AUTH_STUB_ENABLED=true` **かつ** 非本番環境（`APP_ENV != production`）の場合のみ有効。
+有効判定には専用の判定関数を用意し、本番環境では環境変数の値に関わらず常に無効とする。
+
+#### リクエスト
+
+```json
+{
+  "email": "test-user@example.com",
+  "name": "テストユーザー"
+}
+```
+
+#### レスポンス（200 OK）
+
+**レスポンスボディ:**
+```json
+{
+  "data": {
+    "access_token": "eyJhbGciOiJIUzI1NiI...",
+    "token_type": "Bearer",
+    "expires_in": 900
+  }
+}
+```
+
+**レスポンスヘッダー（Refresh Token）:**
+```
+Set-Cookie: refresh_token=<token>; HttpOnly; SameSite=Lax; Path=/api/auth; Max-Age=604800
+```
+
+**注**:
+- スタブ発行 JWT は **HS256** で署名（テスト用シークレット）
+- 認証基盤では、通常の Google ID Token / 自前 RS256 JWT 検証を試みた後、スタブ有効時のみ HS256 の検証にフォールバック
+
+#### エラーレスポンス（404 Not Found）
+
+本番環境や `AUTH_STUB_ENABLED=false` の場合は、エンドポイント自体が存在しないように 404 を返す。
 
 ---
 
@@ -1018,6 +1115,8 @@ monday | tuesday | wednesday | thursday | friday | saturday | sunday
 | INVALID_TOKEN | 401 | トークンが無効です |
 | TOKEN_EXPIRED | 401 | トークンの有効期限が切れています |
 | INVALID_REFRESH_TOKEN | 401 | リフレッシュトークンが無効です |
+| INVALID_AUTHORIZATION_CODE | 400 | Google OAuth の認可コード検証に失敗しました |
+| INVALID_STATE | 400 | OAuth の state 検証に失敗しました（CSRF対策） |
 | FORBIDDEN | 403 | このリソースへのアクセス権限がありません |
 | TASK_NOT_FOUND | 404 | タスクが見つかりません |
 | WEEK_NOT_FOUND | 404 | 週データが見つかりません |
@@ -1034,3 +1133,4 @@ monday | tuesday | wednesday | thursday | friday | saturday | sunday
 | バージョン | 日付 | 内容 |
 |------------|------|------|
 | 1.0.0 | 2024-01-15 | 初版作成 |
+| 1.1.0 | 2026-04-23 | 認証を Auth0 から Google OAuth 2.0 直接連携（BFF型 + PKCE）に変更。`/api/auth/google/authorize`, `/api/auth/google/callback`, `/api/auth/stub-login` を追加。Cookie の SameSite を Strict→Lax に変更、Secure は環境依存に。 |

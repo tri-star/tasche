@@ -1,0 +1,26 @@
+---
+name: TCH-26 認証アーキテクチャの設計決定
+description: BFF型 Google OAuth 2.0 認証（FastAPI + Authlib）の主要設計決定と確認済みパターン
+type: project
+---
+
+BFF 型 Google OAuth 2.0 認証を実装（TCH-26）。FastAPI + Authlib + python-jose + SQLAlchemy (async)。
+
+主な設計決定:
+- フロントエンド → バックエンドが code + code_verifier を受け取り Google と交換する BFF 型
+- 自前 JWT (HS256, 15分) + 不透明 Refresh Token (DB 管理, HttpOnly Cookie, ローテーション)
+- `is_auth_stub_enabled()` が本番安全性ゲート（APP_ENV=production で強制 false）
+- スタブ JWT には `stub: True` クレームを付けて本番 JWT と識別
+- ULID に `usr_` / `rft_` prefix を付けてエンティティ ID に使用（String(30) に収まる設計）
+- Refresh Token: 生トークン非保存 (SHA-256 ハッシュのみ DB 保存)、再利用検知時に全トークン一斉 revoke
+- `rotated_from_id` / `rotated_to_id` で双方向ローテーション連鎖を記録
+
+**Why:** セキュリティ要件（HttpOnly Cookie, PKCE, トークン再利用検知）と MVP のシンプルさのバランスを取った設計。
+
+**How to apply:** 今後の認証関連変更では上記パターンを尊重する。スタブ認証の追加は必ず is_auth_stub_enabled() ガードを通すこと。
+
+既知の問題（レビューで指摘）:
+- services/user.py の create_user / update_user 内に db.commit() があり、外側トランザクションの原子性を壊す（Critical）
+- core/oauth.py の JWKS キャッシュがモジュール変数で asyncio.Lock なし（Critical）
+- cookie.py の REFRESH_TOKEN_MAX_AGE が config.py の jwt_refresh_token_expires_seconds と二重管理
+- get_or_create_user_by_google_sub が lookup→insert パターンで UniqueViolation を未ハンドル

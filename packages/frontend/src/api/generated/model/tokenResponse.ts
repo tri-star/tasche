@@ -10,6 +10,6 @@
  */
 export interface TokenResponse {
   access_token: string;
-  token_type?: string;
+  token_type?: 'Bearer';
   expires_in: number;
 }

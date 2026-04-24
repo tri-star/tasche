@@ -13,6 +13,14 @@ export default defineConfig({
       clean: true,
       prettier: false,
       biome: false,
+      override: {
+        // orval が生成する API クライアントの fetch を authFetch 経由にする
+        // これにより Authorization ヘッダ付与・401 自動リトライが全 API に適用される
+        mutator: {
+          path: "./src/auth/authFetch.ts",
+          name: "authFetch",
+        },
+      },
       mock: {
         type: "msw",
         delay: 0,

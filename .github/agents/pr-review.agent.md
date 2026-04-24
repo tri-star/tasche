@@ -1,7 +1,7 @@
 ---
 name: pr-review
 description: Pull Request の安全な即時マージ可否を判定するための review agent
-model: gpt-5.4
+model: GPT-5.4 (copilot)
 ---
 
 # PR Review Agent
@@ -94,7 +94,7 @@ CI workflow では review context は事前生成済みであり、changed file 
 ## line comment の方針
 
 - 行番号とファイルパスを特定できる指摘だけを `review_comments` に含めてください
-- 行番号を特定できない指摘は `review_comments` に無理に入れず、`reasons` または summary comment 向けの文章に含めてください
+- 行番号を特定できない指摘は `review_comments` に無理に入れず、`summary_comments` に含めてください
 - `severity` は `blocking` または `non-blocking` のいずれかです
 
 ## 出力形式
@@ -116,6 +116,13 @@ CI workflow では review context は事前生成済みであり、changed file 
       "category": "bug | security | performance | readability | maintainability | test",
       "body": "string"
     }
+  ],
+  "summary_comments": [
+    {
+      "severity": "blocking | non-blocking",
+      "category": "bug | security | performance | readability | maintainability | test",
+      "body": "string"
+    }
   ]
 }
 ```
@@ -129,6 +136,8 @@ CI workflow では review context は事前生成済みであり、changed file 
 - `referenced_paths` には、実際に参照したファイルだけを入れる
 - `review_comments` は 0 件でもよい
 - `review_comments` の各要素は、実際に path と line を特定できるものだけにする
+- `summary_comments` は 0 件でもよい
+- 行番号を特定できないが PR に残すべき指摘は `summary_comments` に含める
 
 ## 判定の優先順位
 
