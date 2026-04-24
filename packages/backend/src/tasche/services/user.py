@@ -4,6 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from ulid import ULID
 
+from tasche.core.exceptions import InvalidAuthorizationCodeError
 from tasche.models.user import User
 
 
@@ -126,8 +127,10 @@ async def get_or_create_user_by_google_sub(
 
     # 2) email で lookup（null google_sub ユーザーに紐付け）
     user = await get_user_by_email(db, email)
-    if user and user.google_sub is None:
-        return await update_user(db, user, name=name, picture=picture, google_sub=google_sub)
+    if user:
+        if user.google_sub is None:
+            return await update_user(db, user, name=name, picture=picture, google_sub=google_sub)
+        raise InvalidAuthorizationCodeError("このメールアドレスは別の Google アカウントと紐付いています")
 
     # 3) 新規ユーザーを作成
     user_id = _generate_user_id()

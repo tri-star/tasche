@@ -258,8 +258,10 @@ class TestGoogleCallback:
         # 既存ユーザーの google_sub は上書きされていないことを確認
         await db_session.refresh(existing_user)
         assert existing_user.google_sub == "old_google_sub"
-        # 新しい google_sub でのログインは別ユーザー作成を試みるため DB 制約違反となる
-        assert response.status_code != 200
+        # 別の Google アカウントが紐付いている場合は 400 エラーを返す
+        assert response.status_code == 400
+        data = response.json()
+        assert data["error"]["code"] == "INVALID_AUTHORIZATION_CODE"
 
     async def test_callback_google_error_returns_invalid_code(
         self,
