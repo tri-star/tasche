@@ -5,6 +5,10 @@ import json
 from pathlib import Path
 
 
+SEVERITIES = {"blocking", "non-blocking"}
+CATEGORIES = {"bug", "security", "performance", "readability", "maintainability", "test"}
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--input", required=True)
@@ -67,6 +71,10 @@ def normalize(data: dict | None) -> dict:
     if not isinstance(review_comments, list):
         review_comments = []
 
+    summary_comments = data.get("summary_comments", [])
+    if not isinstance(summary_comments, list):
+        summary_comments = []
+
     normalized_comments = []
     for item in review_comments:
         if not isinstance(item, dict):
@@ -80,9 +88,9 @@ def normalize(data: dict | None) -> dict:
             continue
         if not isinstance(line, int) or line <= 0:
             continue
-        if severity not in {"blocking", "non-blocking"}:
+        if severity not in SEVERITIES:
             continue
-        if not isinstance(category, str) or not category:
+        if category not in CATEGORIES:
             continue
         if not isinstance(body, str) or not body:
             continue
@@ -96,6 +104,27 @@ def normalize(data: dict | None) -> dict:
             }
         )
 
+    normalized_summary_comments = []
+    for item in summary_comments:
+        if not isinstance(item, dict):
+            continue
+        severity = item.get("severity")
+        category = item.get("category")
+        body = item.get("body")
+        if severity not in SEVERITIES:
+            continue
+        if category not in CATEGORIES:
+            continue
+        if not isinstance(body, str) or not body:
+            continue
+        normalized_summary_comments.append(
+            {
+                "severity": severity,
+                "category": category,
+                "body": body,
+            }
+        )
+
     return {
         "verdict": verdict,
         "confidence": confidence,
@@ -103,6 +132,8 @@ def normalize(data: dict | None) -> dict:
         "violated_docs": violated_docs,
         "referenced_paths": referenced_paths,
         "review_comments": normalized_comments,
+        "summary_comments": normalized_summary_comments,
+        "posted_summary_comments": [],
     }
 
 
@@ -114,6 +145,8 @@ def fallback(reason: str) -> dict:
         "violated_docs": [],
         "referenced_paths": [],
         "review_comments": [],
+        "summary_comments": [],
+        "posted_summary_comments": [],
     }
 
 
