@@ -1,7 +1,7 @@
 import { useAtom, useAtomValue, useSetAtom } from "jotai"
 import { useNavigate } from "react-router-dom"
 import { accessTokenAtom, authStatusAtom, currentUserAtom } from "./atoms"
-import { createPkcePair, createState } from "./pkce"
+import { createPkcePair } from "./pkce"
 import { clearPendingOAuth, readPendingOAuth, savePendingOAuth } from "./storage"
 import type { AuthUser, TokenResponse } from "./types"
 
@@ -33,15 +33,7 @@ export function useAuth() {
    */
   async function startGoogleLogin(): Promise<void> {
     const { codeVerifier, codeChallenge, codeChallengeMethod } = await createPkcePair()
-    const state = createState()
     const redirectUri = `${window.location.origin}/auth/callback`
-
-    savePendingOAuth({
-      state,
-      codeVerifier,
-      redirectUri,
-      createdAt: Date.now(),
-    })
 
     const params = new URLSearchParams({
       code_challenge: codeChallenge,
@@ -58,8 +50,16 @@ export function useAuth() {
     }
 
     const json = await res.json()
-    const authorizationUrl = (json as { data: { authorization_url: string } }).data
-      .authorization_url
+    const { authorization_url: authorizationUrl, state } = (
+      json as { data: { authorization_url: string; state: string } }
+    ).data
+
+    savePendingOAuth({
+      state,
+      codeVerifier,
+      redirectUri,
+      createdAt: Date.now(),
+    })
 
     window.location.assign(authorizationUrl)
   }

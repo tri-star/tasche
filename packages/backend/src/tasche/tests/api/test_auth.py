@@ -198,6 +198,69 @@ class TestGoogleCallback:
         await db_session.refresh(existing_user)
         assert existing_user.google_sub == "google_sub_existing"
 
+    async def test_callback_does_not_overwrite_existing_google_sub(
+        self,
+        client: AsyncClient,
+        db_session,
+        rsa_private_key_pem: str,
+        test_jwks: dict,
+    ):
+        """正常系: 既に google_sub が設定されているユーザーへの上書きを防ぐことを確認.
+
+        同一 email でも google_sub が既に存在する場合は自動紐付けを行わず、
+        新規ユーザーを作成する（セキュリティ上の理由）。
+        """
+        from ulid import ULID
+
+        from tasche.models.user import User
+
+        # 既存ユーザー（既に別の google_sub が設定済み）を作成
+        existing_user = User(
+            id=f"usr_{ULID()}",
+            email="linked@example.com",
+            name="Linked User",
+            google_sub="old_google_sub",
+        )
+        db_session.add(existing_user)
+        await db_session.commit()
+
+        id_token = make_google_id_token(
+            rsa_private_key_pem,
+            sub="new_google_sub",
+            email="linked@example.com",
+            aud="test_client_id",
+        )
+
+        with (
+            patch.object(
+                settings, "google_oauth_redirect_uris", "http://localhost:5173/auth/callback"
+            ),
+            patch.object(settings, "google_oauth_client_id", "test_client_id"),
+            respx.mock as mock,
+        ):
+            mock.post("https://oauth2.googleapis.com/token").mock(
+                return_value=Response(200, json=_mock_google_token_success(id_token))
+            )
+            mock.get("https://www.googleapis.com/oauth2/v3/certs").mock(
+                return_value=Response(200, json=test_jwks)
+            )
+
+            response = await client.post(
+                "/api/auth/google/callback",
+                json={
+                    "code": "auth_code_dummy",
+                    "code_verifier": "code_verifier_dummy",
+                    "redirect_uri": "http://localhost:5173/auth/callback",
+                    "state": "state_dummy",
+                },
+            )
+
+        # 既存ユーザーの google_sub は上書きされていないことを確認
+        await db_session.refresh(existing_user)
+        assert existing_user.google_sub == "old_google_sub"
+        # 新しい google_sub でのログインは別ユーザー作成を試みるため DB 制約違反となる
+        assert response.status_code != 200
+
     async def test_callback_google_error_returns_invalid_code(
         self,
         client: AsyncClient,

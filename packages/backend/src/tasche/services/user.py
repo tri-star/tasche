@@ -126,7 +126,7 @@ async def get_or_create_user_by_google_sub(
 
     # 2) email で lookup（null google_sub ユーザーに紐付け）
     user = await get_user_by_email(db, email)
-    if user:
+    if user and user.google_sub is None:
         return await update_user(db, user, name=name, picture=picture, google_sub=google_sub)
 
     # 3) 新規ユーザーを作成
