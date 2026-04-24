@@ -130,7 +130,9 @@ async def get_or_create_user_by_google_sub(
     if user:
         if user.google_sub is None:
             return await update_user(db, user, name=name, picture=picture, google_sub=google_sub)
-        raise InvalidAuthorizationCodeError("このメールアドレスは別の Google アカウントと紐付いています")
+        raise InvalidAuthorizationCodeError(
+            "このメールアドレスは別の Google アカウントと紐付いています"
+        )
 
     # 3) 新規ユーザーを作成
     user_id = _generate_user_id()
