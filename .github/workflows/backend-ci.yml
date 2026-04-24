@@ -69,10 +69,8 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U tasche -d tasche_test"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 10
+          --health-cmd "pg_isready -U tasche -d tasche_test" --health-interval
+          10s --health-timeout 5s --health-retries 10
 
     env:
       DATABASE_URL: postgresql+asyncpg://tasche:tasche_dev_password@localhost:5432/tasche_test
@@ -115,4 +113,4 @@ jobs:
           exit 1
 
       - name: Run tests
-        run: uv run pytest
+        run: timeout 10m uv run pytest
