@@ -50,9 +50,7 @@ class Settings(BaseSettings):
 
         if is_auth_stub_enabled(self.app_env, self.auth_stub_enabled):
             if not self.auth_stub_jwt_secret:
-                raise ValueError(
-                    "AUTH_STUB_JWT_SECRET must be set when AUTH_STUB_ENABLED=true"
-                )
+                raise ValueError("AUTH_STUB_JWT_SECRET must be set when AUTH_STUB_ENABLED=true")
         return self
 
     @property
