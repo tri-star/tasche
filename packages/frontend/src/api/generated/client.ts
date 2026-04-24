@@ -50,6 +50,7 @@ import type {
   APIResponseWeekResponse
 } from './model';
 
+import { authFetch } from '../../auth/authFetch';
 /**
  * Google 認可 URL を組み立てて返す.
 
@@ -98,20 +99,14 @@ export const getGoogleAuthorizeApiAuthGoogleAuthorizeGetUrl = (params: GoogleAut
 
 export const googleAuthorizeApiAuthGoogleAuthorizeGet = async (params: GoogleAuthorizeApiAuthGoogleAuthorizeGetParams, options?: RequestInit): Promise<googleAuthorizeApiAuthGoogleAuthorizeGetResponse> => {
   
-  const res = await fetch(getGoogleAuthorizeApiAuthGoogleAuthorizeGetUrl(params),
+  return authFetch<googleAuthorizeApiAuthGoogleAuthorizeGetResponse>(getGoogleAuthorizeApiAuthGoogleAuthorizeGetUrl(params),
   {      
     ...options,
     method: 'GET'
     
     
   }
-)
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-  
-  const data: googleAuthorizeApiAuthGoogleAuthorizeGetResponse['data'] = body ? JSON.parse(body) : {}
-  return { data, status: res.status, headers: res.headers } as googleAuthorizeApiAuthGoogleAuthorizeGetResponse
-}
+);}
 
 
 
@@ -159,7 +154,7 @@ export const getGoogleCallbackApiAuthGoogleCallbackPostUrl = () => {
 
 export const googleCallbackApiAuthGoogleCallbackPost = async (googleCallbackRequest: GoogleCallbackRequest, options?: RequestInit): Promise<googleCallbackApiAuthGoogleCallbackPostResponse> => {
   
-  const res = await fetch(getGoogleCallbackApiAuthGoogleCallbackPostUrl(),
+  return authFetch<googleCallbackApiAuthGoogleCallbackPostResponse>(getGoogleCallbackApiAuthGoogleCallbackPostUrl(),
   {      
     ...options,
     method: 'POST',
@@ -167,13 +162,7 @@ export const googleCallbackApiAuthGoogleCallbackPost = async (googleCallbackRequ
     body: JSON.stringify(
       googleCallbackRequest,)
   }
-)
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-  
-  const data: googleCallbackApiAuthGoogleCallbackPostResponse['data'] = body ? JSON.parse(body) : {}
-  return { data, status: res.status, headers: res.headers } as googleCallbackApiAuthGoogleCallbackPostResponse
-}
+);}
 
 
 
@@ -218,20 +207,14 @@ export const getRefreshApiAuthRefreshPostUrl = () => {
 
 export const refreshApiAuthRefreshPost = async ( options?: RequestInit): Promise<refreshApiAuthRefreshPostResponse> => {
   
-  const res = await fetch(getRefreshApiAuthRefreshPostUrl(),
+  return authFetch<refreshApiAuthRefreshPostResponse>(getRefreshApiAuthRefreshPostUrl(),
   {      
     ...options,
     method: 'POST'
     
     
   }
-)
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-  
-  const data: refreshApiAuthRefreshPostResponse['data'] = body ? JSON.parse(body) : {}
-  return { data, status: res.status, headers: res.headers } as refreshApiAuthRefreshPostResponse
-}
+);}
 
 
 
@@ -278,20 +261,14 @@ export const getLogoutApiAuthLogoutPostUrl = () => {
 
 export const logoutApiAuthLogoutPost = async ( options?: RequestInit): Promise<logoutApiAuthLogoutPostResponse> => {
   
-  const res = await fetch(getLogoutApiAuthLogoutPostUrl(),
+  return authFetch<logoutApiAuthLogoutPostResponse>(getLogoutApiAuthLogoutPostUrl(),
   {      
     ...options,
     method: 'POST'
     
     
   }
-)
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-  
-  const data: logoutApiAuthLogoutPostResponse['data'] = body ? JSON.parse(body) : {}
-  return { data, status: res.status, headers: res.headers } as logoutApiAuthLogoutPostResponse
-}
+);}
 
 
 
@@ -338,7 +315,7 @@ export const getStubLoginEndpointApiAuthStubLoginPostUrl = () => {
 
 export const stubLoginEndpointApiAuthStubLoginPost = async (stubLoginRequest: StubLoginRequest, options?: RequestInit): Promise<stubLoginEndpointApiAuthStubLoginPostResponse> => {
   
-  const res = await fetch(getStubLoginEndpointApiAuthStubLoginPostUrl(),
+  return authFetch<stubLoginEndpointApiAuthStubLoginPostResponse>(getStubLoginEndpointApiAuthStubLoginPostUrl(),
   {      
     ...options,
     method: 'POST',
@@ -346,13 +323,7 @@ export const stubLoginEndpointApiAuthStubLoginPost = async (stubLoginRequest: St
     body: JSON.stringify(
       stubLoginRequest,)
   }
-)
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-  
-  const data: stubLoginEndpointApiAuthStubLoginPostResponse['data'] = body ? JSON.parse(body) : {}
-  return { data, status: res.status, headers: res.headers } as stubLoginEndpointApiAuthStubLoginPostResponse
-}
+);}
 
 
 
@@ -382,20 +353,14 @@ export const getGetCurrentUserInfoApiUsersMeGetUrl = () => {
 
 export const getCurrentUserInfoApiUsersMeGet = async ( options?: RequestInit): Promise<getCurrentUserInfoApiUsersMeGetResponse> => {
   
-  const res = await fetch(getGetCurrentUserInfoApiUsersMeGetUrl(),
+  return authFetch<getCurrentUserInfoApiUsersMeGetResponse>(getGetCurrentUserInfoApiUsersMeGetUrl(),
   {      
     ...options,
     method: 'GET'
     
     
   }
-)
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-  
-  const data: getCurrentUserInfoApiUsersMeGetResponse['data'] = body ? JSON.parse(body) : {}
-  return { data, status: res.status, headers: res.headers } as getCurrentUserInfoApiUsersMeGetResponse
-}
+);}
 
 
 
@@ -439,20 +404,14 @@ export const getGetTasksApiTasksGetUrl = (params?: GetTasksApiTasksGetParams,) =
 
 export const getTasksApiTasksGet = async (params?: GetTasksApiTasksGetParams, options?: RequestInit): Promise<getTasksApiTasksGetResponse> => {
   
-  const res = await fetch(getGetTasksApiTasksGetUrl(params),
+  return authFetch<getTasksApiTasksGetResponse>(getGetTasksApiTasksGetUrl(params),
   {      
     ...options,
     method: 'GET'
     
     
   }
-)
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-  
-  const data: getTasksApiTasksGetResponse['data'] = body ? JSON.parse(body) : {}
-  return { data, status: res.status, headers: res.headers } as getTasksApiTasksGetResponse
-}
+);}
 
 
 
@@ -489,7 +448,7 @@ export const getCreateTaskApiTasksPostUrl = () => {
 
 export const createTaskApiTasksPost = async (taskCreate: TaskCreate, options?: RequestInit): Promise<createTaskApiTasksPostResponse> => {
   
-  const res = await fetch(getCreateTaskApiTasksPostUrl(),
+  return authFetch<createTaskApiTasksPostResponse>(getCreateTaskApiTasksPostUrl(),
   {      
     ...options,
     method: 'POST',
@@ -497,13 +456,7 @@ export const createTaskApiTasksPost = async (taskCreate: TaskCreate, options?: R
     body: JSON.stringify(
       taskCreate,)
   }
-)
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-  
-  const data: createTaskApiTasksPostResponse['data'] = body ? JSON.parse(body) : {}
-  return { data, status: res.status, headers: res.headers } as createTaskApiTasksPostResponse
-}
+);}
 
 
 
@@ -541,7 +494,7 @@ export const getUpdateTaskApiTasksTaskIdPutUrl = (taskId: string,) => {
 export const updateTaskApiTasksTaskIdPut = async (taskId: string,
     taskUpdate: TaskUpdate, options?: RequestInit): Promise<updateTaskApiTasksTaskIdPutResponse> => {
   
-  const res = await fetch(getUpdateTaskApiTasksTaskIdPutUrl(taskId),
+  return authFetch<updateTaskApiTasksTaskIdPutResponse>(getUpdateTaskApiTasksTaskIdPutUrl(taskId),
   {      
     ...options,
     method: 'PUT',
@@ -549,13 +502,7 @@ export const updateTaskApiTasksTaskIdPut = async (taskId: string,
     body: JSON.stringify(
       taskUpdate,)
   }
-)
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-  
-  const data: updateTaskApiTasksTaskIdPutResponse['data'] = body ? JSON.parse(body) : {}
-  return { data, status: res.status, headers: res.headers } as updateTaskApiTasksTaskIdPutResponse
-}
+);}
 
 
 
@@ -592,20 +539,14 @@ export const getDeleteTaskApiTasksTaskIdDeleteUrl = (taskId: string,) => {
 
 export const deleteTaskApiTasksTaskIdDelete = async (taskId: string, options?: RequestInit): Promise<deleteTaskApiTasksTaskIdDeleteResponse> => {
   
-  const res = await fetch(getDeleteTaskApiTasksTaskIdDeleteUrl(taskId),
+  return authFetch<deleteTaskApiTasksTaskIdDeleteResponse>(getDeleteTaskApiTasksTaskIdDeleteUrl(taskId),
   {      
     ...options,
     method: 'DELETE'
     
     
   }
-)
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-  
-  const data: deleteTaskApiTasksTaskIdDeleteResponse['data'] = body ? JSON.parse(body) : {}
-  return { data, status: res.status, headers: res.headers } as deleteTaskApiTasksTaskIdDeleteResponse
-}
+);}
 
 
 
@@ -649,20 +590,14 @@ export const getGetCurrentWeekApiWeeksCurrentGetUrl = (params?: GetCurrentWeekAp
 
 export const getCurrentWeekApiWeeksCurrentGet = async (params?: GetCurrentWeekApiWeeksCurrentGetParams, options?: RequestInit): Promise<getCurrentWeekApiWeeksCurrentGetResponse> => {
   
-  const res = await fetch(getGetCurrentWeekApiWeeksCurrentGetUrl(params),
+  return authFetch<getCurrentWeekApiWeeksCurrentGetResponse>(getGetCurrentWeekApiWeeksCurrentGetUrl(params),
   {      
     ...options,
     method: 'GET'
     
     
   }
-)
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-  
-  const data: getCurrentWeekApiWeeksCurrentGetResponse['data'] = body ? JSON.parse(body) : {}
-  return { data, status: res.status, headers: res.headers } as getCurrentWeekApiWeeksCurrentGetResponse
-}
+);}
 
 
 
@@ -699,7 +634,7 @@ export const getUpdateCurrentWeekApiWeeksCurrentPutUrl = () => {
 
 export const updateCurrentWeekApiWeeksCurrentPut = async (weekUpdate: WeekUpdate, options?: RequestInit): Promise<updateCurrentWeekApiWeeksCurrentPutResponse> => {
   
-  const res = await fetch(getUpdateCurrentWeekApiWeeksCurrentPutUrl(),
+  return authFetch<updateCurrentWeekApiWeeksCurrentPutResponse>(getUpdateCurrentWeekApiWeeksCurrentPutUrl(),
   {      
     ...options,
     method: 'PUT',
@@ -707,13 +642,7 @@ export const updateCurrentWeekApiWeeksCurrentPut = async (weekUpdate: WeekUpdate
     body: JSON.stringify(
       weekUpdate,)
   }
-)
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-  
-  const data: updateCurrentWeekApiWeeksCurrentPutResponse['data'] = body ? JSON.parse(body) : {}
-  return { data, status: res.status, headers: res.headers } as updateCurrentWeekApiWeeksCurrentPutResponse
-}
+);}
 
 
 
@@ -743,20 +672,14 @@ export const getGetCurrentGoalsApiWeeksCurrentGoalsGetUrl = () => {
 
 export const getCurrentGoalsApiWeeksCurrentGoalsGet = async ( options?: RequestInit): Promise<getCurrentGoalsApiWeeksCurrentGoalsGetResponse> => {
   
-  const res = await fetch(getGetCurrentGoalsApiWeeksCurrentGoalsGetUrl(),
+  return authFetch<getCurrentGoalsApiWeeksCurrentGoalsGetResponse>(getGetCurrentGoalsApiWeeksCurrentGoalsGetUrl(),
   {      
     ...options,
     method: 'GET'
     
     
   }
-)
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-  
-  const data: getCurrentGoalsApiWeeksCurrentGoalsGetResponse['data'] = body ? JSON.parse(body) : {}
-  return { data, status: res.status, headers: res.headers } as getCurrentGoalsApiWeeksCurrentGoalsGetResponse
-}
+);}
 
 
 
@@ -793,7 +716,7 @@ export const getUpdateCurrentGoalsApiWeeksCurrentGoalsPutUrl = () => {
 
 export const updateCurrentGoalsApiWeeksCurrentGoalsPut = async (goalsUpdate: GoalsUpdate, options?: RequestInit): Promise<updateCurrentGoalsApiWeeksCurrentGoalsPutResponse> => {
   
-  const res = await fetch(getUpdateCurrentGoalsApiWeeksCurrentGoalsPutUrl(),
+  return authFetch<updateCurrentGoalsApiWeeksCurrentGoalsPutResponse>(getUpdateCurrentGoalsApiWeeksCurrentGoalsPutUrl(),
   {      
     ...options,
     method: 'PUT',
@@ -801,13 +724,7 @@ export const updateCurrentGoalsApiWeeksCurrentGoalsPut = async (goalsUpdate: Goa
     body: JSON.stringify(
       goalsUpdate,)
   }
-)
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-  
-  const data: updateCurrentGoalsApiWeeksCurrentGoalsPutResponse['data'] = body ? JSON.parse(body) : {}
-  return { data, status: res.status, headers: res.headers } as updateCurrentGoalsApiWeeksCurrentGoalsPutResponse
-}
+);}
 
 
 
@@ -837,20 +754,14 @@ export const getGetCurrentRecordsApiWeeksCurrentRecordsGetUrl = () => {
 
 export const getCurrentRecordsApiWeeksCurrentRecordsGet = async ( options?: RequestInit): Promise<getCurrentRecordsApiWeeksCurrentRecordsGetResponse> => {
   
-  const res = await fetch(getGetCurrentRecordsApiWeeksCurrentRecordsGetUrl(),
+  return authFetch<getCurrentRecordsApiWeeksCurrentRecordsGetResponse>(getGetCurrentRecordsApiWeeksCurrentRecordsGetUrl(),
   {      
     ...options,
     method: 'GET'
     
     
   }
-)
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-  
-  const data: getCurrentRecordsApiWeeksCurrentRecordsGetResponse['data'] = body ? JSON.parse(body) : {}
-  return { data, status: res.status, headers: res.headers } as getCurrentRecordsApiWeeksCurrentRecordsGetResponse
-}
+);}
 
 
 
@@ -887,7 +798,7 @@ export const getCreateRecordApiWeeksCurrentRecordsPostUrl = () => {
 
 export const createRecordApiWeeksCurrentRecordsPost = async (recordCreate: RecordCreate, options?: RequestInit): Promise<createRecordApiWeeksCurrentRecordsPostResponse> => {
   
-  const res = await fetch(getCreateRecordApiWeeksCurrentRecordsPostUrl(),
+  return authFetch<createRecordApiWeeksCurrentRecordsPostResponse>(getCreateRecordApiWeeksCurrentRecordsPostUrl(),
   {      
     ...options,
     method: 'POST',
@@ -895,13 +806,7 @@ export const createRecordApiWeeksCurrentRecordsPost = async (recordCreate: Recor
     body: JSON.stringify(
       recordCreate,)
   }
-)
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-  
-  const data: createRecordApiWeeksCurrentRecordsPostResponse['data'] = body ? JSON.parse(body) : {}
-  return { data, status: res.status, headers: res.headers } as createRecordApiWeeksCurrentRecordsPostResponse
-}
+);}
 
 
 
@@ -945,20 +850,14 @@ export const getGetDashboardApiDashboardGetUrl = (params?: GetDashboardApiDashbo
 
 export const getDashboardApiDashboardGet = async (params?: GetDashboardApiDashboardGetParams, options?: RequestInit): Promise<getDashboardApiDashboardGetResponse> => {
   
-  const res = await fetch(getGetDashboardApiDashboardGetUrl(params),
+  return authFetch<getDashboardApiDashboardGetResponse>(getGetDashboardApiDashboardGetUrl(params),
   {      
     ...options,
     method: 'GET'
     
     
   }
-)
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-  
-  const data: getDashboardApiDashboardGetResponse['data'] = body ? JSON.parse(body) : {}
-  return { data, status: res.status, headers: res.headers } as getDashboardApiDashboardGetResponse
-}
+);}
 
 
 
@@ -988,20 +887,14 @@ export const getRootGetUrl = () => {
 
 export const rootGet = async ( options?: RequestInit): Promise<rootGetResponse> => {
   
-  const res = await fetch(getRootGetUrl(),
+  return authFetch<rootGetResponse>(getRootGetUrl(),
   {      
     ...options,
     method: 'GET'
     
     
   }
-)
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-  
-  const data: rootGetResponse['data'] = body ? JSON.parse(body) : {}
-  return { data, status: res.status, headers: res.headers } as rootGetResponse
-}
+);}
 
 
 
@@ -1031,20 +924,14 @@ export const getHealthHealthGetUrl = () => {
 
 export const healthHealthGet = async ( options?: RequestInit): Promise<healthHealthGetResponse> => {
   
-  const res = await fetch(getHealthHealthGetUrl(),
+  return authFetch<healthHealthGetResponse>(getHealthHealthGetUrl(),
   {      
     ...options,
     method: 'GET'
     
     
   }
-)
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-  
-  const data: healthHealthGetResponse['data'] = body ? JSON.parse(body) : {}
-  return { data, status: res.status, headers: res.headers } as healthHealthGetResponse
-}
+);}
 
 
 export const getGoogleAuthorizeApiAuthGoogleAuthorizeGetResponseMock = (overrideResponse: Partial< APIResponseAuthorizeResponse > = {}): APIResponseAuthorizeResponse => ({data: {authorization_url: faker.string.alpha({length: {min: 10, max: 20}}), state: faker.string.alpha({length: {min: 10, max: 20}})}, ...overrideResponse})
