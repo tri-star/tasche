@@ -1,6 +1,6 @@
 import { test as base, type Page, type Route } from "@playwright/test"
-import { E2E_STUB_USER_EMAIL } from "../utils/test-auth"
 import { getApiBaseUrl } from "../utils/api-base-url"
+import { E2E_STUB_USER_EMAIL } from "../utils/test-auth"
 
 export type AuthFixture = {
   loginAs: (email?: string) => Promise<void>
