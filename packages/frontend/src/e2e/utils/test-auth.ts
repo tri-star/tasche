@@ -1,46 +1,29 @@
 import { getApiBaseUrl } from "./api-base-url"
 
-export type TestAuthUser = {
-  email?: string
-  userId?: string
-}
+export const E2E_STUB_USER_EMAIL = "e2e-test@example.com"
 
-type TestAuthResponse = {
-  access_token?: string
-}
-
-const buildTestAuthUrl = (user?: TestAuthUser) => {
-  const url = new URL("/api/test-auth", getApiBaseUrl())
-  const params = new URLSearchParams()
-
-  if (user?.email) {
-    params.set("email", user.email)
-  } else if (user?.userId) {
-    params.set("user_id", user.userId)
+type StubLoginResponse = {
+  data: {
+    access_token: string
   }
-
-  const query = params.toString()
-  if (query) {
-    url.search = query
-  }
-
-  return url.toString()
 }
 
-export const getTestAuthToken = async (user?: TestAuthUser) => {
-  const response = await fetch(buildTestAuthUrl(user), {
-    method: "GET",
+export const getTestAuthToken = async (email = E2E_STUB_USER_EMAIL) => {
+  const response = await fetch(new URL("/api/auth/stub-login", getApiBaseUrl()).toString(), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
   })
 
   if (!response.ok) {
     throw new Error(`Failed to get test auth token: ${response.status} ${response.statusText}`)
   }
 
-  const data = (await response.json()) as TestAuthResponse
+  const data = (await response.json()) as StubLoginResponse
 
-  if (!data.access_token) {
-    throw new Error("Test auth response missing access_token")
+  if (!data.data?.access_token) {
+    throw new Error("Stub login response missing access_token")
   }
 
-  return data.access_token
+  return data.data.access_token
 }

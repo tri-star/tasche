@@ -1,17 +1,19 @@
 import { test as base, type Page, type Route } from "@playwright/test"
-import { getTestAuthToken, type TestAuthUser } from "../utils/test-auth"
-import { testUsers } from "./test-data"
+import { E2E_STUB_USER_EMAIL } from "../utils/test-auth"
+import { getApiBaseUrl } from "../utils/api-base-url"
 
-/**
- * 認証済みページのフィクスチャ
- * MSWモード・実APIモードの両方に対応
- */
 export type AuthFixture = {
-  loginAs: (user?: TestAuthUser) => Promise<void>
+  loginAs: (email?: string) => Promise<void>
 }
 
 type ApiAuthFixture = {
   setToken: (token: string | null) => Promise<void>
+}
+
+type StubLoginResponse = {
+  data: {
+    access_token: string
+  }
 }
 
 export const test = base.extend<{
@@ -41,34 +43,44 @@ export const test = base.extend<{
 
     await page.unroute("**/api/**", routeHandler)
   },
+
   /**
    * 認証済みページを提供するフィクスチャ
+   *
+   * page.request でブラウザコンテキストから stub-login を呼ぶことで、
+   * refresh token cookie がブラウザのクッキージャーに設定される。
+   * その後 page.goto("/") した際に useBootstrapAuth が /api/auth/refresh を呼ぶと
+   * cookie が Vite proxy 経由でバックエンドに届き、認証状態が復元される。
    */
-  authenticatedPage: async ({ page, apiAuth }, use) => {
+  authenticatedPage: async ({ page }, use) => {
     const useMsw = process.env.E2E_USE_MSW === "true"
 
     if (useMsw) {
-      // MSWモード: 認証は不要（MSWが全てのリクエストをモック）
       await page.goto("/")
     } else {
-      // 実APIモード: テスト用トークンを取得してAPIリクエストに付与
-      const token = await getTestAuthToken({ email: testUsers.primary.email })
-      await apiAuth.setToken(token)
+      await page.request.post(new URL("/api/auth/stub-login", getApiBaseUrl()).toString(), {
+        data: { email: E2E_STUB_USER_EMAIL },
+      })
       await page.goto("/")
     }
 
     await use(page)
   },
-  auth: async ({ apiAuth }, use) => {
+
+  auth: async ({ page, apiAuth }, use) => {
     const useMsw = process.env.E2E_USE_MSW === "true"
 
-    const loginAs: AuthFixture["loginAs"] = async (user) => {
+    const loginAs: AuthFixture["loginAs"] = async (email) => {
       if (useMsw) {
         return
       }
 
-      const token = await getTestAuthToken(user)
-      await apiAuth.setToken(token)
+      const res = await page.request.post(
+        new URL("/api/auth/stub-login", getApiBaseUrl()).toString(),
+        { data: { email: email ?? E2E_STUB_USER_EMAIL } },
+      )
+      const json = (await res.json()) as StubLoginResponse
+      await apiAuth.setToken(json.data.access_token)
     }
 
     await use({ loginAs })
