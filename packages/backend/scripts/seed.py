@@ -45,52 +45,31 @@ async def seed_users(session: AsyncSession) -> None:
 
 
 async def seed_tasks(session: AsyncSession) -> None:
-    """テストタスクをシード."""
-    from sqlalchemy import select
+    """テストタスクをシード（全ユーザー分）."""
+    from sqlalchemy import and_, select
+    from ulid import ULID
 
-    test_tasks = [
-        {
-            "id": "tsk_01HXYZ1234567890ABCDE1",
-            "user_id": "usr_01HXYZ1234567890ABCDEF",
-            "name": "週次レポート作成",
-            "is_archived": False,
-        },
-        {
-            "id": "tsk_01HXYZ1234567890ABCDE2",
-            "user_id": "usr_01HXYZ1234567890ABCDEF",
-            "name": "コードレビュー",
-            "is_archived": False,
-        },
-        {
-            "id": "tsk_01HXYZ1234567890ABCDE3",
-            "user_id": "usr_01HXYZ1234567890ABCDEF",
-            "name": "ミーティング準備",
-            "is_archived": False,
-        },
-        {
-            "id": "tsk_01HXYZ1234567890ABCDE4",
-            "user_id": "usr_01HXYZ1234567890ABCDEF",
-            "name": "ドキュメント更新",
-            "is_archived": False,
-        },
-        {
-            "id": "tsk_01HXYZ1234567890ABCDE5",
-            "user_id": "usr_01HXYZ1234567890ABCDEF",
-            "name": "バグ調査",
-            "is_archived": False,
-        },
+    task_names = [
+        "週次レポート作成",
+        "コードレビュー",
+        "ミーティング準備",
+        "ドキュメント更新",
+        "バグ調査",
     ]
 
-    for task_data in test_tasks:
-        result = await session.execute(select(Task).where(Task.id == task_data["id"]))
-        existing_task = result.scalar_one_or_none()
-
-        if existing_task:
-            print(f"✓ Task already exists: {task_data['name']}")
-        else:
-            task = Task(**task_data)
-            session.add(task)
-            print(f"✓ Created task: {task_data['name']}")
+    users = list((await session.execute(select(User))).scalars().all())
+    for user in users:
+        print(f"  → {user.email} のタスクをシード中...")
+        for name in task_names:
+            result = await session.execute(
+                select(Task).where(and_(Task.user_id == user.id, Task.name == name))
+            )
+            if result.scalar_one_or_none():
+                print(f"    ✓ Task already exists: {name}")
+            else:
+                task = Task(id=f"tsk_{ULID()}", user_id=user.id, name=name, is_archived=False)
+                session.add(task)
+                print(f"    ✓ Created task: {name}")
 
     await session.commit()
 
