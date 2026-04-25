@@ -57,7 +57,13 @@
       "Bash(git status *)",
       "Bash(git diff *)",
       "Bash(git checkout *)",
-      "Bash(git pull *)"
+      "Bash(git pull *)",
+      "mcp__plane__create_work_item_comment"
+    ]
+  },
+  "sandbox": {
+    "excludedCommands": [
+      "bash .claude/skills/summarize-pr-comments/get-pr-comments.sh*"
     ]
   }
 }
