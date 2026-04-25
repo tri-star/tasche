@@ -5,10 +5,12 @@ import { DashboardPage } from "./DashboardPage"
 
 const mockGetDashboard = vi.fn()
 const mockCreateRecord = vi.fn()
+const mockGetTasks = vi.fn()
 
 vi.mock("@/api/generated/client", () => ({
   getDashboardApiDashboardGet: () => mockGetDashboard(),
   createRecordApiWeeksCurrentRecordsPost: (...args: unknown[]) => mockCreateRecord(...args),
+  getTasksApiTasksGet: (...args: unknown[]) => mockGetTasks(...args),
 }))
 
 const mockDashboardData = {
@@ -62,6 +64,11 @@ describe("DashboardPage", () => {
       headers: new Headers(),
     })
     mockCreateRecord.mockResolvedValue({ data: {}, status: 200, headers: new Headers() })
+    mockGetTasks.mockResolvedValue({
+      data: { data: { tasks: [] } },
+      status: 200,
+      headers: new Headers(),
+    })
   })
 
   it("ダッシュボードページが正常にレンダリングされる", async () => {
