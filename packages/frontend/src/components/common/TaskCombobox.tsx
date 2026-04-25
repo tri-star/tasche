@@ -187,6 +187,7 @@ export function TaskCombobox({
               </div>
             ) : (
               filteredTasks.map((task, idx) => (
+                // biome-ignore lint/a11y/useKeyWithClickEvents: キーボード選択はinputのhandleInputKeyDownで処理済み
                 <div
                   key={task.id}
                   role="option"
@@ -195,12 +196,6 @@ export function TaskCombobox({
                   tabIndex={-1}
                   onMouseEnter={() => setActiveIndex(idx)}
                   onClick={() => handleSelect(task.id)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault()
-                      handleSelect(task.id)
-                    }
-                  }}
                   className={cn(
                     "cursor-pointer rounded-sm px-3 py-1.5 text-sm",
                     idx === activeIndex && "bg-accent text-accent-foreground",

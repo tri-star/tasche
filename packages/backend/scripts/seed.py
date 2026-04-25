@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from tasche.core.config import settings
 from tasche.db.session import async_session_maker, engine
+from tasche.models.task import Task
 from tasche.models.user import User
 
 
@@ -43,6 +44,57 @@ async def seed_users(session: AsyncSession) -> None:
     await session.commit()
 
 
+async def seed_tasks(session: AsyncSession) -> None:
+    """テストタスクをシード."""
+    from sqlalchemy import select
+
+    test_tasks = [
+        {
+            "id": "tsk_01HXYZ1234567890ABCDE1",
+            "user_id": "usr_01HXYZ1234567890ABCDEF",
+            "name": "週次レポート作成",
+            "is_archived": False,
+        },
+        {
+            "id": "tsk_01HXYZ1234567890ABCDE2",
+            "user_id": "usr_01HXYZ1234567890ABCDEF",
+            "name": "コードレビュー",
+            "is_archived": False,
+        },
+        {
+            "id": "tsk_01HXYZ1234567890ABCDE3",
+            "user_id": "usr_01HXYZ1234567890ABCDEF",
+            "name": "ミーティング準備",
+            "is_archived": False,
+        },
+        {
+            "id": "tsk_01HXYZ1234567890ABCDE4",
+            "user_id": "usr_01HXYZ1234567890ABCDEF",
+            "name": "ドキュメント更新",
+            "is_archived": False,
+        },
+        {
+            "id": "tsk_01HXYZ1234567890ABCDE5",
+            "user_id": "usr_01HXYZ1234567890ABCDEF",
+            "name": "バグ調査",
+            "is_archived": False,
+        },
+    ]
+
+    for task_data in test_tasks:
+        result = await session.execute(select(Task).where(Task.id == task_data["id"]))
+        existing_task = result.scalar_one_or_none()
+
+        if existing_task:
+            print(f"✓ Task already exists: {task_data['name']}")
+        else:
+            task = Task(**task_data)
+            session.add(task)
+            print(f"✓ Created task: {task_data['name']}")
+
+    await session.commit()
+
+
 async def main() -> None:
     """メイン処理."""
     print("=" * 60)
@@ -52,8 +104,11 @@ async def main() -> None:
     print("-" * 60)
 
     async with async_session_maker() as session:
-        print("\n[1/1] Seeding users...")
+        print("\n[1/2] Seeding users...")
         await seed_users(session)
+
+        print("\n[2/2] Seeding tasks...")
+        await seed_tasks(session)
 
     print("\n" + "=" * 60)
     print("✓ Seeding completed successfully!")

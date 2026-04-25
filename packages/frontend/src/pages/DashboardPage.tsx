@@ -5,7 +5,7 @@ import {
   getDashboardApiDashboardGet,
   getTasksApiTasksGet,
 } from "@/api/generated/client"
-import type { DashboardResponse, DayOfWeek, TaskResponse } from "@/api/generated/model"
+import type { DashboardResponse, DayOfWeek } from "@/api/generated/model"
 import { GoalSettingFab } from "@/components/dashboard/GoalSettingFab"
 import { RecordWidget } from "@/components/dashboard/RecordWidget"
 import { TodayGoalsWidget } from "@/components/dashboard/TodayGoalsWidget"
@@ -29,7 +29,7 @@ function formatDate(dateStr: string, dayOfWeek: DayOfWeek): string {
 export function DashboardPage() {
   const navigate = useNavigate()
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null)
-  const [tasks, setTasks] = useState<TaskResponse[]>([])
+  const [tasks, setTasks] = useState<{ id: string; name: string }[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -44,7 +44,7 @@ export function DashboardPage() {
           setDashboard(dashboardRes.data.data)
         }
         if (tasksRes.status === 200) {
-          setTasks(tasksRes.data.data.tasks.filter((t) => !t.is_archived))
+          setTasks(tasksRes.data.data.tasks.map((t) => ({ id: t.id, name: t.name })))
         }
       } catch (err) {
         setError("データの取得に失敗しました")
@@ -107,7 +107,7 @@ export function DashboardPage() {
           <RecordWidget
             currentDay={dashboard.current_day_of_week}
             weekStartDate={dashboard.week.start_date}
-            tasks={tasks.map((t) => ({ id: t.id, name: t.name }))}
+            tasks={tasks}
             onRecord={handleRecord}
           />
         </div>
