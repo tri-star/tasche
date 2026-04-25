@@ -1,20 +1,14 @@
 import { useState } from "react"
-import type { DayOfWeek, TodayGoal } from "@/api/generated/model"
+import type { DayOfWeek } from "@/api/generated/model"
 import { DaySelector } from "@/components/common/DaySelector"
+import { TaskCombobox } from "@/components/common/TaskCombobox"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 
 type RecordWidgetProps = {
   currentDay: DayOfWeek
   weekStartDate: string
-  tasks: TodayGoal[]
+  tasks: { id: string; name: string }[]
   onRecord?: (day: DayOfWeek, taskId: string, units: number) => void
 }
 
@@ -67,18 +61,7 @@ export function RecordWidget({ currentDay, weekStartDate, tasks, onRecord }: Rec
           />
 
           {/* タスク選択 */}
-          <Select value={selectedTask} onValueChange={setSelectedTask}>
-            <SelectTrigger>
-              <SelectValue placeholder="タスクを選択..." />
-            </SelectTrigger>
-            <SelectContent>
-              {tasks.map((task) => (
-                <SelectItem key={task.task_id} value={task.task_id}>
-                  {task.task_name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <TaskCombobox tasks={tasks} value={selectedTask} onChange={setSelectedTask} />
 
           {/* ユニット数入力 */}
           <div className="flex items-center gap-2">

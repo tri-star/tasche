@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom"
 import {
   createRecordApiWeeksCurrentRecordsPost,
   getDashboardApiDashboardGet,
+  getTasksApiTasksGet,
 } from "@/api/generated/client"
 import type { DashboardResponse, DayOfWeek } from "@/api/generated/model"
 import { GoalSettingFab } from "@/components/dashboard/GoalSettingFab"
@@ -28,15 +29,22 @@ function formatDate(dateStr: string, dayOfWeek: DayOfWeek): string {
 export function DashboardPage() {
   const navigate = useNavigate()
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null)
+  const [tasks, setTasks] = useState<{ id: string; name: string }[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     async function fetchDashboard() {
       try {
-        const response = await getDashboardApiDashboardGet()
-        if (response.status === 200) {
-          setDashboard(response.data.data)
+        const [dashboardRes, tasksRes] = await Promise.all([
+          getDashboardApiDashboardGet(),
+          getTasksApiTasksGet({ include_archived: false }),
+        ])
+        if (dashboardRes.status === 200) {
+          setDashboard(dashboardRes.data.data)
+        }
+        if (tasksRes.status === 200) {
+          setTasks(tasksRes.data.data.tasks.map((t) => ({ id: t.id, name: t.name })))
         }
       } catch (err) {
         setError("データの取得に失敗しました")
@@ -99,7 +107,7 @@ export function DashboardPage() {
           <RecordWidget
             currentDay={dashboard.current_day_of_week}
             weekStartDate={dashboard.week.start_date}
-            tasks={dashboard.today_goals}
+            tasks={tasks}
             onRecord={handleRecord}
           />
         </div>

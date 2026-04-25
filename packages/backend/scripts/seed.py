@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from tasche.core.config import settings
 from tasche.db.session import async_session_maker, engine
+from tasche.models.task import Task
 from tasche.models.user import User
 
 
@@ -43,6 +44,36 @@ async def seed_users(session: AsyncSession) -> None:
     await session.commit()
 
 
+async def seed_tasks(session: AsyncSession) -> None:
+    """テストタスクをシード（全ユーザー分）."""
+    from sqlalchemy import and_, select
+    from ulid import ULID
+
+    task_names = [
+        "週次レポート作成",
+        "コードレビュー",
+        "ミーティング準備",
+        "ドキュメント更新",
+        "バグ調査",
+    ]
+
+    users = list((await session.execute(select(User))).scalars().all())
+    for user in users:
+        print(f"  → {user.email} のタスクをシード中...")
+        for name in task_names:
+            result = await session.execute(
+                select(Task).where(and_(Task.user_id == user.id, Task.name == name))
+            )
+            if result.scalar_one_or_none():
+                print(f"    ✓ Task already exists: {name}")
+            else:
+                task = Task(id=f"tsk_{ULID()}", user_id=user.id, name=name, is_archived=False)
+                session.add(task)
+                print(f"    ✓ Created task: {name}")
+
+    await session.commit()
+
+
 async def main() -> None:
     """メイン処理."""
     print("=" * 60)
@@ -52,8 +83,11 @@ async def main() -> None:
     print("-" * 60)
 
     async with async_session_maker() as session:
-        print("\n[1/1] Seeding users...")
+        print("\n[1/2] Seeding users...")
         await seed_users(session)
+
+        print("\n[2/2] Seeding tasks...")
+        await seed_tasks(session)
 
     print("\n" + "=" * 60)
     print("✓ Seeding completed successfully!")
