@@ -25,12 +25,11 @@ export const authHandlers = [
 
   // code を受け取って JWT 発行
   http.post("*/api/auth/google/callback", async () => {
-    setMockAuthUser({ email: "test-user@example.com", name: "テストユーザー" })
+    const user = { email: "test-user@example.com", name: "テストユーザー" }
+    setMockAuthUser(user)
     return HttpResponse.json({
       data: {
-        access_token: fakeJwt(
-          getMockAuthUser() ?? { email: "test-user@example.com", name: "テストユーザー" },
-        ),
+        access_token: fakeJwt(user),
         token_type: "Bearer",
         expires_in: 900,
       },
