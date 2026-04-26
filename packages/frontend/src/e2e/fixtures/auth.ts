@@ -56,7 +56,9 @@ export const test = base.extend<{
     const useMsw = process.env.E2E_USE_MSW === "true"
 
     if (useMsw) {
-      await page.goto("/")
+      await page.goto("/login")
+      await page.getByRole("button", { name: /スタブログイン/ }).click()
+      await page.waitForURL("**/")
     } else {
       await page.request.post(new URL("/api/auth/stub-login", getApiBaseUrl()).toString(), {
         data: { email: E2E_STUB_USER_EMAIL },
@@ -72,6 +74,9 @@ export const test = base.extend<{
 
     const loginAs: AuthFixture["loginAs"] = async (email) => {
       if (useMsw) {
+        await page.goto("/login")
+        await page.getByRole("button", { name: /スタブログイン/ }).click()
+        await page.waitForURL("**/")
         return
       }
 
