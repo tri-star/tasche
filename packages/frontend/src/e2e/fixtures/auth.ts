@@ -16,6 +16,26 @@ type StubLoginResponse = {
   }
 }
 
+async function loginWithMswStub(page: Page, email: string): Promise<void> {
+  await page.goto("/login")
+
+  await page.evaluate(async (stubEmail) => {
+    const response = await fetch("/api/auth/stub-login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ email: stubEmail }),
+    })
+
+    if (!response.ok) {
+      throw new Error(`stub-login failed: ${response.status} ${response.statusText}`)
+    }
+  }, email)
+
+  await page.goto("/")
+  await page.waitForURL("**/")
+}
+
 export const test = base.extend<{
   authenticatedPage: Page
   auth: AuthFixture
@@ -56,7 +76,7 @@ export const test = base.extend<{
     const useMsw = process.env.E2E_USE_MSW === "true"
 
     if (useMsw) {
-      await page.goto("/")
+      await loginWithMswStub(page, E2E_STUB_USER_EMAIL)
     } else {
       await page.request.post(new URL("/api/auth/stub-login", getApiBaseUrl()).toString(), {
         data: { email: E2E_STUB_USER_EMAIL },
@@ -72,6 +92,7 @@ export const test = base.extend<{
 
     const loginAs: AuthFixture["loginAs"] = async (email) => {
       if (useMsw) {
+        await loginWithMswStub(page, email ?? E2E_STUB_USER_EMAIL)
         return
       }
 
