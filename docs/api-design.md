@@ -97,7 +97,8 @@ Set-Cookie: refresh_token=<token>; HttpOnly; Secure; SameSite=Lax; Path=/api/aut
 | 目標 | GET | /api/weeks/current/goals | 要 | 今週の目標一覧取得 |
 | 目標 | PUT | /api/weeks/current/goals | 要 | 今週の目標一括更新 |
 | 実績 | GET | /api/weeks/current/records | 要 | 今週の実績一覧取得 |
-| 実績 | POST | /api/weeks/current/records | 要 | 実績記録 |
+| 実績 | POST | /api/weeks/current/records | 要 | 実績記録（互換エンドポイント） |
+| 実績 | PUT | /api/weeks/current/records/{day_of_week}/{task_id} | 要 | 特定曜日・特定タスクの実績を保存/更新 |
 | ダッシュボード | GET | /api/dashboard | 要 | ダッシュボード用データ取得 |
 
 ---
@@ -840,6 +841,8 @@ Authorization: Bearer <access_token>
 
 実績を記録します。
 
+既存クライアントとの互換のために残しているエンドポイントです。新規実装では、より明示的な `PUT /api/weeks/current/records/{day_of_week}/{task_id}` の利用を推奨します。
+
 #### リクエストヘッダー
 
 ```
@@ -883,6 +886,51 @@ Content-Type: application/json
   "error": {
     "code": "INVALID_DAY",
     "message": "無効な曜日が指定されました"
+  }
+}
+```
+
+---
+
+### PUT /api/weeks/current/records/{day_of_week}/{task_id}
+
+特定曜日・特定タスクの実績を保存または更新します。
+
+#### リクエストヘッダー
+
+```
+Authorization: Bearer <access_token>
+Content-Type: application/json
+```
+
+#### パスパラメータ
+
+| パラメータ | 型 | 必須 | 説明 |
+|------------|----|------|------|
+| day_of_week | string | Yes | `monday` 〜 `sunday` |
+| task_id | string | Yes | 更新対象のタスクID |
+
+#### リクエスト
+
+```json
+{
+  "actual_units": 1.5
+}
+```
+
+#### レスポンス（200 OK）
+
+```json
+{
+  "data": {
+    "id": "rec_01HXYZ1234567890ABCDEF",
+    "week_id": "wk_01HXYZ1234567890ABCDEF",
+    "task_id": "tsk_01HXYZ1234567890ABCDEF",
+    "task_name": "英語学習",
+    "day_of_week": "wednesday",
+    "actual_units": 1.5,
+    "created_at": "2024-01-17T18:00:00Z",
+    "updated_at": "2024-01-17T18:30:00Z"
   }
 }
 ```

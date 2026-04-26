@@ -17,6 +17,7 @@ from tasche.core.exceptions import (
     TokenExpiredError,
     UserNotFoundException,
     ValidationError,
+    WeekNotFoundException,
 )
 
 logging.basicConfig(
@@ -57,6 +58,15 @@ async def task_not_found_handler(request: Request, exc: TaskNotFoundException):
     return JSONResponse(
         status_code=status.HTTP_404_NOT_FOUND,
         content={"error": {"code": "TASK_NOT_FOUND", "message": str(exc)}},
+    )
+
+
+@app.exception_handler(WeekNotFoundException)
+async def week_not_found_handler(request: Request, exc: WeekNotFoundException):
+    """週未発見例外ハンドラー."""
+    return JSONResponse(
+        status_code=status.HTTP_404_NOT_FOUND,
+        content={"error": {"code": "WEEK_NOT_FOUND", "message": str(exc)}},
     )
 
 

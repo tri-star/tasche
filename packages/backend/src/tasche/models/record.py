@@ -2,7 +2,16 @@
 
 from datetime import datetime
 
-from sqlalchemy import CheckConstraint, DateTime, Enum, ForeignKey, Numeric, String, func
+from sqlalchemy import (
+    CheckConstraint,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Numeric,
+    String,
+    UniqueConstraint,
+    func,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from tasche.db.base import Base
@@ -15,6 +24,7 @@ class Record(Base):
     __tablename__ = "records"
     __table_args__ = (
         CheckConstraint("actual_units >= 0", name="ck_records_actual_units_non_negative"),
+        UniqueConstraint("week_id", "task_id", "day_of_week", name="uq_records_week_task_day"),
     )
 
     id: Mapped[str] = mapped_column(String(30), primary_key=True)  # ULID (rec_xxxx)

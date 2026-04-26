@@ -56,3 +56,9 @@ class RecordCreate(BaseModel):
     task_id: str = Field(..., description="タスクID")
     day_of_week: DayOfWeek = Field(..., description="曜日")
     actual_units: float = Field(..., ge=0, description="実績ユニット数（0.1単位）", multiple_of=0.1)
+
+
+class RecordUpdate(BaseModel):
+    """実績更新リクエスト."""
+
+    actual_units: float = Field(..., ge=0, description="実績ユニット数（0.1単位）", multiple_of=0.1)

@@ -25,6 +25,15 @@ class TaskNotFoundException(TascheException):
         super().__init__(f"Task not found: {task_id}")
 
 
+class WeekNotFoundException(TascheException):
+    """現在の週が見つからない."""
+
+    def __init__(self, user_id: str):
+        """初期化."""
+        self.user_id = user_id
+        super().__init__(f"Current week not found for user: {user_id}")
+
+
 class AuthenticationError(TascheException):
     """認証エラー基底クラス."""
 
