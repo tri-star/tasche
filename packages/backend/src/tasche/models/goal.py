@@ -1,0 +1,53 @@
+"""Goal モデル."""
+
+from datetime import datetime
+
+from sqlalchemy import (
+    CheckConstraint,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Numeric,
+    String,
+    UniqueConstraint,
+    func,
+)
+from sqlalchemy.orm import Mapped, mapped_column
+
+from tasche.db.base import Base
+from tasche.models.enums import DayOfWeek
+
+
+class Goal(Base):
+    """目標テーブル."""
+
+    __tablename__ = "goals"
+    __table_args__ = (
+        CheckConstraint("target_units >= 0", name="ck_goals_target_units_non_negative"),
+        UniqueConstraint("week_id", "task_id", "day_of_week", name="uq_goals_week_task_day"),
+    )
+
+    id: Mapped[str] = mapped_column(String(30), primary_key=True)  # ULID (gol_xxxx)
+    week_id: Mapped[str] = mapped_column(
+        String(30), ForeignKey("weeks.id"), nullable=False, index=True
+    )
+    task_id: Mapped[str] = mapped_column(
+        String(30), ForeignKey("tasks.id"), nullable=False, index=True
+    )
+    day_of_week: Mapped[str] = mapped_column(
+        Enum(DayOfWeek, name="day_of_week_enum"),
+        nullable=False,
+    )
+    target_units: Mapped[float] = mapped_column(Numeric(6, 1, asdecimal=False), nullable=False)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )

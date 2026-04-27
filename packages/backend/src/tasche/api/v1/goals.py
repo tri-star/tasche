@@ -1,97 +1,59 @@
 """目標 API エンドポイント."""
 
-from fastapi import APIRouter
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 
-from tasche.api.deps import CurrentUser
+from fastapi import APIRouter
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from tasche.api.deps import CurrentUser, DbSession
 from tasche.schemas.common import APIResponse
 from tasche.schemas.goal import (
-    CreatedTask,
-    DailyTargets,
-    GoalResponse,
     GoalsResponse,
     GoalsUpdate,
     GoalsUpdateResponse,
 )
+from tasche.services import goal as goal_service
 
 router = APIRouter()
 
 
+@asynccontextmanager
+async def _transaction(db: AsyncSession) -> AsyncIterator[None]:
+    """API 層でトランザクション境界を管理する."""
+    if not db.in_transaction():
+        async with db.begin():
+            yield
+        return
+
+    try:
+        yield
+    except Exception:
+        await db.rollback()
+        raise
+    else:
+        try:
+            await db.commit()
+        except Exception:
+            await db.rollback()
+            raise
+
+
 @router.get("", response_model=APIResponse[GoalsResponse])
 async def get_current_goals(
+    db: DbSession,
     current_user: CurrentUser,
 ) -> APIResponse[GoalsResponse]:
     """今週の目標一覧を取得する."""
-    # ダミーデータを返す
-    goals = GoalsResponse(
-        week_id="wk_01HXYZ1234567890ABCDEF",
-        unit_duration_minutes=30,
-        goals=[
-            GoalResponse(
-                task_id="tsk_01HXYZ1234567890ABCDEF",
-                task_name="英語学習",
-                daily_targets=DailyTargets(
-                    monday=2.0,
-                    tuesday=1.0,
-                    wednesday=2.0,
-                    thursday=1.0,
-                    friday=2.0,
-                    saturday=0,
-                    sunday=0,
-                ),
-            ),
-            GoalResponse(
-                task_id="tsk_02HXYZ1234567890ABCDEF",
-                task_name="個人開発",
-                daily_targets=DailyTargets(
-                    monday=2.0,
-                    tuesday=2.0,
-                    wednesday=0,
-                    thursday=2.0,
-                    friday=0,
-                    saturday=4.0,
-                    sunday=4.0,
-                ),
-            ),
-        ],
-    )
+    goals = await goal_service.list_current_goals(db, current_user)
     return APIResponse(data=goals)
 
 
 @router.put("", response_model=APIResponse[GoalsUpdateResponse])
 async def update_current_goals(
-    goals_update: GoalsUpdate, current_user: CurrentUser
+    goals_update: GoalsUpdate, db: DbSession, current_user: CurrentUser
 ) -> APIResponse[GoalsUpdateResponse]:
     """今週の目標を一括更新する."""
-    # ダミーデータを返す
-    response_goals = []
-    created_tasks = []
-
-    for goal_item in goals_update.goals:
-        if goal_item.task_id is None and goal_item.new_task_name:
-            # 新規タスク作成
-            new_task_id = "tsk_NEW_CREATED_TASK"
-            response_goals.append(
-                GoalResponse(
-                    task_id=new_task_id,
-                    task_name=goal_item.new_task_name,
-                    daily_targets=goal_item.daily_targets,
-                )
-            )
-            created_tasks.append(CreatedTask(id=new_task_id, name=goal_item.new_task_name))
-        elif goal_item.task_id:
-            # 既存タスク
-            response_goals.append(
-                GoalResponse(
-                    task_id=goal_item.task_id,
-                    task_name=f"Task {goal_item.task_id}",
-                    daily_targets=goal_item.daily_targets,
-                )
-            )
-
-    update_response = GoalsUpdateResponse(
-        week_id="wk_01HXYZ1234567890ABCDEF",
-        unit_duration_minutes=goals_update.unit_duration_minutes,
-        goals=response_goals,
-        created_tasks=created_tasks,
-    )
+    async with _transaction(db):
+        update_response = await goal_service.replace_current_goals(db, current_user, goals_update)
     return APIResponse(data=update_response)
