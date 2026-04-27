@@ -55,7 +55,7 @@ def _build_goal_responses(rows: Iterable[tuple[Goal, Task]]) -> list[GoalRespons
                 "daily_targets": _empty_daily_targets(),
             },
         )
-        day_key = DAY_OF_WEEK_FIELD_NAMES[DayOfWeek(goal.day_of_week)]
+        day_key = DAY_OF_WEEK_FIELD_NAMES[goal.day_of_week]
         daily_targets = item["daily_targets"]
         assert isinstance(daily_targets, dict)
         daily_targets[day_key] = float(goal.target_units)
@@ -116,18 +116,24 @@ def _validate_goals_update(goals_update: GoalsUpdate) -> None:
         seen_task_ids.add(item.task_id)
 
 
-async def _get_active_task(db: AsyncSession, user: User, task_id: str) -> Task:
+async def _get_active_tasks_map(
+    db: AsyncSession, user: User, task_ids: set[str]
+) -> dict[str, Task]:
+    if not task_ids:
+        return {}
+
     result = await db.execute(
         select(Task).where(
-            Task.id == task_id,
+            Task.id.in_(task_ids),
             Task.user_id == user.id,
             Task.is_archived.is_(False),
         )
     )
-    task = result.scalar_one_or_none()
-    if task is None:
-        raise TaskNotFoundException(task_id)
-    return task
+    tasks = {task.id: task for task in result.scalars()}
+    for task_id in task_ids:
+        if task_id not in tasks:
+            raise TaskNotFoundException(task_id)
+    return tasks
 
 
 async def replace_current_goals(
@@ -145,6 +151,8 @@ async def replace_current_goals(
 
     response_goals: list[GoalResponse] = []
     created_tasks: list[CreatedTask] = []
+    existing_task_ids = {item.task_id for item in goals_update.goals if item.task_id is not None}
+    active_tasks = await _get_active_tasks_map(db, user, existing_task_ids)
 
     for item in goals_update.goals:
         if item.task_id is None:
@@ -158,7 +166,7 @@ async def replace_current_goals(
             db.add(task)
             created_tasks.append(CreatedTask(id=task.id, name=task.name))
         else:
-            task = await _get_active_task(db, user, item.task_id)
+            task = active_tasks[item.task_id]
 
         for day, target_units in _daily_targets_to_rows(item.daily_targets):
             db.add(

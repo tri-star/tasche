@@ -34,7 +34,7 @@ class Goal(Base):
     task_id: Mapped[str] = mapped_column(
         String(30), ForeignKey("tasks.id"), nullable=False, index=True
     )
-    day_of_week: Mapped[str] = mapped_column(
+    day_of_week: Mapped[DayOfWeek] = mapped_column(
         Enum(DayOfWeek, name="day_of_week_enum"),
         nullable=False,
     )
