@@ -55,6 +55,7 @@ async def upsert_record(
         day_of_week=day_of_week,
         actual_units=record_update.actual_units,
     )
+    await db.commit()
     return APIResponse(data=_build_record_response(record, task_name))
 
 
@@ -72,4 +73,5 @@ async def create_record(
         day_of_week=record_create.day_of_week,
         actual_units=record_create.actual_units,
     )
+    await db.commit()
     return APIResponse(data=_build_record_response(record, task_name))

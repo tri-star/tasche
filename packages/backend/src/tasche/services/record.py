@@ -217,7 +217,7 @@ async def upsert_current_record(
     else:
         record.actual_units = actual_units
 
-    await db.commit()
+    await db.flush()
     await db.refresh(record)
 
     return record, task.name, created
