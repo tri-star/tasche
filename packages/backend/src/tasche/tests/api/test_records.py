@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from tasche.api.deps import get_current_user
 from tasche.main import app
+from tasche.models.enums import DayOfWeek
 from tasche.models.record import Record
 from tasche.models.task import Task
 from tasche.models.user import User
@@ -259,6 +260,60 @@ class TestUpsertRecord:
         assert response.status_code == 201
         assert response.json()["data"]["task_id"] == dev.id
         assert response.json()["data"]["actual_units"] == 0.5
+
+    async def test_service_does_not_commit_transaction(
+        self,
+        db_session: AsyncSession,
+        test_user: User,
+        current_week: Week,
+        test_tasks: tuple[Task, Task],
+        fixed_now: datetime,
+    ):
+        """サービス層では commit せず、呼び出し元が rollback できる."""
+        english, _ = test_tasks
+
+        record, _, created = await record_service.upsert_current_record(
+            db_session,
+            test_user,
+            task_id=english.id,
+            day_of_week=DayOfWeek.MONDAY,
+            actual_units=1.0,
+        )
+
+        assert created is True
+        assert record.week_id == current_week.id
+
+        await db_session.rollback()
+
+        result = await db_session.execute(select(Record).where(Record.id == record.id))
+        assert result.scalar_one_or_none() is None
+
+    async def test_service_can_skip_flush_and_refresh(
+        self,
+        db_session: AsyncSession,
+        test_user: User,
+        current_week: Week,
+        test_tasks: tuple[Task, Task],
+        fixed_now: datetime,
+    ):
+        """呼び出し元が flush / refresh のタイミングを制御できる."""
+        english, _ = test_tasks
+
+        record, _, created = await record_service.upsert_current_record(
+            db_session,
+            test_user,
+            task_id=english.id,
+            day_of_week=DayOfWeek.TUESDAY,
+            actual_units=1.0,
+            flush_record=False,
+            refresh_record=False,
+        )
+
+        assert created is True
+        assert record.created_at is None
+        assert record.updated_at is None
+
+        await db_session.rollback()
 
     async def test_rejects_other_users_task(
         self,

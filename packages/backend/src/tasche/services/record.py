@@ -181,6 +181,8 @@ async def upsert_current_record(
     day_of_week: DayOfWeek,
     actual_units: float,
     now: datetime | None = None,
+    flush_record: bool = True,
+    refresh_record: bool = True,
 ) -> tuple[Record, str, bool]:
     """現在の週の実績を作成または更新する."""
     task_result = await db.execute(
@@ -217,7 +219,9 @@ async def upsert_current_record(
     else:
         record.actual_units = actual_units
 
-    await db.commit()
-    await db.refresh(record)
+    if flush_record or refresh_record:
+        await db.flush()
+    if refresh_record:
+        await db.refresh(record)
 
     return record, task.name, created
