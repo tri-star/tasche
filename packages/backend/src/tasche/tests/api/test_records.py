@@ -288,6 +288,33 @@ class TestUpsertRecord:
         result = await db_session.execute(select(Record).where(Record.id == record.id))
         assert result.scalar_one_or_none() is None
 
+    async def test_service_can_skip_flush_and_refresh(
+        self,
+        db_session: AsyncSession,
+        test_user: User,
+        current_week: Week,
+        test_tasks: tuple[Task, Task],
+        fixed_now: datetime,
+    ):
+        """呼び出し元が flush / refresh のタイミングを制御できる."""
+        english, _ = test_tasks
+
+        record, _, created = await record_service.upsert_current_record(
+            db_session,
+            test_user,
+            task_id=english.id,
+            day_of_week=DayOfWeek.TUESDAY,
+            actual_units=1.0,
+            flush_record=False,
+            refresh_record=False,
+        )
+
+        assert created is True
+        assert record.created_at is None
+        assert record.updated_at is None
+
+        await db_session.rollback()
+
     async def test_rejects_other_users_task(
         self,
         authenticated_client: AsyncClient,

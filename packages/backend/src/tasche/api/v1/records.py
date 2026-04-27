@@ -1,6 +1,10 @@
 """実績 API エンドポイント."""
 
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+
 from fastapi import APIRouter
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from tasche.api.deps import CurrentUser, DbSession
 from tasche.models.enums import DayOfWeek
@@ -14,6 +18,27 @@ from tasche.schemas.record import (
 from tasche.services import record as record_service
 
 router = APIRouter()
+
+
+@asynccontextmanager
+async def _transaction(db: AsyncSession) -> AsyncIterator[None]:
+    """API 層でトランザクション境界を管理する."""
+    if not db.in_transaction():
+        async with db.begin():
+            yield
+        return
+
+    try:
+        yield
+    except Exception:
+        await db.rollback()
+        raise
+    else:
+        try:
+            await db.commit()
+        except Exception:
+            await db.rollback()
+            raise
 
 
 def _build_record_response(record, task_name: str) -> RecordResponse:
@@ -48,15 +73,16 @@ async def upsert_record(
     current_user: CurrentUser,
 ) -> APIResponse[RecordResponse]:
     """今週の実績を作成または更新する."""
-    record, task_name, _ = await record_service.upsert_current_record(
-        db,
-        current_user,
-        task_id=task_id,
-        day_of_week=day_of_week,
-        actual_units=record_update.actual_units,
-    )
-    await db.commit()
-    return APIResponse(data=_build_record_response(record, task_name))
+    async with _transaction(db):
+        record, task_name, _ = await record_service.upsert_current_record(
+            db,
+            current_user,
+            task_id=task_id,
+            day_of_week=day_of_week,
+            actual_units=record_update.actual_units,
+        )
+        response = APIResponse(data=_build_record_response(record, task_name))
+    return response
 
 
 @router.post("", response_model=APIResponse[RecordResponse], status_code=201)
@@ -66,12 +92,13 @@ async def create_record(
     current_user: CurrentUser,
 ) -> APIResponse[RecordResponse]:
     """実績を記録する."""
-    record, task_name, _ = await record_service.upsert_current_record(
-        db,
-        current_user,
-        task_id=record_create.task_id,
-        day_of_week=record_create.day_of_week,
-        actual_units=record_create.actual_units,
-    )
-    await db.commit()
-    return APIResponse(data=_build_record_response(record, task_name))
+    async with _transaction(db):
+        record, task_name, _ = await record_service.upsert_current_record(
+            db,
+            current_user,
+            task_id=record_create.task_id,
+            day_of_week=record_create.day_of_week,
+            actual_units=record_create.actual_units,
+        )
+        response = APIResponse(data=_build_record_response(record, task_name))
+    return response
