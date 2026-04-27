@@ -98,11 +98,12 @@ async def get_current_week(
     user: User,
     *,
     now: datetime | None = None,
+    timezone_name: str | None = None,
 ) -> Week:
     """現在のユーザーの current week を取得する."""
     current_time = now or get_current_time_utc()
     start_date = calculate_current_week_start_date(
-        timezone_name=user.timezone,
+        timezone_name=timezone_name or user.timezone,
         now=current_time,
     )
 
