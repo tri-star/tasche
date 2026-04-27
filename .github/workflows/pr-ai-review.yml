@@ -226,7 +226,7 @@ jobs:
           jq -c '.[]' tmp/review/persistent-summary-comments.json | while read -r item; do
             body=$(printf '%s' "${item}" | jq -r '.body')
             response=$(gh api --method POST "repos/${REPO}/issues/${PR_NUMBER}/comments" -f body="${body}")
-            jq -n \
+            jq -c -n \
               --argjson item "${item}" \
               --argjson response "${response}" \
               '{
