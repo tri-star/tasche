@@ -96,6 +96,7 @@ jobs:
       E2E_API_BASE_URL: http://localhost:8001
       VITE_AUTH_STUB_ENABLED: "true"
       PLAYWRIGHT_HTML_OPEN: never
+      AUTH_STUB_JWT_SECRET: ${{ secrets.AUTH_STUB_JWT_SECRET }}
     steps:
       - uses: actions/checkout@v4
 
