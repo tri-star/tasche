@@ -33,21 +33,23 @@ pnpm test:e2e:ui
 ### 実APIモード
 
 実際のバックエンドAPIに接続してテストを実行します。バックエンドが起動している必要があります。
-CI では backend コンテナ起動後に migration と E2E 用 seed が自動実行されます。
-手動実行する場合は、E2E テスト前に同じ準備コマンドを実行してください。
+`pnpm test:e2e` は E2E 専用の `api-e2e` コンテナを起動し、専用 DB `tasche_test` に対して
+migration、DB リセット、E2E 用 seed を自動実行してから Playwright を開始します。
+通常のローカル開発用 `api` コンテナと DB `tasche` は使用しません。
 
 ```bash
-# バックエンドを起動（別ターミナル）
-# ENABLE_TEST_AUTH=true で起動すること
-docker compose -f compose.yaml up -d
-
-# DB schema と E2E 用データを準備
-docker compose -f compose.yaml exec -T api alembic upgrade heads
-docker compose -f compose.yaml exec -T api python scripts/e2e_seed/run.py
-
-# 実APIモードでテスト実行
+# E2E 専用 backend の起動、DB 準備、seed、テスト実行をまとめて行う
 pnpm --filter @tasche/frontend test:e2e
 ```
+
+`api-e2e` は通常開発用 `api` とは別ポートで起動します。
+テスト終了後、`api-e2e` は自動停止します。
+ポートは `packages/backend/.env` の `E2E_API_CONTAINER_PORT` と
+`packages/frontend/.env` の `E2E_API_BASE_URL` で指定します。
+これらは `scripts/initialize-dotenv.sh` で worktree ごとに自動採番されます。
+
+DB リセットスクリプトは `DATABASE_URL` の DB 名が `tasche_test` の場合だけ実行されます。
+通常のローカル DB `tasche` を誤ってリセットしないためのガードです。
 
 ## テストの書き方
 

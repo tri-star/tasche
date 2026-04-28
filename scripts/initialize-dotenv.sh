@@ -13,6 +13,7 @@ set -euo pipefail
 # ---------------------------------------------------------------------------
 PORT_NAMES=(
   BACKEND_API_PORT
+  E2E_BACKEND_API_PORT
   DB_PORT
   FRONTEND_DEV_PORT
   STORYBOOK_DEV_PORT
