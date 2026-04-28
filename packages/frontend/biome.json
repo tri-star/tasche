@@ -5,6 +5,7 @@
   "files": {
     "includes": [
       "!playwright-report",
+      "!test-results",
       "!public/mockServiceWorker.js",
       "!node_modules",
       "!coverage",

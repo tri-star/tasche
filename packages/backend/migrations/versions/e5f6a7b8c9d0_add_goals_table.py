@@ -10,6 +10,7 @@ from collections.abc import Sequence
 
 import sqlalchemy as sa
 from alembic import op
+from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision: str = "e5f6a7b8c9d0"
@@ -27,7 +28,7 @@ def upgrade() -> None:
         sa.Column("task_id", sa.String(length=30), nullable=False),
         sa.Column(
             "day_of_week",
-            sa.Enum(
+            postgresql.ENUM(
                 "monday",
                 "tuesday",
                 "wednesday",

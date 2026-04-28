@@ -17,7 +17,7 @@ describe("StubLoginButton", () => {
     await user.click(screen.getByRole("button", { name: /スタブログイン/ }))
 
     await waitFor(() => {
-      expect(onLogin).toHaveBeenCalledWith("test-user@example.com")
+      expect(onLogin).toHaveBeenCalledWith("e2e-test@example.com")
     })
   })
 

@@ -33,14 +33,20 @@ pnpm test:e2e:ui
 ### 実APIモード
 
 実際のバックエンドAPIに接続してテストを実行します。バックエンドが起動している必要があります。
+CI では backend コンテナ起動後に migration と E2E 用 seed が自動実行されます。
+手動実行する場合は、E2E テスト前に同じ準備コマンドを実行してください。
 
 ```bash
 # バックエンドを起動（別ターミナル）
 # ENABLE_TEST_AUTH=true で起動すること
-docker-compose up -d
+docker compose -f compose.yaml up -d
+
+# DB schema と E2E 用データを準備
+docker compose -f compose.yaml exec -T api alembic upgrade heads
+docker compose -f compose.yaml exec -T api python scripts/e2e_seed/run.py
 
 # 実APIモードでテスト実行
-pnpm test:e2e:api
+pnpm --filter @tasche/frontend test:e2e
 ```
 
 ## テストの書き方

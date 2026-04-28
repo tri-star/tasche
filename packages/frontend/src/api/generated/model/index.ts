@@ -42,6 +42,7 @@ export * from './logoutResponse';
 export * from './recordCreate';
 export * from './recordItem';
 export * from './recordResponse';
+export * from './recordUpdate';
 export * from './recordsResponse';
 export * from './stubLoginRequest';
 export * from './stubLoginRequestName';

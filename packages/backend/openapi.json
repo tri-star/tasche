@@ -724,6 +724,72 @@
         ]
       }
     },
+    "/api/weeks/current/records/{day_of_week}/{task_id}": {
+      "put": {
+        "tags": [
+          "実績"
+        ],
+        "summary": "Upsert Record",
+        "description": "今週の実績を作成または更新する.",
+        "operationId": "upsert_record_api_weeks_current_records__day_of_week___task_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "day_of_week",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/DayOfWeek"
+            }
+          },
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse_RecordResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/dashboard": {
       "get": {
         "tags": [
@@ -745,7 +811,8 @@
             "schema": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "type": "string",
+                  "maxLength": 64
                 },
                 {
                   "type": "null"
@@ -1542,6 +1609,23 @@
         ],
         "title": "RecordResponse",
         "description": "実績レスポンス."
+      },
+      "RecordUpdate": {
+        "properties": {
+          "actual_units": {
+            "type": "number",
+            "multipleOf": 0.1,
+            "minimum": 0.0,
+            "title": "Actual Units",
+            "description": "実績ユニット数（0.1単位）"
+          }
+        },
+        "type": "object",
+        "required": [
+          "actual_units"
+        ],
+        "title": "RecordUpdate",
+        "description": "実績更新リクエスト."
       },
       "RecordsResponse": {
         "properties": {

@@ -118,11 +118,11 @@ jobs:
         working-directory: packages/backend
 
       - name: Run backend migrations
-        run: docker compose -f compose.yaml exec -T api alembic upgrade head
+        run: docker compose -f compose.yaml exec -T api alembic upgrade heads
         working-directory: packages/backend
 
-      - name: Seed backend data
-        run: docker compose -f compose.yaml exec -T api python scripts/seed.py
+      - name: Seed E2E backend data
+        run: docker compose -f compose.yaml exec -T api python scripts/e2e_seed/run.py
         working-directory: packages/backend
 
       - name: Run E2E Tests

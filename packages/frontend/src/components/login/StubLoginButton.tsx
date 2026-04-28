@@ -10,7 +10,7 @@ type Props = {
  * VITE_AUTH_STUB_ENABLED=true のときのみ LoginPage から描画される
  * このコンポーネント自体は環境変数を参照しない（テスト容易性のため props で制御）
  */
-export function StubLoginButton({ onLogin, defaultEmail = "test-user@example.com" }: Props) {
+export function StubLoginButton({ onLogin, defaultEmail = "e2e-test@example.com" }: Props) {
   const [loading, setLoading] = useState(false)
 
   async function handleClick() {
