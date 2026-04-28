@@ -34,6 +34,7 @@ services:
       COOKIE_SAMESITE: lax
       COOKIE_DOMAIN: ""
       AUTH_STUB_ENABLED: "true"
+      AUTH_STUB_JWT_SECRET: ${AUTH_STUB_JWT_SECRET:-stub-secret-for-local}
       LOG_LEVEL: debug
     ports:
       - "${API_CONTAINER_PORT:-8000}:8000"
@@ -67,6 +68,7 @@ services:
       COOKIE_SAMESITE: lax
       COOKIE_DOMAIN: ""
       AUTH_STUB_ENABLED: "true"
+      AUTH_STUB_JWT_SECRET: ${AUTH_STUB_JWT_SECRET:-stub-secret-for-local}
       LOG_LEVEL: debug
     ports:
       - "${E2E_API_CONTAINER_PORT:-8001}:8000"
