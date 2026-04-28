@@ -32,7 +32,22 @@ async function loginWithMswStub(page: Page, email: string): Promise<void> {
     }
   }, email)
 
+  await gotoAuthenticatedRoot(page)
+}
+
+async function gotoAuthenticatedRoot(page: Page): Promise<void> {
+  const refreshResponse = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/auth/refresh") && response.request().method() === "POST",
+  )
+
   await page.goto("/")
+  const response = await refreshResponse
+
+  if (!response.ok()) {
+    throw new Error(`auth refresh failed: ${response.status()} ${response.statusText()}`)
+  }
+
   await page.waitForURL("**/")
 }
 
@@ -78,10 +93,18 @@ export const test = base.extend<{
     if (useMsw) {
       await loginWithMswStub(page, E2E_STUB_USER_EMAIL)
     } else {
-      await page.request.post(new URL("/api/auth/stub-login", getApiBaseUrl()).toString(), {
-        data: { email: E2E_STUB_USER_EMAIL },
-      })
-      await page.goto("/")
+      const response = await page.request.post(
+        new URL("/api/auth/stub-login", getApiBaseUrl()).toString(),
+        {
+          data: { email: E2E_STUB_USER_EMAIL },
+        },
+      )
+
+      if (!response.ok()) {
+        throw new Error(`stub-login failed: ${response.status()} ${response.statusText()}`)
+      }
+
+      await gotoAuthenticatedRoot(page)
     }
 
     await use(page)
