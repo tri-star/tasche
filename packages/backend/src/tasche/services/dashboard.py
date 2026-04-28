@@ -1,5 +1,6 @@
 """ダッシュボード集計サービス."""
 
+from dataclasses import dataclass
 from datetime import datetime
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -19,6 +20,13 @@ from tasche.schemas.dashboard import (
     WeeklyMatrixItem,
 )
 from tasche.services import record as record_service
+
+
+@dataclass
+class _WeeklyMatrixPayload:
+    task_name: str
+    created_at: datetime
+    daily_data: dict[DayOfWeek, DailyData]
 
 
 def _calculate_completion_rate(target_units: float, actual_units: float) -> float | None:
@@ -43,6 +51,19 @@ def _empty_daily_data() -> dict[DayOfWeek, DailyData]:
         day: DailyData(target_units=0.0, actual_units=0.0, completion_rate=None)
         for day in record_service.DAY_OF_WEEK_ORDER
     }
+
+
+def _get_or_create_weekly_payload(
+    grouped: dict[str, _WeeklyMatrixPayload],
+    task: Task,
+) -> _WeeklyMatrixPayload:
+    if task.id not in grouped:
+        grouped[task.id] = _WeeklyMatrixPayload(
+            task_name=task.name,
+            created_at=task.created_at,
+            daily_data=_empty_daily_data(),
+        )
+    return grouped[task.id]
 
 
 async def _fetch_goal_rows(
@@ -85,20 +106,12 @@ def _build_weekly_matrix(
     goal_rows: list[tuple[Goal, Task]],
     record_rows: list[tuple[Record, Task]],
 ) -> list[WeeklyMatrixItem]:
-    grouped: dict[str, dict[str, object]] = {}
+    grouped: dict[str, _WeeklyMatrixPayload] = {}
 
     for goal, task in goal_rows:
-        item = grouped.setdefault(
-            task.id,
-            {
-                "task_name": task.name,
-                "created_at": task.created_at,
-                "daily_data": _empty_daily_data(),
-            },
-        )
+        item = _get_or_create_weekly_payload(grouped, task)
         day = DayOfWeek(goal.day_of_week)
-        daily_data = item["daily_data"]
-        assert isinstance(daily_data, dict)
+        daily_data = item.daily_data
         current = daily_data[day]
         daily_data[day] = DailyData(
             target_units=float(goal.target_units),
@@ -109,17 +122,9 @@ def _build_weekly_matrix(
         )
 
     for record, task in record_rows:
-        item = grouped.setdefault(
-            task.id,
-            {
-                "task_name": task.name,
-                "created_at": task.created_at,
-                "daily_data": _empty_daily_data(),
-            },
-        )
+        item = _get_or_create_weekly_payload(grouped, task)
         day = DayOfWeek(record.day_of_week)
-        daily_data = item["daily_data"]
-        assert isinstance(daily_data, dict)
+        daily_data = item.daily_data
         current = daily_data[day]
         daily_data[day] = DailyData(
             target_units=current.target_units,
@@ -132,10 +137,10 @@ def _build_weekly_matrix(
     return [
         WeeklyMatrixItem(
             task_id=task_id,
-            task_name=str(payload["task_name"]),
-            daily_data=payload["daily_data"],
+            task_name=payload.task_name,
+            daily_data=payload.daily_data,
         )
-        for task_id, payload in sorted(grouped.items(), key=lambda item: item[1]["created_at"])
+        for task_id, payload in sorted(grouped.items(), key=lambda item: item[1].created_at)
     ]
 
 
