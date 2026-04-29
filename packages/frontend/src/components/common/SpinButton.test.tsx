@@ -10,6 +10,7 @@ describe("SpinButton", () => {
     const spinButton = screen.getByRole("spinbutton", { name: "実績ユニット" })
     expect(spinButton).toHaveTextContent("1.5")
     expect(spinButton).toHaveAttribute("aria-valuenow", "1.5")
+    expect(spinButton).toHaveAttribute("aria-valuetext", "1.5 units")
     expect(spinButton).toHaveAttribute("aria-valuemin", "0")
     expect(spinButton).toHaveAttribute("aria-valuemax", "3")
   })
@@ -82,6 +83,40 @@ describe("SpinButton", () => {
 
     expect(onChange).toHaveBeenNthCalledWith(1, 0)
     expect(onChange).toHaveBeenNthCalledWith(2, 3)
+  })
+
+  it("stepが整数の場合は小数点を表示しない", () => {
+    render(<SpinButton value={1} onChange={vi.fn()} step={1} ariaLabel="実績ユニット" />)
+
+    const spinButton = screen.getByRole("spinbutton", { name: "実績ユニット" })
+    expect(spinButton).toHaveTextContent("1")
+    expect(spinButton).toHaveAttribute("aria-valuetext", "1 units")
+  })
+
+  it("clamp後の値が現在値と同じ場合はonChangeを呼ばない", async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(<SpinButton value={0} onChange={onChange} min={0} ariaLabel="実績ユニット" />)
+
+    const spinButton = screen.getByRole("spinbutton", { name: "実績ユニット" })
+    spinButton.focus()
+    await user.keyboard("{Home}")
+
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  it("指数表記のstepでも小数桁を保って増減する", async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(
+      <SpinButton value={0.0000001} onChange={onChange} step={1e-7} ariaLabel="実績ユニット" />,
+    )
+
+    expect(screen.getByRole("spinbutton", { name: "実績ユニット" })).toHaveTextContent("0.0000001")
+
+    await user.click(screen.getByRole("button", { name: "実績ユニットを増やす" }))
+
+    expect(onChange).toHaveBeenCalledWith(0.0000002)
   })
 
   it("disabled時は操作できない", async () => {

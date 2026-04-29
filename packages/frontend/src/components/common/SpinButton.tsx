@@ -16,12 +16,19 @@ export type SpinButtonProps = {
 }
 
 function getDecimalPlaces(value: number): number {
-  const [, fraction = ""] = value.toString().split(".")
+  const valueText = value.toString().toLowerCase()
+  if (valueText.includes("e-")) {
+    const [coefficient, exponent] = valueText.split("e-")
+    const [, fraction = ""] = coefficient.split(".")
+    return Number(exponent) + fraction.length
+  }
+
+  const [, fraction = ""] = valueText.split(".")
   return fraction.length
 }
 
 function normalize(value: number, step: number): number {
-  const decimalPlaces = Math.max(1, getDecimalPlaces(step))
+  const decimalPlaces = getDecimalPlaces(step)
   return Number(value.toFixed(decimalPlaces))
 }
 
@@ -42,10 +49,14 @@ export function SpinButton({
   className,
 }: SpinButtonProps) {
   const normalizedValue = normalize(clamp(value, min, max), step)
+  const formattedValue = normalizedValue.toFixed(getDecimalPlaces(step))
 
   function update(nextValue: number) {
     if (disabled) return
-    onChange(normalize(clamp(nextValue, min, max), step))
+    const newValue = normalize(clamp(nextValue, min, max), step)
+    if (newValue !== normalizedValue) {
+      onChange(newValue)
+    }
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
@@ -84,6 +95,7 @@ export function SpinButton({
         tabIndex={disabled ? -1 : 0}
         aria-label={ariaLabel}
         aria-valuenow={normalizedValue}
+        aria-valuetext={`${formattedValue} ${unitLabel}`}
         aria-valuemin={min}
         aria-valuemax={max}
         aria-disabled={disabled || undefined}
@@ -94,7 +106,7 @@ export function SpinButton({
           disabled && "cursor-not-allowed opacity-50",
         )}
       >
-        {normalizedValue.toFixed(Math.max(1, getDecimalPlaces(step)))}
+        {formattedValue}
       </div>
       <Button
         type="button"
