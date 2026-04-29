@@ -1,6 +1,7 @@
 import { useState } from "react"
 import type { DayOfWeek } from "@/api/generated/model"
 import { DaySelector } from "@/components/common/DaySelector"
+import { SpinButton } from "@/components/common/SpinButton"
 import { TaskCombobox } from "@/components/common/TaskCombobox"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -16,14 +17,6 @@ export function RecordWidget({ currentDay, weekStartDate, tasks, onRecord }: Rec
   const [selectedDay, setSelectedDay] = useState<DayOfWeek>(currentDay)
   const [selectedTask, setSelectedTask] = useState<string>("")
   const [units, setUnits] = useState<number>(1.5)
-
-  const handleDecrement = () => {
-    setUnits((prev) => Math.max(0, +(prev - 0.5).toFixed(1)))
-  }
-
-  const handleIncrement = () => {
-    setUnits((prev) => +(prev + 0.5).toFixed(1))
-  }
 
   const handleRecord = () => {
     if (selectedTask) {
@@ -64,22 +57,13 @@ export function RecordWidget({ currentDay, weekStartDate, tasks, onRecord }: Rec
           <TaskCombobox tasks={tasks} value={selectedTask} onChange={setSelectedTask} />
 
           {/* ユニット数入力 */}
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={handleDecrement}
-              disabled={units <= 0}
-              className="h-9 w-9"
-            >
-              −
-            </Button>
-            <span className="w-16 text-center text-xl font-medium">{units}</span>
-            <Button variant="outline" size="icon" onClick={handleIncrement} className="h-9 w-9">
-              +
-            </Button>
-            <span className="text-sm text-muted-foreground">units</span>
-          </div>
+          <SpinButton
+            value={units}
+            onChange={setUnits}
+            step={0.1}
+            min={0}
+            ariaLabel="実績ユニット"
+          />
 
           {/* 記録ボタン */}
           <Button
