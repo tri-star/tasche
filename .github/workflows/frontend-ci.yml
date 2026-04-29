@@ -90,10 +90,13 @@ jobs:
       COMPOSE_PROJECT_NAME: test-backend
       DB_CONTAINER_PORT: 5432
       API_CONTAINER_PORT: 8000
+      E2E_API_CONTAINER_PORT: 8001
       VITE_DEV_PORT: 5173
-      VITE_API_BASE_URL: http://localhost:8000
+      VITE_API_BASE_URL: http://localhost:8001
+      E2E_API_BASE_URL: http://localhost:8001
       VITE_AUTH_STUB_ENABLED: "true"
       PLAYWRIGHT_HTML_OPEN: never
+      AUTH_STUB_JWT_SECRET: ${{ secrets.AUTH_STUB_JWT_SECRET }}
     steps:
       - uses: actions/checkout@v4
 
@@ -114,15 +117,19 @@ jobs:
         run: pnpm --filter @tasche/frontend exec playwright install chromium --with-deps
 
       - name: Start backend containers
-        run: docker compose -f compose.yaml up -d
+        run: docker compose -f compose.yaml up -d db api-e2e
         working-directory: packages/backend
 
       - name: Run backend migrations
-        run: docker compose -f compose.yaml exec -T api alembic upgrade heads
+        run: docker compose -f compose.yaml exec -T api-e2e alembic upgrade heads
+        working-directory: packages/backend
+
+      - name: Reset E2E backend data
+        run: docker compose -f compose.yaml exec -T api-e2e python scripts/e2e_seed/reset.py
         working-directory: packages/backend
 
       - name: Seed E2E backend data
-        run: docker compose -f compose.yaml exec -T api python scripts/e2e_seed/run.py
+        run: docker compose -f compose.yaml exec -T api-e2e python scripts/e2e_seed/run.py
         working-directory: packages/backend
 
       - name: Run E2E Tests
