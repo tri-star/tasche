@@ -8,25 +8,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { cn } from "@/lib/utils"
-
-const DAYS_OF_WEEK = [
-  "monday",
-  "tuesday",
-  "wednesday",
-  "thursday",
-  "friday",
-  "saturday",
-  "sunday",
-] as const
-const DAY_LABELS: Record<string, string> = {
-  monday: "月",
-  tuesday: "火",
-  wednesday: "水",
-  thursday: "木",
-  friday: "金",
-  saturday: "土",
-  sunday: "日",
-}
+import { DAY_LABELS, DAYS_OF_WEEK_ORDER } from "@/lib/week-dates"
 
 type WeeklyMatrixProps = {
   data: WeeklyMatrixItem[]
@@ -50,7 +32,7 @@ function getSpriteOffset(rate: number | null | undefined): number {
 }
 
 export function WeeklyMatrix({ data, currentDay }: WeeklyMatrixProps) {
-  const totals = DAYS_OF_WEEK.map((day) => {
+  const totals = DAYS_OF_WEEK_ORDER.map((day) => {
     const dayData = data.map((item) => item.daily_data[day]).filter((d) => d !== undefined)
 
     if (dayData.length === 0) return null
@@ -69,7 +51,7 @@ export function WeeklyMatrix({ data, currentDay }: WeeklyMatrixProps) {
           <TableHeader>
             <TableRow>
               <TableHead className="w-32"></TableHead>
-              {DAYS_OF_WEEK.map((day) => (
+              {DAYS_OF_WEEK_ORDER.map((day) => (
                 <TableHead
                   key={day}
                   className={cn("text-center w-20", day === currentDay && "bg-primary/10")}
@@ -83,7 +65,7 @@ export function WeeklyMatrix({ data, currentDay }: WeeklyMatrixProps) {
             {data.map((item) => (
               <TableRow key={item.task_id}>
                 <TableCell className="font-medium">{item.task_name}</TableCell>
-                {DAYS_OF_WEEK.map((day) => {
+                {DAYS_OF_WEEK_ORDER.map((day) => {
                   const dayData = item.daily_data[day]
                   const rate = dayData?.completion_rate
 
@@ -118,10 +100,10 @@ export function WeeklyMatrix({ data, currentDay }: WeeklyMatrixProps) {
               <TableCell>合計</TableCell>
               {totals.map((total, index) => (
                 <TableCell
-                  key={DAYS_OF_WEEK[index]}
+                  key={DAYS_OF_WEEK_ORDER[index]}
                   className={cn(
                     "text-center",
-                    DAYS_OF_WEEK[index] === currentDay && "bg-primary/10",
+                    DAYS_OF_WEEK_ORDER[index] === currentDay && "bg-primary/10",
                   )}
                 >
                   {total !== null ? `${total}%` : ""}
