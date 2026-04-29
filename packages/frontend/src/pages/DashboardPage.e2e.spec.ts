@@ -94,5 +94,28 @@ test.describe("DashboardPage", () => {
       await authenticatedPage.waitForURL("**/goals")
       expect(authenticatedPage.url()).toContain("/goals")
     })
+
+    test("MSWモードでサイドバーの目標設定からSPA遷移できる", async ({ authenticatedPage }) => {
+      test.skip(!useMsw, "MSW認証状態の維持確認専用のテスト")
+
+      await authenticatedPage.getByRole("link", { name: "目標設定" }).click()
+
+      await authenticatedPage.waitForURL("**/goals")
+      await expect(authenticatedPage.getByText("1ユニットの時間を選んでください")).toBeVisible()
+    })
+
+    test("MSWモードでリロード後もログイン状態を維持する", async ({ authenticatedPage }) => {
+      test.skip(!useMsw, "MSW認証状態の維持確認専用のテスト")
+      const dashboardPage = new DashboardPage(authenticatedPage)
+      await dashboardPage.waitForLoaded()
+
+      await authenticatedPage.reload()
+
+      await authenticatedPage.waitForURL("**/")
+      await expect(dashboardPage.todayGoalsTitle).toBeVisible()
+      await expect(
+        authenticatedPage.getByRole("button", { name: "Google でログイン" }),
+      ).toHaveCount(0)
+    })
   })
 })

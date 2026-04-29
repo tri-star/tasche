@@ -1,11 +1,13 @@
 import { HelpCircle, Home, Settings, Target, User } from "lucide-react"
+import type { ReactNode } from "react"
+import { NavLink } from "react-router-dom"
 import { cn } from "@/lib/utils"
 
 type NavItem = {
-  icon: React.ReactNode
+  icon: ReactNode
   label: string
   href: string
-  active?: boolean
+  end?: boolean
 }
 
 type SidebarProps = {
@@ -14,7 +16,7 @@ type SidebarProps = {
 
 export function Sidebar({ className }: SidebarProps) {
   const mainNavItems: NavItem[] = [
-    { icon: <Home className="h-5 w-5" />, label: "ダッシュボード", href: "/", active: true },
+    { icon: <Home className="h-5 w-5" />, label: "ダッシュボード", href: "/", end: true },
     { icon: <Target className="h-5 w-5" />, label: "目標設定", href: "/goals" },
     { icon: <Settings className="h-5 w-5" />, label: "設定", href: "/settings" },
   ]
@@ -24,6 +26,14 @@ export function Sidebar({ className }: SidebarProps) {
     { icon: <User className="h-5 w-5" />, label: "アカウント", href: "/account" },
   ]
 
+  const linkClassName = ({ isActive }: { isActive: boolean }) =>
+    cn(
+      "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
+      isActive
+        ? "bg-accent text-accent-foreground font-medium"
+        : "text-muted-foreground hover:bg-muted",
+    )
+
   return (
     <aside className={cn("flex w-60 flex-col bg-white border-r", className)}>
       {/* メインナビゲーション */}
@@ -31,18 +41,10 @@ export function Sidebar({ className }: SidebarProps) {
         <ul className="space-y-1">
           {mainNavItems.map((item) => (
             <li key={item.href}>
-              <a
-                href={item.href}
-                className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
-                  item.active
-                    ? "bg-accent text-accent-foreground font-medium"
-                    : "text-muted-foreground hover:bg-muted",
-                )}
-              >
+              <NavLink to={item.href} end={item.end} className={linkClassName}>
                 {item.icon}
                 {item.label}
-              </a>
+              </NavLink>
             </li>
           ))}
         </ul>
@@ -53,13 +55,10 @@ export function Sidebar({ className }: SidebarProps) {
         <ul className="space-y-1">
           {bottomNavItems.map((item) => (
             <li key={item.href}>
-              <a
-                href={item.href}
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-muted transition-colors"
-              >
+              <NavLink to={item.href} end={item.end} className={linkClassName}>
                 {item.icon}
                 {item.label}
-              </a>
+              </NavLink>
             </li>
           ))}
         </ul>

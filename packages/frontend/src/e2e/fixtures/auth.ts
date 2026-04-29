@@ -1,4 +1,5 @@
 import { test as base, type Page, type Route } from "@playwright/test"
+import { MOCK_AUTH_USER_STORAGE_KEY } from "@/mocks/handlers/authSession"
 import { getApiBaseUrl } from "../utils/api-base-url"
 import { E2E_STUB_USER_EMAIL } from "../utils/test-auth"
 
@@ -19,18 +20,24 @@ type StubLoginResponse = {
 async function loginWithMswStub(page: Page, email: string): Promise<void> {
   await page.goto("/login")
 
-  await page.evaluate(async (stubEmail) => {
-    const response = await fetch("/api/auth/stub-login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ email: stubEmail }),
-    })
+  await page.evaluate(
+    async ({ stubEmail, storageKey }) => {
+      const user = { email: stubEmail, name: "テストユーザー" }
+      const response = await fetch("/api/auth/stub-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(user),
+      })
 
-    if (!response.ok) {
-      throw new Error(`stub-login failed: ${response.status} ${response.statusText}`)
-    }
-  }, email)
+      if (!response.ok) {
+        throw new Error(`stub-login failed: ${response.status} ${response.statusText}`)
+      }
+
+      sessionStorage.setItem(storageKey, JSON.stringify(user))
+    },
+    { stubEmail: email, storageKey: MOCK_AUTH_USER_STORAGE_KEY },
+  )
 
   await gotoAuthenticatedRoot(page)
 }
