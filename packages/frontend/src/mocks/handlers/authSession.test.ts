@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
+import { MOCK_AUTH_USER_STORAGE_KEY } from "./authSession"
 
-const storageKey = "tasche.msw.auth.user"
+const storageKey = MOCK_AUTH_USER_STORAGE_KEY
 
 async function loadAuthSession() {
   return await import("./authSession")

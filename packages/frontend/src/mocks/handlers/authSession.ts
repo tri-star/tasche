@@ -16,15 +16,15 @@ function getStorage(): Storage | null {
 }
 
 function parseMockAuthUser(value: unknown): MockAuthUser | null {
-  if (
-    typeof value === "object" &&
-    value !== null &&
-    typeof (value as { email?: unknown }).email === "string" &&
-    typeof (value as { name?: unknown }).name === "string"
-  ) {
+  if (typeof value !== "object" || value === null) {
+    return null
+  }
+
+  const user = value as Record<string, unknown>
+  if (typeof user.email === "string" && typeof user.name === "string") {
     return {
-      email: (value as { email: string }).email,
-      name: (value as { name: string }).name,
+      email: user.email,
+      name: user.name,
     }
   }
 
