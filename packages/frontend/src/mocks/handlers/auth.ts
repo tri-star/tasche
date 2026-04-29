@@ -36,7 +36,7 @@ export const authHandlers = [
     })
   }),
 
-  // refresh: currentUser がいれば成功（リロード後は未認証扱い）
+  // refresh: 保存済みの MSW セッションがあればリロード後も成功する
   http.post("*/api/auth/refresh", () => {
     const currentUser = getMockAuthUser()
     if (!currentUser) {

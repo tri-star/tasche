@@ -20,16 +20,19 @@ async function loginWithMswStub(page: Page, email: string): Promise<void> {
   await page.goto("/login")
 
   await page.evaluate(async (stubEmail) => {
+    const user = { email: stubEmail, name: "テストユーザー" }
     const response = await fetch("/api/auth/stub-login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify({ email: stubEmail }),
+      body: JSON.stringify(user),
     })
 
     if (!response.ok) {
       throw new Error(`stub-login failed: ${response.status} ${response.statusText}`)
     }
+
+    sessionStorage.setItem("tasche.msw.auth.user", JSON.stringify(user))
   }, email)
 
   await gotoAuthenticatedRoot(page)
