@@ -1,18 +1,7 @@
-import type { DailyTargets } from "@/api/generated/model"
+import type { DailyTargets, DayOfWeek } from "@/api/generated/model"
+import { DAY_LABELS, DAYS_OF_WEEK_ORDER } from "@/lib/week-dates"
 import type { GoalTask } from "./types"
 import { createEmptyTargets } from "./types"
-
-const days = [
-  { key: "monday", label: "月" },
-  { key: "tuesday", label: "火" },
-  { key: "wednesday", label: "水" },
-  { key: "thursday", label: "木" },
-  { key: "friday", label: "金" },
-  { key: "saturday", label: "土" },
-  { key: "sunday", label: "日" },
-] as const
-
-type DayKey = (typeof days)[number]["key"]
 
 type WeeklyTargetGridProps = {
   tasks: GoalTask[]
@@ -21,12 +10,12 @@ type WeeklyTargetGridProps = {
 }
 
 export function WeeklyTargetGrid({ tasks, weeklyTargets, onUpdateTargets }: WeeklyTargetGridProps) {
-  const totalsByDay = days.reduce(
+  const totalsByDay = DAYS_OF_WEEK_ORDER.reduce(
     (acc, day) => {
-      acc[day.key] = tasks.reduce((sum, task) => sum + (weeklyTargets[task.id]?.[day.key] ?? 0), 0)
+      acc[day] = tasks.reduce((sum, task) => sum + (weeklyTargets[task.id]?.[day] ?? 0), 0)
       return acc
     },
-    {} as Record<DayKey, number>,
+    {} as Record<DayOfWeek, number>,
   )
 
   return (
@@ -35,9 +24,9 @@ export function WeeklyTargetGrid({ tasks, weeklyTargets, onUpdateTargets }: Week
         <thead>
           <tr className="text-muted-foreground">
             <th className="px-2 text-left">タスク</th>
-            {days.map((day) => (
-              <th key={day.key} className="px-2 text-center font-semibold">
-                {day.label}
+            {DAYS_OF_WEEK_ORDER.map((day) => (
+              <th key={day} className="px-2 text-center font-semibold">
+                {DAY_LABELS[day]}
               </th>
             ))}
             <th className="px-2 text-center">合計</th>
@@ -46,7 +35,7 @@ export function WeeklyTargetGrid({ tasks, weeklyTargets, onUpdateTargets }: Week
         <tbody>
           {tasks.map((task) => {
             const targets = weeklyTargets[task.id]
-            const rowTotal = days.reduce((sum, day) => sum + (targets?.[day.key] ?? 0), 0)
+            const rowTotal = DAYS_OF_WEEK_ORDER.reduce((sum, day) => sum + (targets?.[day] ?? 0), 0)
             return (
               <tr key={task.id} className="rounded-2xl bg-amber-50/40">
                 <td className="px-2 py-2">
@@ -60,18 +49,18 @@ export function WeeklyTargetGrid({ tasks, weeklyTargets, onUpdateTargets }: Week
                     <span className="font-semibold text-emerald-900">{task.name}</span>
                   </div>
                 </td>
-                {days.map((day) => (
-                  <td key={day.key} className="px-2 py-2 text-center">
+                {DAYS_OF_WEEK_ORDER.map((day) => (
+                  <td key={day} className="px-2 py-2 text-center">
                     <input
                       type="number"
                       min={0}
                       step={0.5}
-                      value={targets?.[day.key] ?? 0}
+                      value={targets?.[day] ?? 0}
                       onChange={(event) => {
                         const nextValue = Number(event.target.value)
                         onUpdateTargets(task.id, {
                           ...(targets ?? createEmptyTargets()),
-                          [day.key]: Number.isFinite(nextValue) ? nextValue : 0,
+                          [day]: Number.isFinite(nextValue) ? nextValue : 0,
                         })
                       }}
                       className="w-16 rounded-lg border border-emerald-100 bg-white px-2 py-1 text-center text-sm focus:border-emerald-300 focus:outline-none"
@@ -88,13 +77,13 @@ export function WeeklyTargetGrid({ tasks, weeklyTargets, onUpdateTargets }: Week
         <tfoot>
           <tr className="bg-emerald-50/80 font-semibold text-emerald-900">
             <td className="px-2 py-3">合計</td>
-            {days.map((day) => (
-              <td key={day.key} className="px-2 py-3 text-center">
-                {totalsByDay[day.key].toFixed(1)}
+            {DAYS_OF_WEEK_ORDER.map((day) => (
+              <td key={day} className="px-2 py-3 text-center">
+                {totalsByDay[day].toFixed(1)}
               </td>
             ))}
             <td className="px-2 py-3 text-center">
-              {days.reduce((sum, day) => sum + totalsByDay[day.key], 0).toFixed(1)}
+              {DAYS_OF_WEEK_ORDER.reduce((sum, day) => sum + totalsByDay[day], 0).toFixed(1)}
             </td>
           </tr>
         </tfoot>
