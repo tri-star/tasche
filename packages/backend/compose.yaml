@@ -1,3 +1,22 @@
+x-api-base: &api-base
+  build:
+    context: .
+    dockerfile: Dockerfile.dev
+  env_file:
+    - path: .env
+      required: false
+  volumes:
+    - ./src:/app/src
+    - ./migrations:/app/migrations
+    - ./scripts:/app/scripts
+    - ./alembic.ini:/app/alembic.ini
+    - ./openapi.json:/app/openapi.json
+    - ./ruff.toml:/app/ruff.toml
+  depends_on:
+    db:
+      condition: service_healthy
+  command: uvicorn tasche.main:app --host 0.0.0.0 --port 8000 --reload
+
 services:
   db:
     image: postgres:17-alpine
@@ -17,12 +36,7 @@ services:
       retries: 5
 
   api:
-    build:
-      context: .
-      dockerfile: Dockerfile.dev
-    env_file:
-      - path: .env
-        required: false
+    <<: *api-base
     environment:
       DATABASE_URL: postgresql+asyncpg://tasche:tasche_dev_password@db:5432/tasche
       TEST_DATABASE_URL: postgresql+asyncpg://tasche:tasche_dev_password@db:5432/tasche_test
@@ -38,25 +52,9 @@ services:
       LOG_LEVEL: debug
     ports:
       - "${API_CONTAINER_PORT:-8000}:8000"
-    volumes:
-      - ./src:/app/src
-      - ./migrations:/app/migrations
-      - ./scripts:/app/scripts
-      - ./alembic.ini:/app/alembic.ini
-      - ./openapi.json:/app/openapi.json
-      - ./ruff.toml:/app/ruff.toml
-    depends_on:
-      db:
-        condition: service_healthy
-    command: uvicorn tasche.main:app --host 0.0.0.0 --port 8000 --reload
 
   api-e2e:
-    build:
-      context: .
-      dockerfile: Dockerfile.dev
-    env_file:
-      - path: .env
-        required: false
+    <<: *api-base
     environment:
       DATABASE_URL: postgresql+asyncpg://tasche:tasche_dev_password@db:5432/tasche_test
       TEST_DATABASE_URL: postgresql+asyncpg://tasche:tasche_dev_password@db:5432/tasche_test
@@ -72,17 +70,6 @@ services:
       LOG_LEVEL: debug
     ports:
       - "${E2E_API_CONTAINER_PORT:-8001}:8000"
-    volumes:
-      - ./src:/app/src
-      - ./migrations:/app/migrations
-      - ./scripts:/app/scripts
-      - ./alembic.ini:/app/alembic.ini
-      - ./openapi.json:/app/openapi.json
-      - ./ruff.toml:/app/ruff.toml
-    depends_on:
-      db:
-        condition: service_healthy
-    command: uvicorn tasche.main:app --host 0.0.0.0 --port 8000 --reload
 
 volumes:
   postgres_data:
