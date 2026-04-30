@@ -6,6 +6,7 @@ import { usersHandlers } from "./users"
 
 describe("MSW auth handlers", () => {
   afterEach(() => {
+    server.resetHandlers()
     resetMockAuthUser()
   })
 
