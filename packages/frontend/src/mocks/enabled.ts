@@ -7,5 +7,5 @@ export function getOnUnhandledRequestMode(): "bypass" | "error" | "warn" {
   if (raw === "bypass" || raw === "warn" || raw === "error") {
     return raw
   }
-  return "error"
+  return "bypass"
 }

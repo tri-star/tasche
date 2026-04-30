@@ -1,9 +1,17 @@
-import { afterEach, describe, expect, it } from "vitest"
+import { afterEach, beforeEach, describe, expect, it } from "vitest"
+import { server } from "@/mocks/server"
+import { authHandlers } from "./auth"
 import { resetMockAuthUser } from "./authSession"
+import { usersHandlers } from "./users"
 
 describe("MSW auth handlers", () => {
   afterEach(() => {
+    server.resetHandlers()
     resetMockAuthUser()
+  })
+
+  beforeEach(() => {
+    server.use(...authHandlers, ...usersHandlers)
   })
 
   it("スタブログイン前は users/me が 401 を返す", async () => {
