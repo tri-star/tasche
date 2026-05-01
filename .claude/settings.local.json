@@ -58,7 +58,31 @@
       "Bash(git diff *)",
       "Bash(git checkout *)",
       "Bash(git pull *)",
-      "mcp__plane__create_work_item_comment"
+      "mcp__plane__create_work_item_comment",
+      "mcp__deepwiki__read_wiki_structure"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$(git rev-parse --show-toplevel)/scripts/lint-format-hook.sh\" record"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$(git rev-parse --show-toplevel)/scripts/lint-format-hook.sh\" flush"
+          }
+        ]
+      }
     ]
   },
   "sandbox": {
