@@ -57,10 +57,11 @@ if [ -z "$PROJECT_NAME" ]; then
     PROJECT_NAME="tasche-${PROJECT_INDEX}"
 fi
 
-# PROJECT_NAME のバリデーション
+# PROJECT_NAME の正規化とバリデーション
 # Docker Compose のコンテナ名に使われるため、英数字・ハイフン・アンダースコア・ドットのみ有効
 # sedの区切り文字（/）やその他のメタ文字が含まれると、sedインジェクションによる
 # 任意コマンド実行のリスクがあるため、必ずチェックする
+PROJECT_NAME="$(printf '%s' "$PROJECT_NAME" | tr '[:upper:]' '[:lower:]')"
 if [[ ! "$PROJECT_NAME" =~ ^[a-zA-Z0-9._-]+$ ]]; then
     echo "エラー: PROJECT_NAME に不正な文字が含まれています (指定値: $PROJECT_NAME)" >&2
     echo "  使用可能な文字: 英数字、ハイフン(-)、アンダースコア(_)、ドット(.)" >&2
@@ -73,6 +74,7 @@ fi
 API_PORT=$((10000 + PROJECT_INDEX * 100))
 DB_PORT=$((10001 + PROJECT_INDEX * 100))
 VITE_DEV_PORT=$((10002 + PROJECT_INDEX * 100))
+E2E_API_PORT=$((10003 + PROJECT_INDEX * 100))
 
 echo "=== .env ファイル生成 ==="
 echo "  PROJECT_INDEX     : $PROJECT_INDEX"
@@ -80,6 +82,7 @@ echo "  PROJECT_NAME      : $PROJECT_NAME"
 echo "  API_CONTAINER_PORT: $API_PORT"
 echo "  DB_CONTAINER_PORT : $DB_PORT"
 echo "  VITE_DEV_PORT     : $VITE_DEV_PORT"
+echo "  E2E_API_PORT      : $E2E_API_PORT"
 echo ""
 
 # -----------------------------------------------------------------------------
@@ -100,8 +103,12 @@ replace_placeholders() {
     sed \
         -e "s/{%COMPOSE_PROJECT_NAME%}/${PROJECT_NAME}/g" \
         -e "s/{%API_CONTAINER_PORT%}/${API_PORT}/g" \
+        -e "s/{%BACKEND_API_PORT%}/${API_PORT}/g" \
         -e "s/{%DB_CONTAINER_PORT%}/${DB_PORT}/g" \
+        -e "s/{%DB_PORT%}/${DB_PORT}/g" \
         -e "s/{%VITE_DEV_PORT%}/${VITE_DEV_PORT}/g" \
+        -e "s/{%FRONTEND_DEV_PORT%}/${VITE_DEV_PORT}/g" \
+        -e "s/{%E2E_BACKEND_API_PORT%}/${E2E_API_PORT}/g" \
         "$src" > "$dst"
 
     echo "  生成完了: $dst"
