@@ -14,4 +14,9 @@ async def transaction(db: AsyncSession) -> AsyncIterator[None]:
             yield
         return
 
-    yield
+    try:
+        yield
+        await db.commit()
+    except Exception:
+        await db.rollback()
+        raise

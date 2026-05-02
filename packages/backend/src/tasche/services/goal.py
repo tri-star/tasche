@@ -164,6 +164,7 @@ async def replace_current_goals(
                 is_archived=False,
             )
             db.add(task)
+            await db.flush()
             created_tasks.append(CreatedTask(id=task.id, name=task.name))
         else:
             task = active_tasks[item.task_id]

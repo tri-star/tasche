@@ -13,6 +13,7 @@ export class GoalSettingPage {
   // ヘッダー
   readonly wizardHeader: Locator
   readonly wizardTitle: Locator
+  readonly saveButton: Locator
 
   constructor(page: Page) {
     this.page = page
@@ -23,6 +24,7 @@ export class GoalSettingPage {
     // ヘッダー
     this.wizardHeader = page.locator("header, [role=banner]").first()
     this.wizardTitle = page.getByRole("heading", { level: 2 }).first()
+    this.saveButton = page.getByRole("button", { name: "保存" })
   }
 
   /**
@@ -56,5 +58,41 @@ export class GoalSettingPage {
     await this.wizard.waitFor({ state: "visible" })
     const isVisible = await this.wizard.isVisible()
     return isVisible
+  }
+
+  async selectUnitDuration(label: string) {
+    await this.page.getByRole("button", { name: new RegExp(label) }).click()
+  }
+
+  async goNext() {
+    await this.page.getByRole("button", { name: /次へ/ }).click()
+  }
+
+  async addNewTask(taskName: string) {
+    await this.page.getByPlaceholder("例: ストレッチ").fill(taskName)
+    await this.page.getByRole("button", { name: "追加する" }).click()
+  }
+
+  async fillTarget(taskName: string, dayLabel: string, units: string) {
+    const taskRow = this.page.getByRole("row").filter({ hasText: taskName })
+    const dayColumnIndex = await this.getColumnIndex(dayLabel)
+    await taskRow
+      .getByRole("spinbutton")
+      .nth(dayColumnIndex - 1)
+      .fill(units)
+  }
+
+  async save() {
+    await this.saveButton.click()
+  }
+
+  private async getColumnIndex(label: string): Promise<number> {
+    const headers = await this.page.getByRole("columnheader").all()
+    for (const [index, header] of headers.entries()) {
+      if ((await header.textContent())?.trim() === label) {
+        return index
+      }
+    }
+    throw new Error(`Column header not found: ${label}`)
   }
 }
