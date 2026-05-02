@@ -1,5 +1,6 @@
 import { createBrowserRouter } from "react-router-dom"
 import { ProtectedRoute } from "@/components/routing/ProtectedRoute"
+import { AccountPage } from "@/pages/AccountPage"
 import { AuthCallbackPage } from "@/pages/AuthCallbackPage"
 import { DashboardPage } from "@/pages/DashboardPage"
 import { GoalSettingPage } from "@/pages/GoalSettingPage"
@@ -13,6 +14,7 @@ export const router = createBrowserRouter([
     children: [
       { path: "/", element: <DashboardPage /> },
       { path: "/goals", element: <GoalSettingPage /> },
+      { path: "/account", element: <AccountPage /> },
     ],
   },
 ])
