@@ -146,17 +146,20 @@ class TestGoogleCallback:
         rsa_private_key_pem: str,
         test_jwks: dict,
     ):
-        """正常系: 同じ email の null-google_sub ユーザーへ紐付けが行われることを確認."""
+        """正常系: 同じ email かつ email_verified_at 設定済みユーザーへ紐付けが行われることを確認."""
+        from datetime import datetime, timezone
+
         from ulid import ULID
 
         from tasche.models.user import User
 
-        # 既存ユーザー（google_sub=None）を作成
+        # 既存ユーザー（google_sub=None, email_verified_at=設定済み）を作成
         existing_user = User(
             id=f"usr_{ULID()}",
             email="existing@example.com",
             name="Existing User",
             google_sub=None,
+            email_verified_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
         )
         db_session.add(existing_user)
         await db_session.commit()
@@ -197,6 +200,71 @@ class TestGoogleCallback:
         # 既存ユーザーの google_sub が更新されていることを確認
         await db_session.refresh(existing_user)
         assert existing_user.google_sub == "google_sub_existing"
+        # email_verified_at が更新されていることを確認
+        assert existing_user.email_verified_at is not None
+
+    async def test_callback_rejects_unverified_existing_user(
+        self,
+        client: AsyncClient,
+        db_session,
+        rsa_private_key_pem: str,
+        test_jwks: dict,
+    ):
+        """異常系: email_verified_at=None の既存ユーザーへの自動紐付けが拒否されることを確認."""
+        from ulid import ULID
+
+        from tasche.models.user import User
+
+        # 未検証の既存ユーザー（email_verified_at=None, google_sub=None）を作成
+        unverified_user = User(
+            id=f"usr_{ULID()}",
+            email="unverified_existing@example.com",
+            name="Unverified User",
+            google_sub=None,
+            email_verified_at=None,
+        )
+        db_session.add(unverified_user)
+        await db_session.commit()
+
+        id_token = make_google_id_token(
+            rsa_private_key_pem,
+            sub="google_sub_for_unverified",
+            email="unverified_existing@example.com",
+            aud="test_client_id",
+        )
+
+        with (
+            patch.object(
+                settings, "google_oauth_redirect_uris", "http://localhost:5173/auth/callback"
+            ),
+            patch.object(settings, "google_oauth_client_id", "test_client_id"),
+            respx.mock as mock,
+        ):
+            mock.post("https://oauth2.googleapis.com/token").mock(
+                return_value=Response(200, json=_mock_google_token_success(id_token))
+            )
+            mock.get("https://www.googleapis.com/oauth2/v3/certs").mock(
+                return_value=Response(200, json=test_jwks)
+            )
+
+            response = await client.post(
+                "/api/auth/google/callback",
+                json={
+                    "code": "auth_code_dummy",
+                    "code_verifier": "code_verifier_dummy",
+                    "redirect_uri": "http://localhost:5173/auth/callback",
+                    "state": "state_dummy",
+                },
+            )
+
+        # 自動紐付けが拒否されることを確認
+        assert response.status_code == 400
+        data = response.json()
+        assert data["error"]["code"] == "INVALID_AUTHORIZATION_CODE"
+
+        # 既存ユーザーの google_sub が変更されていないことを確認
+        await db_session.refresh(unverified_user)
+        assert unverified_user.google_sub is None
 
     async def test_callback_does_not_overwrite_existing_google_sub(
         self,
@@ -205,11 +273,7 @@ class TestGoogleCallback:
         rsa_private_key_pem: str,
         test_jwks: dict,
     ):
-        """正常系: 既に google_sub が設定されているユーザーへの上書きを防ぐことを確認.
-
-        同一 email でも google_sub が既に存在する場合は自動紐付けを行わず、
-        新規ユーザーを作成する（セキュリティ上の理由）。
-        """
+        """別のGoogleアカウントが紐付いている場合は400エラーを返す."""
         from ulid import ULID
 
         from tasche.models.user import User

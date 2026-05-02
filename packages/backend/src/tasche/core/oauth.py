@@ -89,7 +89,7 @@ async def verify_google_id_token(id_token: str) -> dict:
         },
     )
     claims.validate()  # exp / iat チェック
-    if not claims.get("email_verified", False):
+    if claims.get("email_verified") is not True:
         raise JoseError("email_not_verified")
     return dict(claims)
 

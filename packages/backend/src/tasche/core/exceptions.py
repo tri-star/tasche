@@ -68,7 +68,11 @@ class InvalidRefreshTokenError(AuthenticationError):
 
 
 class InvalidAuthorizationCodeError(AuthenticationError):
-    """認可コードが無効（Google OAuth エラー、ID Token 検証失敗など）."""
+    """認可コードが無効（Google OAuth エラー、ID Token 検証失敗など）.
+
+    Google 認可コード交換失敗・ID Token 検証失敗に加え、
+    既存ユーザーへの自動紐付け拒否にも使用する。
+    """
 
     def __init__(self, detail: str = "Invalid authorization code"):
         """初期化."""
