@@ -138,6 +138,11 @@ async def handle_google_callback(
         logger.warning("Google ID token verification failed: %s", e)
         raise InvalidAuthorizationCodeError("Invalid Google ID token") from e
 
+    # email_verified の二重チェック（oauth.py 側で検証済みだが念のため再確認）
+    if claims.get("email_verified") is not True:
+        logger.warning("Google ID token email_verified is not true")
+        raise InvalidAuthorizationCodeError("Google email not verified")
+
     # ユーザーを upsert
     google_sub = claims["sub"]
     email = claims.get("email", "")

@@ -24,6 +24,10 @@ class User(Base):
         nullable=True,
         index=True,  # SQLAlchemy が ix_users_google_sub を自動生成
     )
+    email_verified_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
