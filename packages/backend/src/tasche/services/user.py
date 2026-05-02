@@ -134,10 +134,11 @@ async def get_or_create_user_by_google_sub(
     """
     now = datetime.now(tz=timezone.utc)
 
-    # 1) google_sub で lookup → 見つかったら email_verified_at も更新
+    # 1) google_sub で lookup → email_verified_at は未設定の場合のみ初回セット
     user = await get_user_by_google_sub(db, google_sub)
     if user:
-        return await update_user(db, user, name=name, picture=picture, email_verified_at=now)
+        verified_at = now if user.email_verified_at is None else None
+        return await update_user(db, user, name=name, picture=picture, email_verified_at=verified_at)
 
     # 2) email で lookup
     user = await get_user_by_email(db, email)

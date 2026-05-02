@@ -100,11 +100,11 @@ class TestGetOrCreateUserByGoogleSub:
         assert user.email_verified_at is not None
 
     # ============================================================
-    # ケース4: 既存ユーザー（google_sub 設定済み）の再ログインで email_verified_at が更新される
+    # ケース4: 既存ユーザー（google_sub 設定済み）の再ログインで email_verified_at が変更されない
     # ============================================================
 
-    async def test_existing_google_user_gets_email_verified_at_updated(self, db_session):
-        """google_sub が設定済みのユーザーが再ログインすると email_verified_at が更新される."""
+    async def test_existing_google_user_keeps_original_email_verified_at(self, db_session):
+        """google_sub が設定済みのユーザーが再ログインしても email_verified_at は初回値を保持する."""
         old_verified_at = datetime(2026, 1, 1, tzinfo=timezone.utc)
         existing_user = await create_user(
             db_session,
@@ -124,9 +124,10 @@ class TestGetOrCreateUserByGoogleSub:
         )
 
         assert user.id == existing_user.id
+        # 再ログインで email_verified_at が上書きされず、初回検証日時が保持される
+        # SQLite はタイムゾーン情報を保持しないため naive datetime で比較
         assert user.email_verified_at is not None
-        # SQLite テスト環境では naive datetime が返るため、存在確認のみ行う
-        # （PostgreSQL では timezone-aware datetime が返り `>= old_verified_at` で検証可能）
+        assert user.email_verified_at.replace(tzinfo=None) == old_verified_at.replace(tzinfo=None)
 
     # ============================================================
     # ケース5: 既存ユーザー（別の google_sub が設定済み）の場合は別エラー
