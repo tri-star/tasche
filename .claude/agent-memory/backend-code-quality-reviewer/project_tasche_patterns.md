@@ -62,5 +62,22 @@ type: project
 
 - `REFRESH_TOKEN_MAX_AGE = 604800` (cookies.py) と `jwt_refresh_token_expires_seconds = 604800` (config.py) が二重管理
 
+## 例外型の流用パターン
+
+- `InvalidAuthorizationCodeError` は「Google 認可コード交換失敗・ID Token 検証失敗」の意味で定義されているが、TCH-32 で「未検証ユーザーへの自動紐付け拒否」にも流用されている
+- `exceptions.py` のコメントには「Google OAuth エラー、ID Token 検証失敗など」とあるが、実際はより広い範囲で使われている
+- 将来的にフロントエンドでエラーコードを区別したい場合は専用例外が必要になる可能性がある
+
+## テスト方針の補足（TCH-32 で確認）
+
+- `tests/services/` に置かれているテストも実 DB（SQLite in-memory）を使う統合テストである（docstring に「ユニットテスト」と書かれていても）
+- テストケース番号のコメント（`# ケース1`、`# ケース2` 等）を使う慣習があるが、欠番が生じる場合がある → レビュー時に指摘する
+- `conftest.py` の `db_session` フィクスチャは function スコープで毎テスト後に drop_all + engine dispose するクリーンな設計
+
+## モデル設計（TCH-32 で確認）
+
+- `email_verified_at: Mapped[datetime | None]` が `User` モデルに追加された（`DateTime(timezone=True)` + `nullable=True`）
+- SQLite テスト環境では naive datetime が返るため、datetime の比較アサーションは `is not None` の存在確認にとどめる（PostgreSQL との差異）
+
 **Why:** TCH-26 の Google OAuth 実装時に発見。今後のレビューでも同様のトランザクション管理・ログ欠落パターンを注意して見るべき。
-**How to apply:** services 層の新しい関数をレビューするときはコミット境界を必ず確認。セキュリティ関連の分岐には INFO/WARNING ログが入っているか確認する。
+**How to apply:** services 層の新しい関数をレビューするときはコミット境界を必ず確認。セキュリティ関連の分岐には INFO/WARNING ログが入っているか確認する。セキュリティ拒否分岐には必ず WARNING ログ（user_id, email, 試行元情報）を追加するよう指摘する。

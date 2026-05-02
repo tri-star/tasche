@@ -20,7 +20,13 @@ BFF 型 Google OAuth 2.0 認証を実装（TCH-26）。FastAPI + Authlib + pytho
 **How to apply:** 今後の認証関連変更では上記パターンを尊重する。スタブ認証の追加は必ず is_auth_stub_enabled() ガードを通すこと。
 
 既知の問題（レビューで指摘）:
-- services/user.py の create_user / update_user 内に db.commit() があり、外側トランザクションの原子性を壊す（Critical）
+- ~~services/user.py の create_user / update_user 内に db.commit() があり~~→ TCH-32 で修正済み（flush のみに変更）
 - core/oauth.py の JWKS キャッシュがモジュール変数で asyncio.Lock なし（Critical）
 - cookie.py の REFRESH_TOKEN_MAX_AGE が config.py の jwt_refresh_token_expires_seconds と二重管理
-- get_or_create_user_by_google_sub が lookup→insert パターンで UniqueViolation を未ハンドル
+- get_or_create_user_by_google_sub が lookup→insert パターンで UniqueViolation を未ハンドル（TCH-32 でも未修正）
+
+TCH-32 追加情報:
+- email_verified_at カラム追加（Google 自動紐付けのセキュリティ修正）
+- InvalidAuthorizationCodeError を「未検証メール紐付け拒否」に流用している（Warning 指摘済み。専用例外 GoogleAccountAlreadyLinkedError / UnverifiedEmailAutoLinkError 追加を推奨）
+- email_verified_at は再ログインのたびに上書きされる（初回検証日時ではなく最終検証日時として機能）
+- migrations/versions/ は git 追跡対象外（.gitkeep のみ）。バックフィル戦略の検証不可
