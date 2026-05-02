@@ -173,7 +173,7 @@ async def replace_current_goals(
                 Goal(
                     id=_generate_goal_id(),
                     week_id=week.id,
-                    task_id=task.id,
+                    task=task,
                     day_of_week=day,
                     target_units=target_units,
                 )

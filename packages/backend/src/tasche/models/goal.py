@@ -1,6 +1,7 @@
 """Goal モデル."""
 
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     CheckConstraint,
@@ -12,10 +13,13 @@ from sqlalchemy import (
     UniqueConstraint,
     func,
 )
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from tasche.db.base import Base
 from tasche.models.enums import DayOfWeek
+
+if TYPE_CHECKING:
+    from tasche.models.task import Task
 
 
 class Goal(Base):
@@ -55,3 +59,5 @@ class Goal(Base):
         onupdate=func.now(),
         nullable=False,
     )
+
+    task: Mapped["Task"] = relationship(back_populates="goals")

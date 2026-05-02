@@ -15,6 +15,7 @@
 #   API_PORT      = 10000 + PROJECT_INDEX × 100
 #   DB_PORT       = 10001 + PROJECT_INDEX × 100
 #   VITE_DEV_PORT = 10002 + PROJECT_INDEX × 100
+#   E2E_API_PORT  = 10003 + PROJECT_INDEX × 100
 # =============================================================================
 
 set -euo pipefail
@@ -48,11 +49,13 @@ for index in $(seq 0 $MAX_INDEX); do
     api_port=$((10000 + index * 100))
     db_port=$((10001 + index * 100))
     vite_port=$((10002 + index * 100))
+    e2e_api_port=$((10003 + index * 100))
 
-    # 3つのポートが全て空いているか確認
+    # 4つのポートが全て空いているか確認
     if ! is_port_in_use "$api_port" && \
        ! is_port_in_use "$db_port" && \
-       ! is_port_in_use "$vite_port"; then
+       ! is_port_in_use "$vite_port" && \
+       ! is_port_in_use "$e2e_api_port"; then
         # 使用可能なPROJECT_INDEXを出力して正常終了
         echo "$index"
         exit 0
