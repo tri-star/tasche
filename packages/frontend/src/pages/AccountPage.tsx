@@ -24,12 +24,12 @@ export function AccountPage() {
               {currentUser?.picture ? (
                 <img
                   src={currentUser.picture}
-                  alt={currentUser.name}
+                  alt={currentUser.name ?? "ユーザー"}
                   className="h-12 w-12 rounded-full"
                 />
               ) : (
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-tasche-greenSoft text-lg font-semibold text-tasche-text">
-                  {currentUser?.name?.charAt(0) ?? "?"}
+                  {currentUser?.name ? currentUser.name.charAt(0) : "?"}
                 </div>
               )}
               <div className="space-y-1">
