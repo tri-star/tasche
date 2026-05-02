@@ -1,7 +1,7 @@
 """add email_verified_at to users
 
 Revision ID: 1aa789ccd79a
-Revises: 573f7187c750
+Revises: 8f4c2b1a9d7e
 Create Date: 2026-05-02 16:27:23.118570
 
 """
@@ -13,7 +13,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "1aa789ccd79a"
-down_revision: Union[str, None] = "573f7187c750"
+down_revision: Union[str, None] = "8f4c2b1a9d7e"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
