@@ -69,8 +69,8 @@ echo "  コンテナの起動完了（healthcheck確認済み）"
 # ステップ2: Alembic でデータベースマイグレーションを実行
 # -----------------------------------------------------------------------------
 echo ""
-echo "--- [2/3] データベースマイグレーション (alembic upgrade heads) ---"
-docker compose exec api alembic upgrade heads
+echo "--- [2/3] データベースマイグレーション (alembic upgrade head) ---"
+docker compose exec api alembic upgrade head
 echo "  マイグレーション完了"
 
 # -----------------------------------------------------------------------------

@@ -38,7 +38,7 @@ try {
   compose("up", "-d", "--no-deps", "--force-recreate", "api-e2e")
 
   console.log("Applying E2E database migrations...")
-  compose("exec", "-T", "api-e2e", "alembic", "upgrade", "heads")
+  compose("exec", "-T", "api-e2e", "alembic", "upgrade", "head")
 
   console.log("Resetting E2E database data...")
   compose("exec", "-T", "api-e2e", "python", "scripts/e2e_seed/reset.py")

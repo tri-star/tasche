@@ -52,6 +52,16 @@ jobs:
       - name: Ruff format check
         run: uv run ruff format . --check
 
+      - name: Check Alembic has single head
+        run: |
+          heads="$(uv run alembic heads)"
+          count="$(printf '%s\n' "$heads" | sed '/^[[:space:]]*$/d' | wc -l)"
+          if [ "$count" -ne 1 ]; then
+            echo "Expected exactly one Alembic head, but found $count:" >&2
+            printf '%s\n' "$heads" >&2
+            exit 1
+          fi
+
   backend-test:
     name: backend-test
     runs-on: ubuntu-latest

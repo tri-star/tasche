@@ -121,7 +121,7 @@ jobs:
         working-directory: packages/backend
 
       - name: Run backend migrations
-        run: docker compose -f compose.yaml exec -T api-e2e alembic upgrade heads
+        run: docker compose -f compose.yaml exec -T api-e2e alembic upgrade head
         working-directory: packages/backend
 
       - name: Reset E2E backend data
