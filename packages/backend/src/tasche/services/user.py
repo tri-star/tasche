@@ -138,7 +138,9 @@ async def get_or_create_user_by_google_sub(
     user = await get_user_by_google_sub(db, google_sub)
     if user:
         verified_at = now if user.email_verified_at is None else None
-        return await update_user(db, user, name=name, picture=picture, email_verified_at=verified_at)
+        return await update_user(
+            db, user, name=name, picture=picture, email_verified_at=verified_at
+        )
 
     # 2) email で lookup
     user = await get_user_by_email(db, email)
