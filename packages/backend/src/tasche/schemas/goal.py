@@ -3,6 +3,18 @@
 from pydantic import BaseModel, Field
 
 
+class DailyAvailableUnits(BaseModel):
+    """曜日ごとの確保可能ユニット数."""
+
+    monday: float = Field(0.0, ge=0, description="月曜日の確保可能ユニット数")
+    tuesday: float = Field(0.0, ge=0, description="火曜日の確保可能ユニット数")
+    wednesday: float = Field(0.0, ge=0, description="水曜日の確保可能ユニット数")
+    thursday: float = Field(0.0, ge=0, description="木曜日の確保可能ユニット数")
+    friday: float = Field(0.0, ge=0, description="金曜日の確保可能ユニット数")
+    saturday: float = Field(0.0, ge=0, description="土曜日の確保可能ユニット数")
+    sunday: float = Field(0.0, ge=0, description="日曜日の確保可能ユニット数")
+
+
 class DailyTargets(BaseModel):
     """曜日ごとの目標ユニット数."""
 
@@ -28,6 +40,9 @@ class GoalsResponse(BaseModel):
 
     week_id: str = Field(..., description="週ID")
     unit_duration_minutes: int = Field(..., description="1ユニットの時間（分）")
+    daily_available_units: DailyAvailableUnits = Field(
+        ..., description="曜日ごとの確保可能ユニット数"
+    )
     goals: list[GoalResponse] = Field(..., description="目標一覧")
 
 
@@ -43,6 +58,9 @@ class GoalsUpdate(BaseModel):
     """目標一括更新リクエスト."""
 
     unit_duration_minutes: int = Field(..., description="1ユニットの時間（分）")
+    daily_available_units: DailyAvailableUnits = Field(
+        default_factory=DailyAvailableUnits, description="曜日ごとの確保可能ユニット数"
+    )
     goals: list[GoalUpdateItem] = Field(..., description="目標一覧")
 
 
@@ -58,5 +76,8 @@ class GoalsUpdateResponse(BaseModel):
 
     week_id: str = Field(..., description="週ID")
     unit_duration_minutes: int = Field(..., description="1ユニットの時間（分）")
+    daily_available_units: DailyAvailableUnits = Field(
+        ..., description="曜日ごとの確保可能ユニット数"
+    )
     goals: list[GoalResponse] = Field(..., description="更新後の目標一覧")
     created_tasks: list[CreatedTask] = Field(..., description="作成されたタスク一覧")

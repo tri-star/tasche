@@ -11,8 +11,10 @@ from tasche.models.enums import DayOfWeek
 from tasche.models.goal import Goal
 from tasche.models.task import Task
 from tasche.models.user import User
+from tasche.models.week import Week
 from tasche.schemas.goal import (
     CreatedTask,
+    DailyAvailableUnits,
     DailyTargets,
     GoalResponse,
     GoalsResponse,
@@ -36,6 +38,28 @@ def _generate_task_id() -> str:
 
 def _empty_daily_targets() -> dict[str, float]:
     return {field_name: 0.0 for field_name in DAY_OF_WEEK_FIELD_NAMES.values()}
+
+
+def _build_daily_available_units(week: Week) -> DailyAvailableUnits:
+    return DailyAvailableUnits(
+        monday=float(week.available_units_monday),
+        tuesday=float(week.available_units_tuesday),
+        wednesday=float(week.available_units_wednesday),
+        thursday=float(week.available_units_thursday),
+        friday=float(week.available_units_friday),
+        saturday=float(week.available_units_saturday),
+        sunday=float(week.available_units_sunday),
+    )
+
+
+def _apply_daily_available_units(week: Week, daily_available_units: DailyAvailableUnits) -> None:
+    week.available_units_monday = daily_available_units.monday
+    week.available_units_tuesday = daily_available_units.tuesday
+    week.available_units_wednesday = daily_available_units.wednesday
+    week.available_units_thursday = daily_available_units.thursday
+    week.available_units_friday = daily_available_units.friday
+    week.available_units_saturday = daily_available_units.saturday
+    week.available_units_sunday = daily_available_units.sunday
 
 
 def _daily_targets_to_rows(daily_targets: DailyTargets) -> Iterable[tuple[DayOfWeek, float]]:
@@ -89,6 +113,7 @@ async def list_current_goals(
     return GoalsResponse(
         week_id=week.id,
         unit_duration_minutes=week.unit_duration_minutes,
+        daily_available_units=_build_daily_available_units(week),
         goals=_build_goal_responses(result.all()),
     )
 
@@ -146,6 +171,7 @@ async def replace_current_goals(
 
     week = await get_current_week(db, user)
     week.unit_duration_minutes = goals_update.unit_duration_minutes
+    _apply_daily_available_units(week, goals_update.daily_available_units)
 
     await db.execute(delete(Goal).where(Goal.week_id == week.id))
 
@@ -192,6 +218,7 @@ async def replace_current_goals(
     return GoalsUpdateResponse(
         week_id=week.id,
         unit_duration_minutes=week.unit_duration_minutes,
+        daily_available_units=_build_daily_available_units(week),
         goals=response_goals,
         created_tasks=created_tasks,
     )
