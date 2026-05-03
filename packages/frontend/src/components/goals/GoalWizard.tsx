@@ -6,20 +6,28 @@ import {
   updateCurrentGoalsApiWeeksCurrentGoalsPut,
   updateTaskApiTasksTaskIdPut,
 } from "@/api/generated/client"
-import type { DailyTargets, TaskResponse } from "@/api/generated/model"
+import type {
+  DailyAvailableUnits,
+  DailyTargets,
+  DayOfWeek,
+  TaskResponse,
+} from "@/api/generated/model"
+import { DAYS_OF_WEEK_ORDER } from "@/lib/week-dates"
 import { Step1UnitDuration } from "./Step1UnitDuration"
+import { Step2AvailableUnits } from "./Step2AvailableUnits"
 import { Step2TaskSelection } from "./Step2TaskSelection"
 import { Step3WeeklyTargets } from "./Step3WeeklyTargets"
 import { Step4Confirmation } from "./Step4Confirmation"
 import { StepIndicator } from "./StepIndicator"
 import type { GoalTask, NewTask, WizardStep } from "./types"
-import { createEmptyTargets } from "./types"
+import { createEmptyDailyAvailableUnits, createEmptyTargets } from "./types"
 
 const steps = [
   { number: 1, label: "ユニット時間選択" },
-  { number: 2, label: "タスク選択" },
-  { number: 3, label: "曜日別目標設定" },
-  { number: 4, label: "確認" },
+  { number: 2, label: "確保可能ユニット" },
+  { number: 3, label: "タスク選択" },
+  { number: 4, label: "曜日別目標設定" },
+  { number: 5, label: "確認" },
 ]
 
 const buildTargetsMap = (goals: { task_id: string; daily_targets: DailyTargets }[]) => {
@@ -29,9 +37,33 @@ const buildTargetsMap = (goals: { task_id: string; daily_targets: DailyTargets }
   }, {})
 }
 
+const normalizeDailyAvailableUnits = (
+  availableUnits?: DailyAvailableUnits,
+): DailyAvailableUnits => {
+  const emptyUnits = createEmptyDailyAvailableUnits()
+  return DAYS_OF_WEEK_ORDER.reduce<DailyAvailableUnits>((acc, day) => {
+    acc[day] = availableUnits?.[day] ?? emptyUnits[day]
+    return acc
+  }, emptyUnits)
+}
+
+const getCurrentWeekStartDate = () => {
+  const today = new Date()
+  const dayOfWeek = today.getDay()
+  const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek
+  const monday = new Date(today)
+  monday.setDate(today.getDate() + mondayOffset)
+  return `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, "0")}-${String(
+    monday.getDate(),
+  ).padStart(2, "0")}`
+}
+
 export function GoalWizard() {
   const [currentStep, setCurrentStep] = useState<WizardStep>(1)
   const [unitDurationMinutes, setUnitDurationMinutes] = useState<number | null>(null)
+  const [dailyAvailableUnits, setDailyAvailableUnits] = useState<DailyAvailableUnits>(
+    createEmptyDailyAvailableUnits,
+  )
   const [tasks, setTasks] = useState<TaskResponse[]>([])
   const [newTasks, setNewTasks] = useState<NewTask[]>([])
   const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([])
@@ -74,6 +106,7 @@ export function GoalWizard() {
           if (isMounted) {
             setTasks(Array.from(taskMap.values()))
             setUnitDurationMinutes(goalsData.unit_duration_minutes)
+            setDailyAvailableUnits(normalizeDailyAvailableUnits(goalsData.daily_available_units))
             setSelectedTaskIds(goalsData.goals.map((goal) => goal.task_id))
             setWeeklyTargets(buildTargetsMap(goalsData.goals))
           }
@@ -189,6 +222,10 @@ export function GoalWizard() {
     setWeeklyTargets((prev) => ({ ...prev, [taskId]: targets }))
   }
 
+  const handleUpdateAvailableUnits = (day: DayOfWeek, value: number) => {
+    setDailyAvailableUnits((prev) => ({ ...prev, [day]: value }))
+  }
+
   const handleSave = async () => {
     if (!unitDurationMinutes) {
       setErrorMessage("ユニット時間を選択してください。")
@@ -201,6 +238,7 @@ export function GoalWizard() {
     try {
       const payload = {
         unit_duration_minutes: unitDurationMinutes,
+        daily_available_units: dailyAvailableUnits,
         goals: selectedTasks.map((task) => {
           const dailyTargets = weeklyTargets[task.id] ?? createEmptyTargets()
           if (task.isNew) {
@@ -264,6 +302,17 @@ export function GoalWizard() {
         ) : null}
 
         {currentStep === 2 ? (
+          <Step2AvailableUnits
+            availableUnits={dailyAvailableUnits}
+            unitDurationMinutes={unitDurationMinutes ?? 0}
+            weekStartDate={getCurrentWeekStartDate()}
+            onChange={handleUpdateAvailableUnits}
+            onNext={() => setCurrentStep(3)}
+            onBack={() => setCurrentStep(1)}
+          />
+        ) : null}
+
+        {currentStep === 3 ? (
           <Step2TaskSelection
             tasks={tasks}
             selectedTaskIds={selectedTaskIds}
@@ -272,28 +321,30 @@ export function GoalWizard() {
             onAddNewTask={handleAddNewTask}
             onEditTask={handleEditTask}
             onDeleteTask={handleDeleteTask}
-            onNext={() => setCurrentStep(3)}
-            onBack={() => setCurrentStep(1)}
-          />
-        ) : null}
-
-        {currentStep === 3 ? (
-          <Step3WeeklyTargets
-            tasks={selectedTasks}
-            weeklyTargets={weeklyTargets}
-            onUpdateTargets={handleUpdateTargets}
             onNext={() => setCurrentStep(4)}
             onBack={() => setCurrentStep(2)}
           />
         ) : null}
 
         {currentStep === 4 ? (
+          <Step3WeeklyTargets
+            tasks={selectedTasks}
+            weeklyTargets={weeklyTargets}
+            dailyAvailableUnits={dailyAvailableUnits}
+            onUpdateTargets={handleUpdateTargets}
+            onNext={() => setCurrentStep(5)}
+            onBack={() => setCurrentStep(3)}
+          />
+        ) : null}
+
+        {currentStep === 5 ? (
           <Step4Confirmation
             unitDurationMinutes={unitDurationMinutes ?? 0}
+            dailyAvailableUnits={dailyAvailableUnits}
             tasks={selectedTasks}
             weeklyTargets={weeklyTargets}
             onSave={handleSave}
-            onBack={() => setCurrentStep(3)}
+            onBack={() => setCurrentStep(4)}
             isSaving={isSaving}
             errorMessage={errorMessage}
           />

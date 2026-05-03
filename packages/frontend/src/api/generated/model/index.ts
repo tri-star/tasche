@@ -20,6 +20,7 @@ export * from './aPIResponseWeekResponse';
 export * from './authorizeResponse';
 export * from './createdTask';
 export * from './dailyActuals';
+export * from './dailyAvailableUnits';
 export * from './dailyData';
 export * from './dailyDataCompletionRate';
 export * from './dailyTargets';

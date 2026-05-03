@@ -4,6 +4,7 @@
  * Tasche API
  * OpenAPI spec version: 0.1.0
  */
+import type { DailyAvailableUnits } from './dailyAvailableUnits';
 import type { GoalUpdateItem } from './goalUpdateItem';
 
 /**
@@ -12,6 +13,8 @@ import type { GoalUpdateItem } from './goalUpdateItem';
 export interface GoalsUpdate {
   /** 1ユニットの時間（分） */
   unit_duration_minutes: number;
+  /** 曜日ごとの確保可能ユニット数 */
+  daily_available_units?: DailyAvailableUnits;
   /** 目標一覧 */
   goals: GoalUpdateItem[];
 }

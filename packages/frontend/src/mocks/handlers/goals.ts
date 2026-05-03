@@ -55,6 +55,15 @@ const mockGoals: APIResponseGoalsResponse = {
   data: {
     week_id: "wk_01HXYZ1234567890ABCDEF",
     unit_duration_minutes: 30,
+    daily_available_units: {
+      monday: 0,
+      tuesday: 0,
+      wednesday: 0,
+      thursday: 0,
+      friday: 0,
+      saturday: 0,
+      sunday: 0,
+    },
     goals: [],
   },
 }
@@ -106,6 +115,15 @@ export const goalsHandlers = [
       data: {
         week_id: "wk_01HXYZ1234567890ABCDEF",
         unit_duration_minutes: body.unit_duration_minutes,
+        daily_available_units: body.daily_available_units ?? {
+          monday: 0,
+          tuesday: 0,
+          wednesday: 0,
+          thursday: 0,
+          friday: 0,
+          saturday: 0,
+          sunday: 0,
+        },
         goals: body.goals.map((goal: GoalUpdateItem, index: number) => ({
           task_id: goal.task_id ?? `tsk_new_${index}`,
           task_name: goal.new_task_name ?? `Task ${index + 1}`,

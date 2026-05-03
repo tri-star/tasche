@@ -54,6 +54,11 @@ test.describe("GoalSettingPage", () => {
 
       await goalSettingPage.selectUnitDuration("30分")
       await goalSettingPage.goNext()
+      await goalSettingPage.increaseAvailableUnits("月", 2)
+      await goalSettingPage.goNext()
+      await goalSettingPage.toggleTask("試験勉強")
+      await goalSettingPage.toggleTask("個人開発")
+      await goalSettingPage.toggleTask("後で読む消化")
       await goalSettingPage.addNewTask(taskName)
       await goalSettingPage.goNext()
       await goalSettingPage.fillTarget(taskName, "月", "1")
