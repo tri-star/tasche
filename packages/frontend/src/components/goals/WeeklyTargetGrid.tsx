@@ -96,12 +96,18 @@ export function WeeklyTargetGrid({
             <td className="px-2 py-3">目標合計 / 確保可能</td>
             {DAYS_OF_WEEK_ORDER.map((day) => {
               const isExceeded = exceededDays.has(day)
+              const targetTotal = totalsByDay[day]
+              const availableTotal = dailyAvailableUnits[day] ?? 0
+              const isBelowAvailable = targetTotal < availableTotal
               return (
                 <td
                   key={day}
                   className={`px-2 py-3 text-center ${isExceeded ? "bg-rose-100 text-rose-700" : ""}`}
                 >
-                  {totalsByDay[day].toFixed(1)} / {(dailyAvailableUnits[day] ?? 0).toFixed(1)}
+                  <span className={isBelowAvailable ? "text-sky-700" : undefined}>
+                    {targetTotal.toFixed(1)}
+                  </span>{" "}
+                  / {availableTotal.toFixed(1)}
                 </td>
               )
             })}

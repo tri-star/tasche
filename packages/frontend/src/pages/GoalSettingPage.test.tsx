@@ -106,14 +106,8 @@ describe("GoalSettingPage", () => {
     await screen.findByText("1ユニットの時間を選んでください")
     await user.click(screen.getByRole("button", { name: /次へ/ }))
 
-    expect(screen.getByRole("spinbutton", { name: "月曜日の確保可能ユニット" })).toHaveAttribute(
-      "aria-valuenow",
-      "1.5",
-    )
-    expect(screen.getByRole("spinbutton", { name: "火曜日の確保可能ユニット" })).toHaveAttribute(
-      "aria-valuenow",
-      "2",
-    )
+    expect(screen.getByRole("spinbutton", { name: "月曜日の確保可能ユニット" })).toHaveValue(1.5)
+    expect(screen.getByRole("spinbutton", { name: "火曜日の確保可能ユニット" })).toHaveValue(2)
   })
 
   it("保存payloadにdaily_available_unitsが含まれる", async () => {
