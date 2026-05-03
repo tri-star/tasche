@@ -1127,6 +1127,62 @@
         "title": "DailyActuals",
         "description": "曜日ごとの実績ユニット数."
       },
+      "DailyAvailableUnits": {
+        "properties": {
+          "monday": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Monday",
+            "description": "月曜日の確保可能ユニット数",
+            "default": 0.0
+          },
+          "tuesday": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Tuesday",
+            "description": "火曜日の確保可能ユニット数",
+            "default": 0.0
+          },
+          "wednesday": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Wednesday",
+            "description": "水曜日の確保可能ユニット数",
+            "default": 0.0
+          },
+          "thursday": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Thursday",
+            "description": "木曜日の確保可能ユニット数",
+            "default": 0.0
+          },
+          "friday": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Friday",
+            "description": "金曜日の確保可能ユニット数",
+            "default": 0.0
+          },
+          "saturday": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Saturday",
+            "description": "土曜日の確保可能ユニット数",
+            "default": 0.0
+          },
+          "sunday": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Sunday",
+            "description": "日曜日の確保可能ユニット数",
+            "default": 0.0
+          }
+        },
+        "type": "object",
+        "title": "DailyAvailableUnits",
+        "description": "曜日ごとの確保可能ユニット数."
+      },
       "DailyData": {
         "properties": {
           "target_units": {
@@ -1360,6 +1416,10 @@
             "title": "Unit Duration Minutes",
             "description": "1ユニットの時間（分）"
           },
+          "daily_available_units": {
+            "$ref": "#/components/schemas/DailyAvailableUnits",
+            "description": "曜日ごとの確保可能ユニット数"
+          },
           "goals": {
             "items": {
               "$ref": "#/components/schemas/GoalResponse"
@@ -1373,6 +1433,7 @@
         "required": [
           "week_id",
           "unit_duration_minutes",
+          "daily_available_units",
           "goals"
         ],
         "title": "GoalsResponse",
@@ -1384,6 +1445,10 @@
             "type": "integer",
             "title": "Unit Duration Minutes",
             "description": "1ユニットの時間（分）"
+          },
+          "daily_available_units": {
+            "$ref": "#/components/schemas/DailyAvailableUnits",
+            "description": "曜日ごとの確保可能ユニット数"
           },
           "goals": {
             "items": {
@@ -1414,6 +1479,10 @@
             "title": "Unit Duration Minutes",
             "description": "1ユニットの時間（分）"
           },
+          "daily_available_units": {
+            "$ref": "#/components/schemas/DailyAvailableUnits",
+            "description": "曜日ごとの確保可能ユニット数"
+          },
           "goals": {
             "items": {
               "$ref": "#/components/schemas/GoalResponse"
@@ -1435,6 +1504,7 @@
         "required": [
           "week_id",
           "unit_duration_minutes",
+          "daily_available_units",
           "goals",
           "created_tasks"
         ],
