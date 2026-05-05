@@ -21,7 +21,8 @@ async def get_current_goals(
     current_user: CurrentUser,
 ) -> APIResponse[GoalsResponse]:
     """今週の目標一覧を取得する."""
-    goals = await goal_service.list_current_goals(db, current_user)
+    async with transaction(db):
+        goals = await goal_service.list_current_goals(db, current_user)
     return APIResponse(data=goals)
 
 
