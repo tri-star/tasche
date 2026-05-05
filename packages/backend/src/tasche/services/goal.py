@@ -11,8 +11,10 @@ from tasche.models.enums import DayOfWeek
 from tasche.models.goal import Goal
 from tasche.models.task import Task
 from tasche.models.user import User
+from tasche.models.week import Week
 from tasche.schemas.goal import (
     CreatedTask,
+    DailyAvailableUnits,
     DailyTargets,
     GoalResponse,
     GoalsResponse,
@@ -36,6 +38,23 @@ def _generate_task_id() -> str:
 
 def _empty_daily_targets() -> dict[str, float]:
     return {field_name: 0.0 for field_name in DAY_OF_WEEK_FIELD_NAMES.values()}
+
+
+def _build_daily_available_units(week: Week) -> DailyAvailableUnits:
+    return DailyAvailableUnits(
+        **{
+            DAY_OF_WEEK_FIELD_NAMES[day]: float(
+                getattr(week, f"available_units_{DAY_OF_WEEK_FIELD_NAMES[day]}")
+            )
+            for day in DAY_OF_WEEK_ORDER
+        }
+    )
+
+
+def _apply_daily_available_units(week: Week, daily_available_units: DailyAvailableUnits) -> None:
+    for day in DAY_OF_WEEK_ORDER:
+        field_name = DAY_OF_WEEK_FIELD_NAMES[day]
+        setattr(week, f"available_units_{field_name}", getattr(daily_available_units, field_name))
 
 
 def _daily_targets_to_rows(daily_targets: DailyTargets) -> Iterable[tuple[DayOfWeek, float]]:
@@ -88,7 +107,9 @@ async def list_current_goals(
 
     return GoalsResponse(
         week_id=week.id,
+        week_start_date=week.start_date.isoformat(),
         unit_duration_minutes=week.unit_duration_minutes,
+        daily_available_units=_build_daily_available_units(week),
         goals=_build_goal_responses(result.all()),
     )
 
@@ -100,7 +121,11 @@ def _validate_goals_update(goals_update: GoalsUpdate) -> None:
 
     seen_task_ids: set[str] = set()
     seen_new_task_names: set[str] = set()
+    daily_target_totals = _empty_daily_targets()
     for item in goals_update.goals:
+        for day, target_units in _daily_targets_to_rows(item.daily_targets):
+            daily_target_totals[DAY_OF_WEEK_FIELD_NAMES[day]] += target_units
+
         if item.task_id is None:
             new_task_name = (item.new_task_name or "").strip()
             if not new_task_name:
@@ -114,6 +139,13 @@ def _validate_goals_update(goals_update: GoalsUpdate) -> None:
         if item.task_id in seen_task_ids:
             raise ValidationError("duplicate task_id is not allowed")
         seen_task_ids.add(item.task_id)
+
+    for field_name, target_units in daily_target_totals.items():
+        available_units = float(getattr(goals_update.daily_available_units, field_name))
+        if target_units > available_units:
+            raise ValidationError(
+                f"daily target units for {field_name} must not exceed daily_available_units"
+            )
 
 
 async def _get_active_tasks_map(
@@ -146,6 +178,7 @@ async def replace_current_goals(
 
     week = await get_current_week(db, user)
     week.unit_duration_minutes = goals_update.unit_duration_minutes
+    _apply_daily_available_units(week, goals_update.daily_available_units)
 
     await db.execute(delete(Goal).where(Goal.week_id == week.id))
 
@@ -191,7 +224,9 @@ async def replace_current_goals(
 
     return GoalsUpdateResponse(
         week_id=week.id,
+        week_start_date=week.start_date.isoformat(),
         unit_duration_minutes=week.unit_duration_minutes,
+        daily_available_units=_build_daily_available_units(week),
         goals=response_goals,
         created_tasks=created_tasks,
     )

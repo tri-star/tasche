@@ -68,9 +68,25 @@ export class GoalSettingPage {
     await this.page.getByRole("button", { name: /次へ/ }).click()
   }
 
+  async increaseAvailableUnits(dayLabel: string, times: number) {
+    const button = this.page.getByRole("button", {
+      name: `${dayLabel}曜日の確保可能ユニットを増やす`,
+    })
+    for (let index = 0; index < times; index++) {
+      await button.click()
+    }
+  }
+
   async addNewTask(taskName: string) {
     await this.page.getByPlaceholder("例: ストレッチ").fill(taskName)
     await this.page.getByRole("button", { name: "追加する" }).click()
+  }
+
+  async toggleTask(taskName: string) {
+    await this.page
+      .getByRole("button", { name: new RegExp(taskName) })
+      .first()
+      .click()
   }
 
   async fillTarget(taskName: string, dayLabel: string, units: string) {

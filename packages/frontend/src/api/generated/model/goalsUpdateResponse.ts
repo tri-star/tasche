@@ -4,6 +4,7 @@
  * Tasche API
  * OpenAPI spec version: 0.1.0
  */
+import type { DailyAvailableUnits } from './dailyAvailableUnits';
 import type { GoalResponse } from './goalResponse';
 import type { CreatedTask } from './createdTask';
 
@@ -13,8 +14,12 @@ import type { CreatedTask } from './createdTask';
 export interface GoalsUpdateResponse {
   /** 週ID */
   week_id: string;
+  /** 週の開始日 */
+  week_start_date: string;
   /** 1ユニットの時間（分） */
   unit_duration_minutes: number;
+  /** 曜日ごとの確保可能ユニット数 */
+  daily_available_units: DailyAvailableUnits;
   /** 更新後の目標一覧 */
   goals: GoalResponse[];
   /** 作成されたタスク一覧 */

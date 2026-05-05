@@ -125,6 +125,18 @@ def _daily_targets(value: float = 0.0) -> dict[str, float]:
     }
 
 
+def _daily_available_units(value: float = 0.0) -> dict[str, float]:
+    return {
+        "monday": value,
+        "tuesday": value,
+        "wednesday": value,
+        "thursday": value,
+        "friday": value,
+        "saturday": value,
+        "sunday": value,
+    }
+
+
 async def _add_goal(
     db_session: AsyncSession,
     *,
@@ -190,7 +202,9 @@ class TestGetCurrentGoals:
         assert response.status_code == 200
         data = response.json()["data"]
         assert data["week_id"] == current_week.id
+        assert data["week_start_date"] == "2026-04-20"
         assert data["unit_duration_minutes"] == 30
+        assert data["daily_available_units"] == _daily_available_units(0.0)
         assert len(data["goals"]) == 1
         assert data["goals"][0]["task_name"] == "英語学習"
         assert data["goals"][0]["daily_targets"]["monday"] == 2.0
@@ -209,6 +223,8 @@ class TestGetCurrentGoals:
         assert response.status_code == 200
         data = response.json()["data"]
         assert data["week_id"] == current_week.id
+        assert data["week_start_date"] == "2026-04-20"
+        assert data["daily_available_units"] == _daily_available_units(0.0)
         assert data["goals"] == []
 
     async def test_returns_404_when_current_week_does_not_exist(
@@ -241,6 +257,13 @@ class TestUpdateCurrentGoals:
             "/api/weeks/current/goals",
             json={
                 "unit_duration_minutes": 60,
+                "daily_available_units": {
+                    **_daily_available_units(0.0),
+                    "monday": 4.0,
+                    "tuesday": 3.5,
+                    "wednesday": 1.5,
+                    "sunday": 1.0,
+                },
                 "goals": [
                     {
                         "task_id": english.id,
@@ -257,17 +280,34 @@ class TestUpdateCurrentGoals:
         assert response.status_code == 200
         data = response.json()["data"]
         assert data["week_id"] == current_week.id
+        assert data["week_start_date"] == "2026-04-20"
         assert data["unit_duration_minutes"] == 60
+        assert data["daily_available_units"]["monday"] == 4.0
+        assert data["daily_available_units"]["tuesday"] == 3.5
+        assert data["daily_available_units"]["wednesday"] == 1.5
+        assert data["daily_available_units"]["sunday"] == 1.0
         assert data["goals"][0]["task_id"] == english.id
         assert data["goals"][0]["daily_targets"]["wednesday"] == 1.5
         assert data["created_tasks"] == []
 
         await db_session.refresh(current_week)
         assert current_week.unit_duration_minutes == 60
+        assert current_week.available_units_monday == 4.0
+        assert current_week.available_units_tuesday == 3.5
+        assert current_week.available_units_wednesday == 1.5
+        assert current_week.available_units_sunday == 1.0
 
         result = await db_session.execute(select(Goal).where(Goal.week_id == current_week.id))
         goals = list(result.scalars())
         assert len(goals) == 7
+
+        get_response = await authenticated_client.get("/api/weeks/current/goals")
+        assert get_response.status_code == 200
+        get_data = get_response.json()["data"]
+        assert get_data["daily_available_units"]["monday"] == 4.0
+        assert get_data["daily_available_units"]["tuesday"] == 3.5
+        assert get_data["daily_available_units"]["wednesday"] == 1.5
+        assert get_data["daily_available_units"]["sunday"] == 1.0
 
     async def test_put_creates_new_task_with_goals(
         self,
@@ -281,6 +321,7 @@ class TestUpdateCurrentGoals:
             "/api/weeks/current/goals",
             json={
                 "unit_duration_minutes": 30,
+                "daily_available_units": _daily_available_units(1.0),
                 "goals": [
                     {
                         "task_id": None,
@@ -338,6 +379,7 @@ class TestUpdateCurrentGoals:
             "/api/weeks/current/goals",
             json={
                 "unit_duration_minutes": 30,
+                "daily_available_units": _daily_available_units(1.0),
                 "goals": [
                     {
                         "task_id": english.id,
@@ -380,6 +422,7 @@ class TestUpdateCurrentGoals:
             "/api/weeks/current/goals",
             json={
                 "unit_duration_minutes": 30,
+                "daily_available_units": _daily_available_units(1.0),
                 "goals": [{"task_id": other_task.id, "daily_targets": _daily_targets(1.0)}],
             },
         )
@@ -401,6 +444,7 @@ class TestUpdateCurrentGoals:
             "/api/weeks/current/goals",
             json={
                 "unit_duration_minutes": 30,
+                "daily_available_units": _daily_available_units(1.0),
                 "goals": [{"task_id": archived.id, "daily_targets": _daily_targets(1.0)}],
             },
         )
@@ -423,6 +467,46 @@ class TestUpdateCurrentGoals:
             json={
                 "unit_duration_minutes": 25,
                 "goals": [{"task_id": english.id, "daily_targets": _daily_targets(1.0)}],
+            },
+        )
+
+        assert response.status_code == 400
+        assert response.json()["error"]["code"] == "VALIDATION_ERROR"
+
+    async def test_put_rejects_daily_targets_exceeding_available_units(
+        self,
+        authenticated_client: AsyncClient,
+        current_week: Week,
+        test_tasks: tuple[Task, Task, Task],
+        fixed_now: datetime,
+    ):
+        """曜日ごとの目標合計が確保可能ユニットを超える場合は拒否する."""
+        english, dev, _ = test_tasks
+
+        response = await authenticated_client.put(
+            "/api/weeks/current/goals",
+            json={
+                "unit_duration_minutes": 30,
+                "daily_available_units": {
+                    **_daily_available_units(0.0),
+                    "monday": 2.0,
+                },
+                "goals": [
+                    {
+                        "task_id": english.id,
+                        "daily_targets": {
+                            **_daily_targets(0.0),
+                            "monday": 1.5,
+                        },
+                    },
+                    {
+                        "task_id": dev.id,
+                        "daily_targets": {
+                            **_daily_targets(0.0),
+                            "monday": 1.0,
+                        },
+                    },
+                ],
             },
         )
 

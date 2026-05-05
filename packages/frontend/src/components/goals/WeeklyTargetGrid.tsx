@@ -1,4 +1,4 @@
-import type { DailyTargets, DayOfWeek } from "@/api/generated/model"
+import type { DailyAvailableUnits, DailyTargets, DayOfWeek } from "@/api/generated/model"
 import { DAY_LABELS, DAYS_OF_WEEK_ORDER } from "@/lib/week-dates"
 import type { GoalTask } from "./types"
 import { createEmptyTargets } from "./types"
@@ -6,10 +6,18 @@ import { createEmptyTargets } from "./types"
 type WeeklyTargetGridProps = {
   tasks: GoalTask[]
   weeklyTargets: Record<string, DailyTargets>
+  dailyAvailableUnits: DailyAvailableUnits
+  exceededDays: ReadonlySet<DayOfWeek>
   onUpdateTargets: (taskId: string, targets: DailyTargets) => void
 }
 
-export function WeeklyTargetGrid({ tasks, weeklyTargets, onUpdateTargets }: WeeklyTargetGridProps) {
+export function WeeklyTargetGrid({
+  tasks,
+  weeklyTargets,
+  dailyAvailableUnits,
+  exceededDays,
+  onUpdateTargets,
+}: WeeklyTargetGridProps) {
   const totalsByDay = DAYS_OF_WEEK_ORDER.reduce(
     (acc, day) => {
       acc[day] = tasks.reduce((sum, task) => sum + (weeklyTargets[task.id]?.[day] ?? 0), 0)
@@ -50,7 +58,12 @@ export function WeeklyTargetGrid({ tasks, weeklyTargets, onUpdateTargets }: Week
                   </div>
                 </td>
                 {DAYS_OF_WEEK_ORDER.map((day) => (
-                  <td key={day} className="px-2 py-2 text-center">
+                  <td
+                    key={day}
+                    className={`px-2 py-2 text-center ${
+                      exceededDays.has(day) ? "bg-rose-50/80" : ""
+                    }`}
+                  >
                     <input
                       type="number"
                       min={0}
@@ -63,7 +76,11 @@ export function WeeklyTargetGrid({ tasks, weeklyTargets, onUpdateTargets }: Week
                           [day]: Number.isFinite(nextValue) ? nextValue : 0,
                         })
                       }}
-                      className="w-16 rounded-lg border border-emerald-100 bg-white px-2 py-1 text-center text-sm focus:border-emerald-300 focus:outline-none"
+                      className={`w-16 rounded-lg border bg-white px-2 py-1 text-center text-sm focus:outline-none ${
+                        exceededDays.has(day)
+                          ? "border-rose-300 focus:border-rose-400"
+                          : "border-emerald-100 focus:border-emerald-300"
+                      }`}
                     />
                   </td>
                 ))}
@@ -76,14 +93,52 @@ export function WeeklyTargetGrid({ tasks, weeklyTargets, onUpdateTargets }: Week
         </tbody>
         <tfoot>
           <tr className="bg-emerald-50/80 font-semibold text-emerald-900">
-            <td className="px-2 py-3">合計</td>
-            {DAYS_OF_WEEK_ORDER.map((day) => (
-              <td key={day} className="px-2 py-3 text-center">
-                {totalsByDay[day].toFixed(1)}
-              </td>
-            ))}
+            <td className="px-2 py-3">目標合計 / 確保可能</td>
+            {DAYS_OF_WEEK_ORDER.map((day) => {
+              const isExceeded = exceededDays.has(day)
+              const targetTotal = totalsByDay[day]
+              const availableTotal = dailyAvailableUnits[day] ?? 0
+              const isBelowAvailable = targetTotal < availableTotal
+              return (
+                <td
+                  key={day}
+                  className={`px-2 py-3 text-center ${isExceeded ? "bg-rose-100 text-rose-700" : ""}`}
+                >
+                  <span className={isBelowAvailable ? "text-sky-700" : undefined}>
+                    {targetTotal.toFixed(1)}
+                  </span>{" "}
+                  / {availableTotal.toFixed(1)}
+                </td>
+              )
+            })}
             <td className="px-2 py-3 text-center">
-              {DAYS_OF_WEEK_ORDER.reduce((sum, day) => sum + totalsByDay[day], 0).toFixed(1)}
+              {DAYS_OF_WEEK_ORDER.reduce((sum, day) => sum + totalsByDay[day], 0).toFixed(1)} /{" "}
+              {DAYS_OF_WEEK_ORDER.reduce(
+                (sum, day) => sum + (dailyAvailableUnits[day] ?? 0),
+                0,
+              ).toFixed(1)}
+            </td>
+          </tr>
+          <tr className="text-xs text-muted-foreground">
+            <td className="px-2 py-2">確保可能との差分</td>
+            {DAYS_OF_WEEK_ORDER.map((day) => {
+              const remaining = (dailyAvailableUnits[day] ?? 0) - totalsByDay[day]
+              return (
+                <td
+                  key={day}
+                  className={`px-2 py-2 text-center ${
+                    remaining < 0 ? "font-semibold text-rose-700" : ""
+                  }`}
+                >
+                  {remaining.toFixed(1)}
+                </td>
+              )
+            })}
+            <td className="px-2 py-2 text-center">
+              {DAYS_OF_WEEK_ORDER.reduce(
+                (sum, day) => sum + (dailyAvailableUnits[day] ?? 0) - totalsByDay[day],
+                0,
+              ).toFixed(1)}
             </td>
           </tr>
         </tfoot>
