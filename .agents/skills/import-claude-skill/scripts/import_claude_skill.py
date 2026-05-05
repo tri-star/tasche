@@ -15,8 +15,8 @@ from typing import Any
 
 MODEL_MAP = {
     "opus": ("gpt-5.5", "xhigh"),
-    "sonnet": ("gpt-5.5", "medium"),
-    "haiku": ("gpt-5.5", "low"),
+    "sonnet": ("gpt-5.4-mini", "medium"),
+    "haiku": ("gpt-5.4", "low"),
 }
 
 SKILL_FRONTMATTER_KEYS = {
@@ -74,18 +74,36 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description="Convert .claude/skills and .claude/agents into Codex-compatible files."
     )
-    parser.add_argument("--project-root", type=Path, help="Project root. Defaults to nearest parent with .git.")
-    parser.add_argument("--skills-only", action="store_true", help="Import only Claude Code skills.")
-    parser.add_argument("--agents-only", action="store_true", help="Import only Claude Code agents.")
-    parser.add_argument("--dry-run", action="store_true", help="Print planned changes without writing files.")
+    parser.add_argument(
+        "--project-root",
+        type=Path,
+        help="Project root. Defaults to nearest parent with .git.",
+    )
+    parser.add_argument(
+        "--skills-only", action="store_true", help="Import only Claude Code skills."
+    )
+    parser.add_argument(
+        "--agents-only", action="store_true", help="Import only Claude Code agents."
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Print planned changes without writing files.",
+    )
     args = parser.parse_args()
 
     if args.skills_only and args.agents_only:
         parser.error("--skills-only and --agents-only cannot be used together")
 
-    project_root = args.project_root.resolve() if args.project_root else find_project_root(Path.cwd())
+    project_root = (
+        args.project_root.resolve()
+        if args.project_root
+        else find_project_root(Path.cwd())
+    )
     if project_root is None:
-        print("error: could not find project root; pass --project-root", file=sys.stderr)
+        print(
+            "error: could not find project root; pass --project-root", file=sys.stderr
+        )
         return 2
 
     imported = 0
@@ -122,7 +140,10 @@ def import_skills(project_root: Path, *, dry_run: bool) -> int:
     for skill_dir in sorted(path for path in source_root.iterdir() if path.is_dir()):
         source_skill = skill_dir / "SKILL.md"
         if not source_skill.is_file():
-            print(f"skip skill without SKILL.md: {relative(skill_dir, project_root)}", file=sys.stderr)
+            print(
+                f"skip skill without SKILL.md: {relative(skill_dir, project_root)}",
+                file=sys.stderr,
+            )
             continue
 
         doc = parse_frontmatter(source_skill.read_text(encoding="utf-8"))
@@ -131,11 +152,15 @@ def import_skills(project_root: Path, *, dry_run: bool) -> int:
         target_skill = target_dir / "SKILL.md"
         converted = convert_skill_doc(doc, name=target_name)
 
-        print(f"{'would write' if dry_run else 'write'} {relative(target_skill, project_root)}")
+        print(
+            f"{'would write' if dry_run else 'write'} {relative(target_skill, project_root)}"
+        )
         if not dry_run:
             if target_dir.exists():
                 shutil.rmtree(target_dir)
-            shutil.copytree(skill_dir, target_dir, ignore=shutil.ignore_patterns("SKILL.md"))
+            shutil.copytree(
+                skill_dir, target_dir, ignore=shutil.ignore_patterns("SKILL.md")
+            )
             target_skill.write_text(converted, encoding="utf-8")
         count += 1
     return count
@@ -147,7 +172,10 @@ def import_agents(project_root: Path, *, dry_run: bool) -> int | None:
     if not source_root.is_dir():
         return 0
     if (project_root / ".codex").exists() and not (project_root / ".codex").is_dir():
-        print("error: .codex exists but is not a directory; cannot import agents", file=sys.stderr)
+        print(
+            "error: .codex exists but is not a directory; cannot import agents",
+            file=sys.stderr,
+        )
         return None
 
     count = 0
@@ -157,7 +185,9 @@ def import_agents(project_root: Path, *, dry_run: bool) -> int | None:
         target_agent = target_root / f"{name}.toml"
         converted = convert_agent_doc(doc, fallback_name=name)
 
-        print(f"{'would write' if dry_run else 'write'} {relative(target_agent, project_root)}")
+        print(
+            f"{'would write' if dry_run else 'write'} {relative(target_agent, project_root)}"
+        )
         if not dry_run:
             target_root.mkdir(parents=True, exist_ok=True)
             target_agent.write_text(converted, encoding="utf-8")
@@ -188,7 +218,11 @@ def parse_simple_yaml(raw: str) -> dict[str, Any]:
     while index < len(lines):
         line = lines[index]
         index += 1
-        if not line.strip() or line.lstrip().startswith("#") or line.startswith((" ", "\t")):
+        if (
+            not line.strip()
+            or line.lstrip().startswith("#")
+            or line.startswith((" ", "\t"))
+        ):
             continue
         if ":" not in line:
             continue
@@ -201,7 +235,11 @@ def parse_simple_yaml(raw: str) -> dict[str, Any]:
             while index < len(lines) and lines[index].startswith((" ", "\t")):
                 nested_line = lines[index].strip()
                 index += 1
-                if not nested_line or nested_line.startswith("#") or ":" not in nested_line:
+                if (
+                    not nested_line
+                    or nested_line.startswith("#")
+                    or ":" not in nested_line
+                ):
                     continue
                 nested_key, nested_value = nested_line.split(":", 1)
                 nested[nested_key.strip()] = parse_scalar(nested_value.strip())
@@ -223,7 +261,9 @@ def parse_scalar(value: str) -> Any:
         if not inner:
             return []
         return [parse_scalar(part.strip()) for part in split_csv(inner)]
-    if (value.startswith('"') and value.endswith('"')) or (value.startswith("'") and value.endswith("'")):
+    if (value.startswith('"') and value.endswith('"')) or (
+        value.startswith("'") and value.endswith("'")
+    ):
         return unquote(value)
     return value
 
@@ -266,13 +306,17 @@ def unquote(value: str) -> str:
 
 def convert_skill_doc(doc: FrontmatterDoc, *, name: str) -> str:
     source = doc.data
-    description = str(source.get("description") or f"Imported Claude Code skill: {name}.")
+    description = str(
+        source.get("description") or f"Imported Claude Code skill: {name}."
+    )
 
     metadata: dict[str, Any] = {}
     if isinstance(source.get("metadata"), dict):
         metadata.update(source["metadata"])
 
-    claude_fields = {key: value for key, value in source.items() if key not in SKILL_FRONTMATTER_KEYS}
+    claude_fields = {
+        key: value for key, value in source.items() if key not in SKILL_FRONTMATTER_KEYS
+    }
     if claude_fields:
         metadata["claude"] = claude_fields
 
@@ -297,7 +341,9 @@ def convert_skill_doc(doc: FrontmatterDoc, *, name: str) -> str:
 def convert_agent_doc(doc: FrontmatterDoc, *, fallback_name: str) -> str:
     source = doc.data
     name = sanitize_agent_name(str(source.get("name") or fallback_name))
-    description = str(source.get("description") or f"Imported Claude Code agent: {name}.")
+    description = str(
+        source.get("description") or f"Imported Claude Code agent: {name}."
+    )
     body = rewrite_claude_agent_refs(doc.body).strip() or description
     model = str(source.get("model") or "").lower()
     codex_model, effort = MODEL_MAP.get(model, ("gpt-5.5", "medium"))
@@ -324,11 +370,17 @@ def unsupported_agent_comments(source: dict[str, Any]) -> list[str]:
     return comments
 
 
-def is_read_only_agent(name: str, description: str, body: str, source: dict[str, Any]) -> bool:
+def is_read_only_agent(
+    name: str, description: str, body: str, source: dict[str, Any]
+) -> bool:
     name_lower = name.lower()
     haystack = " ".join([name, description, first_chars(body, 2000)]).lower()
-    has_read_only_signal = any(keyword.lower() in haystack for keyword in READ_ONLY_KEYWORDS)
-    has_write_role_name = any(keyword.lower() in name_lower for keyword in WRITE_KEYWORDS)
+    has_read_only_signal = any(
+        keyword.lower() in haystack for keyword in READ_ONLY_KEYWORDS
+    )
+    has_write_role_name = any(
+        keyword.lower() in name_lower for keyword in WRITE_KEYWORDS
+    )
 
     tools = str(source.get("tools") or "").lower()
     write_tools = ("write", "edit", "multiedit", "notebookedit")
@@ -392,13 +444,23 @@ def yaml_scalar(value: Any) -> str:
     if value is None:
         return "null"
     text = str(value)
-    if text == "" or text.strip() != text or any(char in text for char in ":\n#[]{}&*!,>|%@`\"'"):
-        return '"' + text.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n") + '"'
+    if (
+        text == ""
+        or text.strip() != text
+        or any(char in text for char in ":\n#[]{}&*!,>|%@`\"'")
+    ):
+        return (
+            '"'
+            + text.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n")
+            + '"'
+        )
     return text
 
 
 def toml_string(value: str) -> str:
-    return '"' + value.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n") + '"'
+    return (
+        '"' + value.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n") + '"'
+    )
 
 
 def toml_multiline_string(value: str) -> str:

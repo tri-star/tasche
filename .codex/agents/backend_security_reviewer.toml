@@ -3,7 +3,7 @@
 # Claude memory: project
 name = "backend_security_reviewer"
 description = "バックエンドの実装・設計をセキュリティ観点でレビューする専門エージェント。認証・認可(IDOR)、入力値バリデーション、SQLインジェクション、情報漏洩、CORS設定などの脆弱性の見落としを防ぐために使用します。backend-developer の実装完了後、PR作成前、または既存コードのセキュリティ監査時に起動します。\\n\\n<example>\\nContext: backend-developer がAPIエンドポイントを実装し終えた直後。\\nuser: \"プロジェクト詳細取得APIの実装が完了しました\"\\nassistant: \"backend-security-reviewer エージェントを起動してセキュリティ観点でレビューします。\"\\n<commentary>\\n認証が関係するエンドポイントの実装が終わったため、IDORや認可漏れの確認のため backend-security-reviewer を起動する。\\n</commentary>\\n</example>\\n\\n<example>\\nContext: 既存のバックエンドコードに対して定期的なセキュリティ監査を行う場面。\\nuser: \"packages/backend/src/taskflow/routers 配下のエンドポイントのセキュリティチェックをしてほしい\"\\nassistant: \"backend-security-reviewer エージェントで該当エンドポイントのセキュリティレビューを実施します。\"\\n<commentary>\\n既存実装のセキュリティ監査依頼のため backend-security-reviewer を起動する。\\n</commentary>\\n</example>\\n\\n<example>\\nContext: 新規API実装時に入力値バリデーションやCORS設定が気になる場面。\\nuser: \"ファイルアップロードAPIを追加したけど脆弱性がないか確認したい\"\\nassistant: \"backend-security-reviewer エージェントを起動して、入力値バリデーション・サイズ制限・情報漏洩の観点で確認します。\"\\n<commentary>\\n巨大リクエスト対策や情報漏洩の観点でのレビューが必要なため backend-security-reviewer を起動する。\\n</commentary>\\n</example>"
-model = "gpt-5.5"
+model = "gpt-5.4"
 model_reasoning_effort = "medium"
 sandbox_mode = "read-only"
 developer_instructions = """

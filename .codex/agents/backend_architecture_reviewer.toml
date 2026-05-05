@@ -3,7 +3,7 @@
 # Claude memory: project
 name = "backend_architecture_reviewer"
 description = "バックエンドの実装や設計変更が行われ、アーキテクチャレビューが必要なときにこのエージェントを使用します。対象には、新しいAPIエンドポイント、サービス層やリポジトリ層の変更、データベースマイグレーション、その他のバックエンドリファクタリングが含まれます。このエージェントは、設計の妥当性とバックエンドアーキテクチャの健全性を検証します。\\n\\n<example>\\nContext: ユーザーがサービス層とリポジトリ層を含む新しいREST APIエンドポイントを実装した直後。\\nuser: \"ユーザー登録のエンドポイントを追加しました\"\\nassistant: \"実装を確認しました。では backend-architecture-reviewer エージェントを使って、API設計・レイヤー分離・DB設計の観点からレビューします\"\\n<commentary>\\nバックエンド実装が追加されたため、RESTful設計、レイヤー分離、DB設計の観点で検証するために Agent ツールで backend-architecture-reviewer エージェントを起動する。\\n</commentary>\\n</example>\\n\\n<example>\\nContext: ユーザーがサービス層に新しいビジネスロジックを追加した場面。\\nuser: \"注文処理のサービスを更新して、在庫チェックのロジックを追加しました\"\\nassistant: \"変更内容を backend-architecture-reviewer エージェントでレビューします\"\\n<commentary>\\nサービス層のビジネスロジック変更にはアーキテクチャレビューが必要なので、並行性、冪等性、エラーハンドリングを確認するために backend-architecture-reviewer エージェントを使う。\\n</commentary>\\n</example>\\n\\n<example>\\nContext: ユーザーがデータベースマイグレーションファイルを追加した場面。\\nuser: \"orders テーブルに status カラムを追加するマイグレーションを作りました\"\\nassistant: \"backend-architecture-reviewer エージェントを使ってマイグレーションとインデックス設計をレビューします\"\\n<commentary>\\nデータベーススキーマ変更では、ロールバック安全性とインデックス設計を確認するために backend-architecture-reviewer エージェントでレビューする。\\n</commentary>\\n</example>"
-model = "gpt-5.5"
+model = "gpt-5.4"
 model_reasoning_effort = "medium"
 sandbox_mode = "read-only"
 developer_instructions = """

@@ -3,7 +3,7 @@
 # Claude memory: project
 name = "backend_code_quality_reviewer"
 description = "バックエンドコードが新規作成または変更され、可読性、堅牢性、エラーハンドリング、ロギング、パフォーマンスの観点で品質レビューが必要なときにこのエージェントを使用します。バックエンド機能、APIエンドポイント、データベース操作、ビジネスロジックの実装後には、このエージェントを能動的に起動すべきです。\\n\\n<example>\\nContext: ユーザーがDBからユーザーデータを取得する新しいバックエンドAPIエンドポイントを実装した直後。\\nuser: \"ユーザー一覧を取得するAPIエンドポイントを実装してください\"\\nassistant: \"APIエンドポイントを実装しました:\"\\n<function call omitted for brevity>\\n<commentary>\\nバックエンドコードが書かれた直後なので、可読性、安定性、エラーハンドリング、ロギング、パフォーマンスの問題を確認するために、Agent ツールで backend-code-quality-reviewer エージェントを起動して実装をレビューする。\\n</commentary>\\nassistant: \"実装が完了したので、backend-code-quality-reviewerエージェントを使用してコード品質をレビューします\"\\n</example>\\n\\n<example>\\nContext: ユーザーがバックエンドのデータ処理関数をリファクタリングした場面。\\nuser: \"この処理関数をリファクタリングして\"\\nassistant: \"リファクタリングを完了しました:\"\\n<function call omitted for brevity>\\n<commentary>\\nバックエンドコードが変更されたため、リファクタ後のコードが品質基準を満たしているか確認する目的で、backend-code-quality-reviewer エージェントを能動的に使う。\\n</commentary>\\nassistant: \"backend-code-quality-reviewerエージェントでリファクタリング後のコードをレビューします\"\\n</example>\\n\\n<example>\\nContext: ユーザーがファイルアップロードを扱う新しい async 関数を追加した場面。\\nuser: \"ファイルアップロード機能を追加してください\"\\nassistant: \"ファイルアップロード機能を実装しました\"\\n<function call omitted for brevity>\\n<commentary>\\nこれはファイル処理と async 処理の両方を含み、重要なレビュー観点になるため、リソース管理と async/await の使い方を確認する目的で backend-code-quality-reviewer エージェントを起動する。\\n</commentary>\\nassistant: \"backend-code-quality-reviewerエージェントを起動してレビューを実施します\"\\n</example>"
-model = "gpt-5.5"
+model = "gpt-5.4"
 model_reasoning_effort = "medium"
 sandbox_mode = "read-only"
 developer_instructions = """

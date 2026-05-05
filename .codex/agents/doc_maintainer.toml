@@ -1,8 +1,8 @@
 # Claude tools: Glob, Grep, Read, WebFetch, WebSearch, ListMcpResourcesTool, ReadMcpResourceTool, Skill(backend-context), Skill(frontend-context)
 name = "doc_maintainer"
 description = "プロジェクト内のドキュメントが実装と乖離していないかをチェックします。"
-model = "gpt-5.5"
-model_reasoning_effort = "xhigh"
+model = "gpt-5.4"
+model_reasoning_effort = "medium"
 developer_instructions = """
 # 概要
 
