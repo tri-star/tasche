@@ -1,10 +1,9 @@
 """タスク API エンドポイント."""
 
-from datetime import datetime, timezone
-
 from fastapi import APIRouter, Query
 
 from tasche.api.deps import CurrentUser, DbSession
+from tasche.api.transaction import transaction
 from tasche.schemas.common import APIResponse
 from tasche.schemas.task import (
     TaskCreate,
@@ -24,9 +23,9 @@ async def get_tasks(
     include_archived: bool = Query(False, description="アーカイブ済みタスクを含める"),
 ) -> APIResponse[TaskListResponse]:
     """タスク一覧を取得する."""
-    tasks = await task_service.get_tasks_by_user_id(
+    tasks = await task_service.get_tasks_by_user(
         db,
-        user_id=current_user.id,
+        current_user,
         include_archived=include_archived,
     )
 
@@ -37,45 +36,34 @@ async def get_tasks(
 
 @router.post("", response_model=APIResponse[TaskResponse], status_code=201)
 async def create_task(
-    task_create: TaskCreate, current_user: CurrentUser
+    task_create: TaskCreate, db: DbSession, current_user: CurrentUser
 ) -> APIResponse[TaskResponse]:
     """新規タスクを作成する."""
-    # ダミーデータを返す
-    new_task = TaskResponse(
-        id="tsk_05HXYZ1234567890ABCDEF",
-        name=task_create.name,
-        is_archived=False,
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc),
-    )
-    return APIResponse(data=new_task)
+    async with transaction(db):
+        task = await task_service.create_task(db, current_user, task_create.name)
+    return APIResponse(data=TaskResponse.model_validate(task))
 
 
 @router.put("/{task_id}", response_model=APIResponse[TaskResponse])
 async def update_task(
-    task_id: str, task_update: TaskUpdate, current_user: CurrentUser
+    task_id: str, task_update: TaskUpdate, db: DbSession, current_user: CurrentUser
 ) -> APIResponse[TaskResponse]:
     """既存タスクを更新する."""
-    # ダミーデータを返す
-    updated_task = TaskResponse(
-        id=task_id,
-        name=task_update.name,
-        is_archived=False,
-        created_at=datetime(2024, 1, 10, 9, 0, 0, tzinfo=timezone.utc),
-        updated_at=datetime.now(timezone.utc),
-    )
-    return APIResponse(data=updated_task)
+    async with transaction(db):
+        task = await task_service.update_task(
+            db,
+            current_user,
+            task_id,
+            task_update.name,
+        )
+    return APIResponse(data=TaskResponse.model_validate(task))
 
 
 @router.delete("/{task_id}", response_model=APIResponse[TaskResponse])
-async def delete_task(task_id: str, current_user: CurrentUser) -> APIResponse[TaskResponse]:
+async def delete_task(
+    task_id: str, db: DbSession, current_user: CurrentUser
+) -> APIResponse[TaskResponse]:
     """タスクを削除（アーカイブ）する."""
-    # ダミーデータを返す
-    archived_task = TaskResponse(
-        id=task_id,
-        name="アーカイブされたタスク",
-        is_archived=True,
-        created_at=datetime(2024, 1, 10, 9, 0, 0, tzinfo=timezone.utc),
-        updated_at=datetime.now(timezone.utc),
-    )
-    return APIResponse(data=archived_task)
+    async with transaction(db):
+        task = await task_service.archive_task(db, current_user, task_id)
+    return APIResponse(data=TaskResponse.model_validate(task))
