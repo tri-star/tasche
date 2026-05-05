@@ -39,6 +39,7 @@ class GoalsResponse(BaseModel):
     """目標一覧レスポンス."""
 
     week_id: str = Field(..., description="週ID")
+    week_start_date: str = Field(..., description="週の開始日")
     unit_duration_minutes: int = Field(..., description="1ユニットの時間（分）")
     daily_available_units: DailyAvailableUnits = Field(
         ..., description="曜日ごとの確保可能ユニット数"
@@ -75,6 +76,7 @@ class GoalsUpdateResponse(BaseModel):
     """目標一括更新レスポンス."""
 
     week_id: str = Field(..., description="週ID")
+    week_start_date: str = Field(..., description="週の開始日")
     unit_duration_minutes: int = Field(..., description="1ユニットの時間（分）")
     daily_available_units: DailyAvailableUnits = Field(
         ..., description="曜日ごとの確保可能ユニット数"

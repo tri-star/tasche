@@ -54,6 +54,7 @@ const mockTasks: APIResponseTaskListResponse = {
 const mockGoals: APIResponseGoalsResponse = {
   data: {
     week_id: "wk_01HXYZ1234567890ABCDEF",
+    week_start_date: "2026-04-20",
     unit_duration_minutes: 30,
     daily_available_units: {
       monday: 0,
@@ -114,6 +115,7 @@ export const goalsHandlers = [
     const response: APIResponseGoalsUpdateResponse = {
       data: {
         week_id: "wk_01HXYZ1234567890ABCDEF",
+        week_start_date: "2026-04-20",
         unit_duration_minutes: body.unit_duration_minutes,
         daily_available_units: body.daily_available_units ?? {
           monday: 0,

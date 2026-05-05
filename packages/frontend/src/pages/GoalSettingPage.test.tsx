@@ -27,6 +27,7 @@ describe("GoalSettingPage", () => {
       data: {
         data: {
           week_id: "week-1",
+          week_start_date: "2026-04-20",
           unit_duration_minutes: 25,
           daily_available_units: {
             monday: 0,
@@ -80,6 +81,7 @@ describe("GoalSettingPage", () => {
       data: {
         data: {
           week_id: "week-1",
+          week_start_date: "2026-04-20",
           unit_duration_minutes: 30,
           daily_available_units: {
             monday: 1.5,
@@ -133,6 +135,7 @@ describe("GoalSettingPage", () => {
       data: {
         data: {
           week_id: "week-1",
+          week_start_date: "2026-04-20",
           unit_duration_minutes: 30,
           daily_available_units: {
             monday: 2,
@@ -211,6 +214,7 @@ describe("GoalSettingPage", () => {
       data: {
         data: {
           week_id: "week-1",
+          week_start_date: "2026-04-20",
           unit_duration_minutes: 30,
           daily_available_units: {
             monday: 1,

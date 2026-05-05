@@ -13,6 +13,8 @@ import type { GoalResponse } from './goalResponse';
 export interface GoalsResponse {
   /** 週ID */
   week_id: string;
+  /** 週の開始日 */
+  week_start_date: string;
   /** 1ユニットの時間（分） */
   unit_duration_minutes: number;
   /** 曜日ごとの確保可能ユニット数 */

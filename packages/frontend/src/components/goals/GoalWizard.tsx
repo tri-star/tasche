@@ -47,23 +47,13 @@ const normalizeDailyAvailableUnits = (
   }, emptyUnits)
 }
 
-const getCurrentWeekStartDate = () => {
-  const today = new Date()
-  const dayOfWeek = today.getDay()
-  const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek
-  const monday = new Date(today)
-  monday.setDate(today.getDate() + mondayOffset)
-  return `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, "0")}-${String(
-    monday.getDate(),
-  ).padStart(2, "0")}`
-}
-
 export function GoalWizard() {
   const [currentStep, setCurrentStep] = useState<WizardStep>(1)
   const [unitDurationMinutes, setUnitDurationMinutes] = useState<number | null>(null)
   const [dailyAvailableUnits, setDailyAvailableUnits] = useState<DailyAvailableUnits>(
     createEmptyDailyAvailableUnits,
   )
+  const [weekStartDate, setWeekStartDate] = useState("")
   const [tasks, setTasks] = useState<TaskResponse[]>([])
   const [newTasks, setNewTasks] = useState<NewTask[]>([])
   const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([])
@@ -105,6 +95,7 @@ export function GoalWizard() {
 
           if (isMounted) {
             setTasks(Array.from(taskMap.values()))
+            setWeekStartDate(goalsData.week_start_date)
             setUnitDurationMinutes(goalsData.unit_duration_minutes)
             setDailyAvailableUnits(normalizeDailyAvailableUnits(goalsData.daily_available_units))
             setSelectedTaskIds(goalsData.goals.map((goal) => goal.task_id))
@@ -305,7 +296,7 @@ export function GoalWizard() {
           <Step2AvailableUnits
             availableUnits={dailyAvailableUnits}
             unitDurationMinutes={unitDurationMinutes ?? 0}
-            weekStartDate={getCurrentWeekStartDate()}
+            weekStartDate={weekStartDate}
             onChange={handleUpdateAvailableUnits}
             onNext={() => setCurrentStep(3)}
             onBack={() => setCurrentStep(1)}
