@@ -225,20 +225,63 @@ class TestGetCurrentGoals:
         assert data["daily_available_units"] == _daily_available_units(0.0)
         assert data["goals"] == []
 
-    async def test_returns_404_when_current_week_does_not_exist(
+    async def test_get_creates_current_week_if_missing(
         self,
         authenticated_client: AsyncClient,
+        db_session: AsyncSession,
+        test_user: User,
         fixed_now: datetime,
     ):
-        """current week 未作成なら 404."""
+        """current week 未作成でも GET で自動作成し 200 を返す."""
         response = await authenticated_client.get("/api/weeks/current/goals")
 
-        assert response.status_code == 404
-        assert response.json()["error"]["code"] == "WEEK_NOT_FOUND"
+        assert response.status_code == 200
+        data = response.json()["data"]
+        assert data["week_id"] is not None
+        assert data["unit_duration_minutes"] == 30
+        assert data["daily_available_units"] == _daily_available_units(0.0)
+        assert data["goals"] == []
+
+        # DB に週レコードが作成されていることを確認
+        from tasche.models.week import Week
+
+        result = await db_session.execute(select(Week).where(Week.user_id == test_user.id))
+        week = result.scalar_one_or_none()
+        assert week is not None
+        assert week.unit_duration_minutes == 30
 
 
 class TestUpdateCurrentGoals:
     """PUT /api/weeks/current/goals のテスト."""
+
+    async def test_put_creates_current_week_if_missing(
+        self,
+        authenticated_client: AsyncClient,
+        db_session: AsyncSession,
+        test_user: User,
+        fixed_now: datetime,
+    ):
+        """current week 未作成でも PUT で自動作成し 200 を返す."""
+        response = await authenticated_client.put(
+            "/api/weeks/current/goals",
+            json={
+                "unit_duration_minutes": 60,
+                "goals": [],
+            },
+        )
+
+        assert response.status_code == 200
+        data = response.json()["data"]
+        assert data["week_id"] is not None
+        assert data["unit_duration_minutes"] == 60
+
+        # DB に週レコードが作成されていることを確認
+        from tasche.models.week import Week
+
+        result = await db_session.execute(select(Week).where(Week.user_id == test_user.id))
+        week = result.scalar_one_or_none()
+        assert week is not None
+        assert week.unit_duration_minutes == 60
 
     async def test_put_saves_existing_task_goals(
         self,

@@ -4,6 +4,8 @@ from unittest.mock import patch
 
 import respx
 from httpx import AsyncClient, Response
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from tasche.core.config import settings
 from tasche.tests.conftest import make_google_id_token
@@ -420,6 +422,62 @@ class TestGoogleCallback:
             )
         assert response.status_code == 400
 
+    async def test_callback_creates_current_week_for_new_user(
+        self,
+        client: AsyncClient,
+        db_session: AsyncSession,
+        rsa_private_key_pem: str,
+        test_jwks: dict,
+    ):
+        """正常系: 新規ユーザーのコールバック後に current week が作成されていることを確認."""
+        from tasche.models.user import User
+        from tasche.models.week import Week
+
+        id_token = make_google_id_token(
+            rsa_private_key_pem,
+            sub="google_sub_week_test",
+            email="weektest@example.com",
+            name="Week Test User",
+            aud="test_client_id",
+        )
+
+        with (
+            patch.object(
+                settings, "google_oauth_redirect_uris", "http://localhost:5173/auth/callback"
+            ),
+            patch.object(settings, "google_oauth_client_id", "test_client_id"),
+            respx.mock as mock,
+        ):
+            mock.post("https://oauth2.googleapis.com/token").mock(
+                return_value=Response(200, json=_mock_google_token_success(id_token))
+            )
+            mock.get("https://www.googleapis.com/oauth2/v3/certs").mock(
+                return_value=Response(200, json=test_jwks)
+            )
+
+            response = await client.post(
+                "/api/auth/google/callback",
+                json={
+                    "code": "auth_code_dummy",
+                    "code_verifier": "code_verifier_dummy",
+                    "redirect_uri": "http://localhost:5173/auth/callback",
+                    "state": "state_dummy",
+                },
+            )
+
+        assert response.status_code == 200
+
+        # ユーザーを取得して weeks テーブルに行があることを確認
+        user_result = await db_session.execute(
+            select(User).where(User.email == "weektest@example.com")
+        )
+        user = user_result.scalar_one()
+
+        week_result = await db_session.execute(select(Week).where(Week.user_id == user.id))
+        week = week_result.scalar_one_or_none()
+        assert week is not None
+        assert week.unit_duration_minutes == 30
+
 
 # ============================================================
 # POST /api/auth/refresh テスト
@@ -635,6 +693,14 @@ class TestStubLogin:
         payload = jwt.decode(access_token, "test_stub_secret_12345678", algorithms=["HS256"])
         assert payload["stub"] is True
         assert payload["sub"] == user.id
+
+        # current week が作成されていることを確認
+        from tasche.models.week import Week
+
+        week_result = await db_session.execute(select(Week).where(Week.user_id == user.id))
+        week = week_result.scalar_one_or_none()
+        assert week is not None
+        assert week.unit_duration_minutes == 30
 
     async def test_stub_login_endpoint_not_found_in_production(self):
         """本番安全性: production 環境ではスタブログインが 404 になることを確認.
