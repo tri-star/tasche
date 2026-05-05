@@ -15,6 +15,7 @@ from tasche.services import task as task_service
 
 router = APIRouter()
 
+
 @router.get("", response_model=APIResponse[TaskListResponse])
 async def get_tasks(
     db: DbSession,
