@@ -25,6 +25,56 @@ def token_service() -> _LocalTokenService:
 
 
 @pytest.fixture
+def auth_headers(token_service: _LocalTokenService):
+    """認証ヘッダーを生成する."""
+
+    def _auth_headers(user: User) -> dict[str, str]:
+        token = token_service.create_token(user.id, user.email)
+        return {"Authorization": f"Bearer {token}"}
+
+    return _auth_headers
+
+
+async def _create_user(
+    db_session: AsyncSession,
+    *,
+    user_id: str,
+    email: str,
+    name: str = "Other User",
+) -> User:
+    """テスト用ユーザーを作成する."""
+    user = User(
+        id=user_id,
+        email=email,
+        name=name,
+        timezone="Asia/Tokyo",
+    )
+    db_session.add(user)
+    await db_session.commit()
+    return user
+
+
+async def _create_task(
+    db_session: AsyncSession,
+    user: User,
+    *,
+    task_id: str,
+    name: str,
+    is_archived: bool = False,
+) -> Task:
+    """テスト用タスクを作成する."""
+    task = Task(
+        id=task_id,
+        user_id=user.id,
+        name=name,
+        is_archived=is_archived,
+    )
+    db_session.add(task)
+    await db_session.commit()
+    return task
+
+
+@pytest.fixture
 async def test_tasks(db_session: AsyncSession, test_user: User) -> list[Task]:
     """テスト用タスクを作成."""
     tasks = [
@@ -64,15 +114,10 @@ async def test_get_tasks_success(
     client: AsyncClient,
     test_user: User,
     test_tasks: list[Task],
-    token_service: _LocalTokenService,
+    auth_headers,
 ):
     """認証済みユーザーがタスク一覧を取得できる."""
-    token = token_service.create_token(test_user.id, test_user.email)
-
-    response = await client.get(
-        "/api/tasks",
-        headers={"Authorization": f"Bearer {token}"},
-    )
+    response = await client.get("/api/tasks", headers=auth_headers(test_user))
 
     assert response.status_code == 200
     data = response.json()["data"]
@@ -93,14 +138,12 @@ async def test_get_tasks_include_archived(
     client: AsyncClient,
     test_user: User,
     test_tasks: list[Task],
-    token_service: _LocalTokenService,
+    auth_headers,
 ):
     """include_archived=trueでアーカイブ済みタスクも取得できる."""
-    token = token_service.create_token(test_user.id, test_user.email)
-
     response = await client.get(
         "/api/tasks?include_archived=true",
-        headers={"Authorization": f"Bearer {token}"},
+        headers=auth_headers(test_user),
     )
 
     assert response.status_code == 200
@@ -120,15 +163,10 @@ async def test_get_tasks_include_archived(
 async def test_get_tasks_empty(
     client: AsyncClient,
     test_user: User,
-    token_service: _LocalTokenService,
+    auth_headers,
 ):
     """タスクが存在しない場合は空配列を返す."""
-    token = token_service.create_token(test_user.id, test_user.email)
-
-    response = await client.get(
-        "/api/tasks",
-        headers={"Authorization": f"Bearer {token}"},
-    )
+    response = await client.get("/api/tasks", headers=auth_headers(test_user))
 
     assert response.status_code == 200
     data = response.json()["data"]
@@ -158,35 +196,24 @@ async def test_get_tasks_only_own_tasks(
     db_session: AsyncSession,
     test_user: User,
     test_tasks: list[Task],
-    token_service: _LocalTokenService,
+    auth_headers,
 ):
     """他ユーザーのタスクは取得できない."""
-    # 別ユーザーを作成
-    other_user = User(
-        id="usr_02OTHER1234567890ABCDE",
+    other_user = await _create_user(
+        db_session,
+        user_id="usr_02OTHER1234567890ABCDE",
         email="other@example.com",
-        name="Other User",
-        timezone="Asia/Tokyo",
     )
-    db_session.add(other_user)
-    await db_session.commit()
-
-    # 別ユーザーのタスクを作成
-    other_task = Task(
-        id="tsk_99OTHER1234567890ABCDE",
-        user_id=other_user.id,
+    await _create_task(
+        db_session,
+        other_user,
+        task_id="tsk_99OTHER1234567890ABCDE",
         name="他ユーザーのタスク",
-        is_archived=False,
     )
-    db_session.add(other_task)
-    await db_session.commit()
-
-    # test_userでアクセス
-    token = token_service.create_token(test_user.id, test_user.email)
 
     response = await client.get(
         "/api/tasks?include_archived=true",
-        headers={"Authorization": f"Bearer {token}"},
+        headers=auth_headers(test_user),
     )
 
     assert response.status_code == 200
@@ -206,15 +233,10 @@ async def test_get_tasks_response_format(
     client: AsyncClient,
     test_user: User,
     test_tasks: list[Task],
-    token_service: _LocalTokenService,
+    auth_headers,
 ):
     """レスポンス形式が正しい."""
-    token = token_service.create_token(test_user.id, test_user.email)
-
-    response = await client.get(
-        "/api/tasks",
-        headers={"Authorization": f"Bearer {token}"},
-    )
+    response = await client.get("/api/tasks", headers=auth_headers(test_user))
 
     assert response.status_code == 200
     json_data = response.json()
@@ -245,15 +267,13 @@ class TestCreateTask:
         client: AsyncClient,
         db_session: AsyncSession,
         test_user: User,
-        token_service: _LocalTokenService,
+        auth_headers,
     ):
         """認証済みユーザーがタスクを作成できる."""
-        token = token_service.create_token(test_user.id, test_user.email)
-
         response = await client.post(
             "/api/tasks",
             json={"name": "  新規タスク  "},
-            headers={"Authorization": f"Bearer {token}"},
+            headers=auth_headers(test_user),
         )
 
         assert response.status_code == 201
@@ -269,19 +289,19 @@ class TestCreateTask:
         assert db_task.is_archived is False
 
     @pytest.mark.asyncio
-    async def test_create_task_rejects_blank_name(
+    @pytest.mark.parametrize("name", ["", "   ", "x" * 101])
+    async def test_create_task_rejects_invalid_name(
         self,
         client: AsyncClient,
         test_user: User,
-        token_service: _LocalTokenService,
+        auth_headers,
+        name: str,
     ):
-        """空白のみのタスク名は 400 になる."""
-        token = token_service.create_token(test_user.id, test_user.email)
-
+        """不正なタスク名は 400 になる."""
         response = await client.post(
             "/api/tasks",
-            json={"name": "   "},
-            headers={"Authorization": f"Bearer {token}"},
+            json={"name": name},
+            headers=auth_headers(test_user),
         )
 
         assert response.status_code == 400
@@ -303,24 +323,20 @@ class TestUpdateTask:
         client: AsyncClient,
         db_session: AsyncSession,
         test_user: User,
-        token_service: _LocalTokenService,
+        auth_headers,
     ):
         """所有する active タスクを更新できる."""
-        task = Task(
-            id="tsk_10UPDATE1234567890ABCDEF",
-            user_id=test_user.id,
+        task = await _create_task(
+            db_session,
+            test_user,
+            task_id="tsk_10UPDATE1234567890ABCDEF",
             name="更新前",
-            is_archived=False,
         )
-        db_session.add(task)
-        await db_session.commit()
-
-        token = token_service.create_token(test_user.id, test_user.email)
 
         response = await client.put(
             f"/api/tasks/{task.id}",
             json={"name": "  更新後  "},
-            headers={"Authorization": f"Bearer {token}"},
+            headers=auth_headers(test_user),
         )
 
         assert response.status_code == 200
@@ -334,38 +350,46 @@ class TestUpdateTask:
         assert db_task.name == "更新後"
 
     @pytest.mark.asyncio
+    async def test_update_task_unauthorized(self, client: AsyncClient):
+        """未認証では 401 になる."""
+        response = await client.put("/api/tasks/tsk_auth_check", json={"name": "更新後"})
+        assert response.status_code == 401
+
+    @pytest.mark.asyncio
+    async def test_update_task_invalid_token(self, client: AsyncClient):
+        """無効なトークンでは 401 になる."""
+        response = await client.put(
+            "/api/tasks/tsk_auth_check",
+            json={"name": "更新後"},
+            headers={"Authorization": "Bearer invalid_token"},
+        )
+        assert response.status_code == 401
+
+    @pytest.mark.asyncio
     async def test_update_task_rejects_other_users_task(
         self,
         client: AsyncClient,
         db_session: AsyncSession,
         test_user: User,
-        token_service: _LocalTokenService,
+        auth_headers,
     ):
         """他ユーザーのタスクは 404 になる."""
-        other_user = User(
-            id="usr_99OTHER1234567890ABCDE",
+        other_user = await _create_user(
+            db_session,
+            user_id="usr_99OTHER1234567890ABCDE",
             email="other-update@example.com",
-            name="Other User",
-            timezone="Asia/Tokyo",
         )
-        db_session.add(other_user)
-        await db_session.commit()
-
-        other_task = Task(
-            id="tsk_99OTHERUPDATE123456789",
-            user_id=other_user.id,
+        other_task = await _create_task(
+            db_session,
+            other_user,
+            task_id="tsk_99OTHERUPDATE123456789",
             name="他ユーザーのタスク",
-            is_archived=False,
         )
-        db_session.add(other_task)
-        await db_session.commit()
-
-        token = token_service.create_token(test_user.id, test_user.email)
 
         response = await client.put(
             f"/api/tasks/{other_task.id}",
             json={"name": "更新後"},
-            headers={"Authorization": f"Bearer {token}"},
+            headers=auth_headers(test_user),
         )
 
         assert response.status_code == 404
@@ -377,53 +401,48 @@ class TestUpdateTask:
         client: AsyncClient,
         db_session: AsyncSession,
         test_user: User,
-        token_service: _LocalTokenService,
+        auth_headers,
     ):
         """アーカイブ済みタスクは 404 になる."""
-        archived_task = Task(
-            id="tsk_10ARCHIVED1234567890ABC",
-            user_id=test_user.id,
+        archived_task = await _create_task(
+            db_session,
+            test_user,
+            task_id="tsk_10ARCHIVED1234567890ABC",
             name="アーカイブ済み",
             is_archived=True,
         )
-        db_session.add(archived_task)
-        await db_session.commit()
-
-        token = token_service.create_token(test_user.id, test_user.email)
 
         response = await client.put(
             f"/api/tasks/{archived_task.id}",
             json={"name": "更新後"},
-            headers={"Authorization": f"Bearer {token}"},
+            headers=auth_headers(test_user),
         )
 
         assert response.status_code == 404
         assert response.json()["error"]["code"] == "TASK_NOT_FOUND"
 
     @pytest.mark.asyncio
-    async def test_update_task_rejects_blank_name(
+    @pytest.mark.parametrize("name", ["", "   ", "x" * 101])
+    async def test_update_task_rejects_invalid_name(
         self,
         client: AsyncClient,
         db_session: AsyncSession,
         test_user: User,
-        token_service: _LocalTokenService,
+        auth_headers,
+        name: str,
     ):
-        """空白のみのタスク名は 400 になる."""
-        task = Task(
-            id="tsk_11BLANK1234567890ABCDEF",
-            user_id=test_user.id,
+        """不正なタスク名は 400 になる."""
+        task = await _create_task(
+            db_session,
+            test_user,
+            task_id="tsk_11BLANK1234567890ABCDEF",
             name="更新前",
-            is_archived=False,
         )
-        db_session.add(task)
-        await db_session.commit()
-
-        token = token_service.create_token(test_user.id, test_user.email)
 
         response = await client.put(
             f"/api/tasks/{task.id}",
-            json={"name": "   "},
-            headers={"Authorization": f"Bearer {token}"},
+            json={"name": name},
+            headers=auth_headers(test_user),
         )
 
         assert response.status_code == 400
@@ -439,23 +458,19 @@ class TestDeleteTask:
         client: AsyncClient,
         db_session: AsyncSession,
         test_user: User,
-        token_service: _LocalTokenService,
+        auth_headers,
     ):
         """所有する active タスクをアーカイブできる."""
-        task = Task(
-            id="tsk_20DELETE1234567890ABCDE",
-            user_id=test_user.id,
+        task = await _create_task(
+            db_session,
+            test_user,
+            task_id="tsk_20DELETE1234567890ABCDE",
             name="削除対象",
-            is_archived=False,
         )
-        db_session.add(task)
-        await db_session.commit()
-
-        token = token_service.create_token(test_user.id, test_user.email)
 
         response = await client.delete(
             f"/api/tasks/{task.id}",
-            headers={"Authorization": f"Bearer {token}"},
+            headers=auth_headers(test_user),
         )
 
         assert response.status_code == 200
@@ -469,9 +484,24 @@ class TestDeleteTask:
 
         list_response = await client.get(
             "/api/tasks",
-            headers={"Authorization": f"Bearer {token}"},
+            headers=auth_headers(test_user),
         )
         assert task.id not in [item["id"] for item in list_response.json()["data"]["tasks"]]
+
+    @pytest.mark.asyncio
+    async def test_delete_task_unauthorized(self, client: AsyncClient):
+        """未認証では 401 になる."""
+        response = await client.delete("/api/tasks/tsk_auth_check")
+        assert response.status_code == 401
+
+    @pytest.mark.asyncio
+    async def test_delete_task_invalid_token(self, client: AsyncClient):
+        """無効なトークンでは 401 になる."""
+        response = await client.delete(
+            "/api/tasks/tsk_auth_check",
+            headers={"Authorization": "Bearer invalid_token"},
+        )
+        assert response.status_code == 401
 
     @pytest.mark.asyncio
     async def test_delete_task_rejects_other_users_task(
@@ -479,32 +509,24 @@ class TestDeleteTask:
         client: AsyncClient,
         db_session: AsyncSession,
         test_user: User,
-        token_service: _LocalTokenService,
+        auth_headers,
     ):
         """他ユーザーのタスクは 404 になる."""
-        other_user = User(
-            id="usr_88OTHER1234567890ABCDE",
+        other_user = await _create_user(
+            db_session,
+            user_id="usr_88OTHER1234567890ABCDE",
             email="other-delete@example.com",
-            name="Other User",
-            timezone="Asia/Tokyo",
         )
-        db_session.add(other_user)
-        await db_session.commit()
-
-        other_task = Task(
-            id="tsk_88OTHERDELETE123456789",
-            user_id=other_user.id,
+        other_task = await _create_task(
+            db_session,
+            other_user,
+            task_id="tsk_88OTHERDELETE123456789",
             name="他ユーザーのタスク",
-            is_archived=False,
         )
-        db_session.add(other_task)
-        await db_session.commit()
-
-        token = token_service.create_token(test_user.id, test_user.email)
 
         response = await client.delete(
             f"/api/tasks/{other_task.id}",
-            headers={"Authorization": f"Bearer {token}"},
+            headers=auth_headers(test_user),
         )
 
         assert response.status_code == 404
@@ -516,23 +538,20 @@ class TestDeleteTask:
         client: AsyncClient,
         db_session: AsyncSession,
         test_user: User,
-        token_service: _LocalTokenService,
+        auth_headers,
     ):
         """アーカイブ済みタスクの再削除は 404 になる."""
-        archived_task = Task(
-            id="tsk_21ARCHIVED1234567890ABC",
-            user_id=test_user.id,
+        archived_task = await _create_task(
+            db_session,
+            test_user,
+            task_id="tsk_21ARCHIVED1234567890ABC",
             name="アーカイブ済み",
             is_archived=True,
         )
-        db_session.add(archived_task)
-        await db_session.commit()
-
-        token = token_service.create_token(test_user.id, test_user.email)
 
         response = await client.delete(
             f"/api/tasks/{archived_task.id}",
-            headers={"Authorization": f"Bearer {token}"},
+            headers=auth_headers(test_user),
         )
 
         assert response.status_code == 404

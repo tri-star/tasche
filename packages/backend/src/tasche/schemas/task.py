@@ -8,13 +8,13 @@ from pydantic import BaseModel, Field
 class TaskCreate(BaseModel):
     """タスク作成リクエスト."""
 
-    name: str = Field(..., min_length=1, max_length=100, description="タスク名")
+    name: str = Field(..., description="タスク名（前後空白は除去され、1〜100文字）")
 
 
 class TaskUpdate(BaseModel):
     """タスク更新リクエスト."""
 
-    name: str = Field(..., min_length=1, max_length=100, description="タスク名")
+    name: str = Field(..., description="タスク名（前後空白は除去され、1〜100文字）")
 
 
 class TaskResponse(BaseModel):

@@ -8,6 +8,8 @@ from tasche.core.exceptions import TaskNotFoundException, ValidationError
 from tasche.models.task import Task
 from tasche.models.user import User
 
+TASK_NAME_MAX_LENGTH = 100
+
 
 def _generate_task_id() -> str:
     """ULID 形式のタスクIDを生成する（tsk_ プレフィックス付き）."""
@@ -19,6 +21,8 @@ def _normalize_task_name(name: str) -> str:
     normalized_name = name.strip()
     if not normalized_name:
         raise ValidationError("task name must not be blank")
+    if len(normalized_name) > TASK_NAME_MAX_LENGTH:
+        raise ValidationError("task name must be 100 characters or fewer")
     return normalized_name
 
 
@@ -37,22 +41,22 @@ async def _get_active_task_for_user(db: AsyncSession, user: User, task_id: str) 
     return task
 
 
-async def get_tasks_by_user_id(
+async def get_tasks_by_user(
     db: AsyncSession,
-    user_id: str,
+    user: User,
     include_archived: bool = False,
 ) -> list[Task]:
     """ユーザーのタスク一覧を取得.
 
     Args:
         db: DBセッション
-        user_id: ユーザーID
+        user: ユーザー
         include_archived: アーカイブ済みタスクを含めるか
 
     Returns:
         タスクのリスト（作成日時昇順）
     """
-    query = select(Task).where(Task.user_id == user_id)
+    query = select(Task).where(Task.user_id == user.id)
 
     if not include_archived:
         query = query.where(Task.is_archived.is_(False))
