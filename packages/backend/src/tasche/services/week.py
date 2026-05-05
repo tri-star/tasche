@@ -1,6 +1,7 @@
 """週サービス（current week の取得・保証）."""
 
-from datetime import timedelta
+import logging
+from datetime import datetime, timedelta
 
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -16,6 +17,8 @@ from tasche.services.record import (
     calculate_current_week_start_date,
 )
 
+logger = logging.getLogger(__name__)
+
 DEFAULT_UNIT_DURATION_MINUTES = 30
 
 
@@ -28,7 +31,7 @@ async def ensure_current_week(
     db: AsyncSession,
     user: User,
     *,
-    now=None,
+    now: datetime | None = None,
     timezone_name: str | None = None,
 ) -> Week:
     """ユーザーの current week を取得し、無ければ既定値で作成する.
@@ -76,14 +79,19 @@ async def ensure_current_week(
         async with db.begin_nested():
             db.add(new_week)
             await db.flush()
+        logger.info("Created new week for user %s: %s", user.id, new_week.id)
     except IntegrityError:
         # 同時リクエストで競合した場合は既存週を再取得する
+        logger.warning("IntegrityError on ensure_current_week for user %s, re-selecting", user.id)
         result = await db.execute(
             select(Week).where(
                 Week.user_id == user.id,
                 Week.start_date == start_date,
             )
         )
-        new_week = result.scalar_one()
+        week = result.scalar_one_or_none()
+        if week is None:
+            raise
+        new_week = week
 
     return new_week

@@ -10,6 +10,7 @@ from ulid import ULID
 from tasche.models.user import User
 from tasche.models.week import Week
 from tasche.services import record as record_service
+from tasche.services.record import calculate_current_week_start_date
 from tasche.services.week import DEFAULT_UNIT_DURATION_MINUTES, ensure_current_week
 
 
@@ -106,21 +107,28 @@ class TestEnsureCurrentWeek:
 
     async def test_uses_user_timezone(self, db_session: AsyncSession):
         """ユーザーのタイムゾーンに応じた start_date が計算される."""
-        # UTC+0 のユーザー（週の区切りが UTC で発生）
+        # UTC と異なるタイムゾーン（US/Pacific = UTC-7 または UTC-8）のユーザー
         user = User(
             id=_make_user_id(),
-            email="utc_user@example.com",
-            name="UTC User",
-            timezone="UTC",
+            email="pacific_user@example.com",
+            name="Pacific User",
+            timezone="US/Pacific",
         )
         db_session.add(user)
         await db_session.commit()
 
-        # 月曜 03:00 UTC（Asia/Tokyo では月曜 12:00）
-        now = datetime(2026, 4, 20, 3, 0, tzinfo=UTC)
+        # 月曜 09:00 UTC = 月曜 02:00 US/Pacific（week_start_hour=4 より前）
+        # → US/Pacific ではまだ前週（week_start_hour=4 の境界を超えていない）
+        # → 前の月曜（2026-04-13）が start_date になる
+        now = datetime(2026, 4, 20, 9, 0, tzinfo=UTC)
 
         week = await ensure_current_week(db_session, user, now=now)
 
-        # UTC タイムゾーンでも適切な start_date が計算されること
-        assert week.start_date is not None
+        # 期待値を calculate_current_week_start_date で計算する
+        expected_start_date = calculate_current_week_start_date(
+            timezone_name="US/Pacific",
+            now=now,
+        )
+
+        assert week.start_date == expected_start_date
         assert week.user_id == user.id
