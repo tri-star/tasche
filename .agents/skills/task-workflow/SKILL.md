@@ -30,6 +30,6 @@ metadata:
 - 6. ユーザーの承認後、`frontend-workflow` skill を呼び出し、実装を開始する
 - 7. `backend-workflow` skillの完了後、`frontend-workflow` skill を呼び出し、実装を開始する
 - 8. backend/frontendのどちらにも属さない場合(インフラの構築や、CI/CDの設定)、 `Plan` agent を呼び出してプランを作成、ユーザーからの承認を得た後で汎用エージェントを使い作業を進める
-- 9. タスクが完了した場合は、lint, format, testが通ることを確認、コミットも完了していることを確認し、git push、PRを作成する。
+- 9. タスクが完了した場合は、testが通ることを確認、コミットも完了していることを確認し、git push、PRを作成する。
 - 10. `plane-project-manager` エージェントを利用してPlaneのIssueを `review` 状態に更新する
   - PRを作成した場合、PlaneのIssueにPRのURLを追記する

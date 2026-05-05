@@ -32,7 +32,6 @@ developer_instructions = """
 
 テストコードまで記述が終わった段階で以下を行う。
 
-- lint,format
 - テスト実行
 - コミット
 

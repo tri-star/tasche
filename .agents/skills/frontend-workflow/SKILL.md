@@ -25,5 +25,9 @@ metadata:
   - 3-1. `<task-root>/frontend-plan.md` の内容を元に、 `frontend-developer` エージェントを起動させ、実装タスクを実行します。
   - 3-2. `frontend-developer` が正常にタスクを完了できなかった場合、起きている問題をユーザーに伝えます。
   - 3-3. `doc-maintainer` エージェントを起動させ、既存ドキュメントとの乖離を確認します。
-  - 3-4. `frontend-developer` がタスクを正常に完了した場合、ワークフローは終了します。
+  - 3-4. `frontend-developer` がタスクを正常に完了した場合、以下のエージェントを並列で起動しレビューを行い、レビュー結果を `<task-root>/frontend-local-review.md` に保存、ユーザーに対し対応の要否を求めます。
+    - `frontend-security-reviewer`
+    - `frontend-architecture-reviewer`
+    - `frontend-code-quality-reviewer`
+  - 3-5. 修正を行う場合、 `<task-root>/frontend-local-review.md` とユーザーの指示に従って `frontend-developer` エージェントを起動させ修正を行います。エージェントが正常に完了した場合、ワークフローは終了です。
 - 4. 今回の作業範囲が"plan+implementation"の場合は、上記 2と3を順番に実行します。
