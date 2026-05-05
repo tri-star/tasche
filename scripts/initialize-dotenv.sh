@@ -126,7 +126,7 @@ main() {
 
   # プロジェクト名（ディレクトリ名）を COMPOSE_PROJECT_NAME として使用
   local compose_project_name
-  compose_project_name="$(basename "$project_root")"
+  compose_project_name="$(basename "$project_root" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9_-]/-/g')"
   echo "  COMPOSE_PROJECT_NAME = ${compose_project_name}"
 
   # .env.example の検索
