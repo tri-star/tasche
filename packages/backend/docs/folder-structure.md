@@ -212,7 +212,7 @@ Pydantic スキーマ（API リクエスト/レスポンスの型定義）。
 | `auth.py`      | Google OAuth トークン交換、ID Token 検証、自前 JWT 発行、リフレッシュトークン管理、ユーザー登録/取得 |
 | `user.py`      | ユーザー情報取得・更新                |
 | `task.py`      | タスク CRUD 操作                      |
-| `week.py`      | 週の取得・更新、週の引き継ぎロジック  |
+| `week.py`      | 週の取得・更新、current week の存在保証（ensure_current_week）、週の引き継ぎロジック |
 | `goal.py`      | 目標設定の取得・更新                  |
 | `record.py`    | 実績記録の取得・更新                  |
 | `dashboard.py` | ダッシュボード用集約データの構築      |

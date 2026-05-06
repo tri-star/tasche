@@ -9,6 +9,15 @@
   },
   "chat.tools.terminal.autoApprove": {
     "git add": true,
-    "git commit": true
+    "git commit": true,
+    "/^bash scripts/initialize-dotenv\\.sh$/": {
+      "approve": true,
+      "matchCommandLine": true
+    },
+    "/^cd /home/tristar/projects/tasche\\.worktrees/TCH-42 && bash scripts/initialize-dotenv\\.sh$/": {
+      "approve": true,
+      "matchCommandLine": true
+    },
+    "docker compose": true
   }
 }

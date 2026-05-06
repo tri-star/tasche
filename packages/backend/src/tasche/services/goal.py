@@ -21,7 +21,8 @@ from tasche.schemas.goal import (
     GoalsUpdate,
     GoalsUpdateResponse,
 )
-from tasche.services.record import DAY_OF_WEEK_FIELD_NAMES, DAY_OF_WEEK_ORDER, get_current_week
+from tasche.services.record import DAY_OF_WEEK_FIELD_NAMES, DAY_OF_WEEK_ORDER
+from tasche.services.week import ensure_current_week
 
 ALLOWED_UNIT_DURATIONS = {10, 30, 60, 120}
 
@@ -94,7 +95,7 @@ async def list_current_goals(
     user: User,
 ) -> GoalsResponse:
     """現在の週の目標一覧を取得する."""
-    week = await get_current_week(db, user)
+    week = await ensure_current_week(db, user)
     result = await db.execute(
         select(Goal, Task)
         .join(Task, Task.id == Goal.task_id)
@@ -176,7 +177,7 @@ async def replace_current_goals(
     """現在の週の目標をリクエスト内容で置き換える."""
     _validate_goals_update(goals_update)
 
-    week = await get_current_week(db, user)
+    week = await ensure_current_week(db, user)
     week.unit_duration_minutes = goals_update.unit_duration_minutes
     _apply_daily_available_units(week, goals_update.daily_available_units)
 

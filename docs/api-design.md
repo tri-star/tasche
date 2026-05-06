@@ -175,6 +175,7 @@ Set-Cookie: refresh_token=<token>; HttpOnly; Secure; SameSite=Lax; Path=/api/aut
 - Refresh Token は不透明トークン（DB で管理・ローテーション）、HttpOnly Cookie として設定
 - `Secure` 属性は環境依存（ローカル/E2E は false、本番は true）
 - Google の access/refresh/id_token はバックエンドで一時利用のみとし、フロントには露出させない
+- ログイン成功時の副作用として、当該ユーザーの current week レコードを既定値で存在保証する（既存の場合は変更なし）
 
 #### エラーレスポンス（400 Bad Request）
 
@@ -300,6 +301,7 @@ Set-Cookie: refresh_token=<token>; HttpOnly; SameSite=Lax; Path=/api/auth; Max-A
 **注**:
 - スタブ発行 JWT は **HS256** で署名（テスト用シークレット）
 - 認証基盤では、通常の Google ID Token / 自前 RS256 JWT 検証を試みた後、スタブ有効時のみ HS256 の検証にフォールバック
+- ログイン成功時の副作用として、当該ユーザーの current week レコードを既定値で存在保証する（既存の場合は変更なし）
 
 #### エラーレスポンス（404 Not Found）
 
@@ -615,6 +617,8 @@ Content-Type: application/json
 
 今週の目標一覧を取得します。
 
+**注**: current week が存在しない場合（初回アクセス時）は、既定値（`unit_duration_minutes=30`、`daily_available_units=0.0`）で自動作成され、`goals: []` の空配列を返します。`WEEK_NOT_FOUND` エラーは返りません。
+
 #### リクエストヘッダー
 
 ```
@@ -665,6 +669,8 @@ Authorization: Bearer <access_token>
 ### PUT /api/weeks/current/goals
 
 今週の目標を一括更新します。週の目標設定ウィザードの保存時に使用します。
+
+**注**: current week が存在しない場合（初回ユーザー）は自動作成してから更新します。`WEEK_NOT_FOUND` エラーは返りません。
 
 #### リクエストヘッダー
 
@@ -1167,7 +1173,7 @@ monday | tuesday | wednesday | thursday | friday | saturday | sunday
 | INVALID_STATE | 400 | OAuth の state 検証に失敗しました（CSRF対策） |
 | FORBIDDEN | 403 | このリソースへのアクセス権限がありません |
 | TASK_NOT_FOUND | 404 | タスクが見つかりません |
-| WEEK_NOT_FOUND | 404 | 週データが見つかりません |
+| WEEK_NOT_FOUND | 404 | 週データが見つかりません（注: goals API `GET/PUT /api/weeks/current/goals` では current week が自動作成されるため、このエラーは返らない） |
 | VALIDATION_ERROR | 400 | 入力値が不正です |
 | INVALID_UNIT_DURATION | 400 | ユニット時間の値が不正です |
 | INVALID_DAY | 400 | 曜日の値が不正です |

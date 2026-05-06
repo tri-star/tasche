@@ -23,6 +23,7 @@ from tasche.core.security import issue_access_token, issue_stub_access_token
 from tasche.models.refresh_token import RefreshToken
 from tasche.models.user import User
 from tasche.services.user import get_or_create_user_by_email, get_or_create_user_by_google_sub
+from tasche.services.week import ensure_current_week
 
 logger = logging.getLogger(__name__)
 
@@ -157,6 +158,9 @@ async def handle_google_callback(
         picture=picture,
     )
 
+    # current week を保証する（新規登録ユーザーの場合は週レコードを作成）
+    await ensure_current_week(db, user)
+
     # 自前 JWT 発行
     access_token, _ = issue_access_token(user_id=user.id, email=user.email)
 
@@ -284,6 +288,9 @@ async def stub_login(
         (user, access_token, raw_refresh_token)
     """
     user = await get_or_create_user_by_email(db, email=email, name=name)
+
+    # current week を保証する（新規登録ユーザーの場合は週レコードを作成）
+    await ensure_current_week(db, user)
 
     # スタブ用 JWT 発行
     access_token, _ = issue_stub_access_token(user_id=user.id, email=user.email)
