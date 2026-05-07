@@ -1,0 +1,162 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: |
+  Tasche Frontend - S3 (静的ホスティング) + CloudFront + 独自ドメイン.
+  /api/* は Backend Lambda Function URL にルーティングして同一オリジン運用とする。
+  詳細は docs/work-logs/20260508-deploy-pipeline/plan.md を参照。
+
+Parameters:
+  Env:
+    Type: String
+    AllowedValues: [dev, prod]
+  BackendFunctionUrl:
+    Type: String
+    Description: |
+      Backend Lambda Function URL のホスト名 (例: xxxxx.lambda-url.ap-southeast-1.on.aws).
+      Backend スタックの BackendFunctionUrl Output からホスト部のみ抜き出して渡す。
+      CI から `--parameter-overrides BackendFunctionUrl=<...>` で指定する。
+  Domain:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /tasche/dev/frontend/domain
+    Description: CloudFront に割り当てる独自ドメイン名 (SSM Parameter から解決)
+  AcmCertificateArn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /tasche/dev/frontend/acm-certificate-arn
+    Description: ACM 証明書 ARN (us-east-1) (SSM Parameter から解決)
+
+Resources:
+  # ----------------------------------------------------------------------------
+  # 静的ファイル配信用 S3 バケット
+  # ----------------------------------------------------------------------------
+  AssetsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "tasche-frontend-${Env}-${AWS::AccountId}"
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+
+  # ----------------------------------------------------------------------------
+  # Origin Access Control: S3 への CloudFront からのアクセスを認可
+  # ----------------------------------------------------------------------------
+  S3OriginAccessControl:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub "tasche-frontend-${Env}-s3-oac"
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  # Lambda Function URL 用 OAC (CloudFront → Function URL の sigv4 署名)
+  # Lambda Function URL に対する CloudFront OAC は 2024 年に GA
+  LambdaOriginAccessControl:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub "tasche-frontend-${Env}-lambda-oac"
+        OriginAccessControlOriginType: lambda
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  # ----------------------------------------------------------------------------
+  # CloudFront Distribution
+  # ----------------------------------------------------------------------------
+  Distribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Comment: !Sub "Tasche frontend (${Env})"
+        HttpVersion: http2and3
+        PriceClass: PriceClass_200
+        Aliases:
+          - !Ref Domain
+        ViewerCertificate:
+          AcmCertificateArn: !Ref AcmCertificateArn
+          MinimumProtocolVersion: TLSv1.2_2021
+          SslSupportMethod: sni-only
+        Origins:
+          - Id: s3-assets
+            DomainName: !GetAtt AssetsBucket.RegionalDomainName
+            S3OriginConfig:
+              OriginAccessIdentity: ""
+            OriginAccessControlId: !GetAtt S3OriginAccessControl.Id
+          - Id: backend-lambda
+            DomainName: !Ref BackendFunctionUrl
+            CustomOriginConfig:
+              OriginProtocolPolicy: https-only
+              OriginSSLProtocols: [TLSv1.2]
+            OriginAccessControlId: !GetAtt LambdaOriginAccessControl.Id
+        DefaultRootObject: index.html
+        DefaultCacheBehavior:
+          TargetOriginId: s3-assets
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods: [GET, HEAD, OPTIONS]
+          CachedMethods: [GET, HEAD]
+          Compress: true
+          # CachingOptimized
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+        CacheBehaviors:
+          - PathPattern: /api/*
+            TargetOriginId: backend-lambda
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods: [GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE]
+            CachedMethods: [GET, HEAD]
+            Compress: true
+            # CachingDisabled
+            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+            # AllViewerExceptHostHeader (Authorization/Cookie を含む全ヘッダ転送, Host は除外)
+            OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac
+        # SPA フォールバック: 静的アセットの 404 を index.html に置換
+        CustomErrorResponses:
+          - ErrorCode: 403
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+            ErrorCachingMinTTL: 0
+          - ErrorCode: 404
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+            ErrorCachingMinTTL: 0
+
+  # ----------------------------------------------------------------------------
+  # S3 バケットポリシー: CloudFront OAC のみアクセス許可
+  # ----------------------------------------------------------------------------
+  AssetsBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref AssetsBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AllowCloudFrontServicePrincipal
+            Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub "${AssetsBucket.Arn}/*"
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${Distribution}"
+
+Outputs:
+  AssetsBucketName:
+    Description: 静的ファイルを配置する S3 バケット名 (CI からの aws s3 sync 先)
+    Value: !Ref AssetsBucket
+    Export:
+      Name: !Sub "tasche-frontend-${Env}-bucket"
+  DistributionId:
+    Description: CloudFront Distribution ID (CI からの cache invalidation 用)
+    Value: !Ref Distribution
+    Export:
+      Name: !Sub "tasche-frontend-${Env}-distribution-id"
+  DistributionDomainName:
+    Description: CloudFront のデフォルトドメイン名 (動作確認 / Route53 alias 用)
+    Value: !GetAtt Distribution.DomainName
+  CustomDomain:
+    Description: 設定済みカスタムドメイン
+    Value: !Ref Domain

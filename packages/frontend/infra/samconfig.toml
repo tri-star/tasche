@@ -1,0 +1,23 @@
+version = 0.1
+
+[default.global.parameters]
+stack_name = "tasche-frontend"
+region = "ap-southeast-1"
+
+# dev 環境
+[dev.deploy.parameters]
+stack_name = "tasche-frontend-dev"
+region = "ap-southeast-1"
+capabilities = "CAPABILITY_NAMED_IAM"
+confirm_changeset = false
+fail_on_empty_changeset = false
+parameter_overrides = "Env=dev"
+
+# prod 環境 (枠のみ; 別タスクで完成させる)
+[prod.deploy.parameters]
+stack_name = "tasche-frontend-prod"
+region = "ap-southeast-1"
+capabilities = "CAPABILITY_NAMED_IAM"
+confirm_changeset = true
+fail_on_empty_changeset = false
+parameter_overrides = "Env=prod"
