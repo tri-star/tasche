@@ -1,4 +1,4 @@
-import { HelpCircle, Home, Settings, Target, User } from "lucide-react"
+import { ClipboardList, HelpCircle, Home, Settings, Target, User } from "lucide-react"
 import type { ReactNode } from "react"
 import { NavLink } from "react-router-dom"
 import { cn } from "@/lib/utils"
@@ -17,6 +17,7 @@ type SidebarProps = {
 export function Sidebar({ className }: SidebarProps) {
   const mainNavItems: NavItem[] = [
     { icon: <Home className="h-5 w-5" />, label: "ダッシュボード", href: "/", end: true },
+    { icon: <ClipboardList className="h-5 w-5" />, label: "タスク管理", href: "/tasks" },
     { icon: <Target className="h-5 w-5" />, label: "目標設定", href: "/goals" },
     { icon: <Settings className="h-5 w-5" />, label: "設定", href: "/settings" },
   ]
