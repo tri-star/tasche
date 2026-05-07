@@ -75,6 +75,9 @@ jobs:
         id: ecr
         uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076 # v2
 
+      - name: Fetch Lambda Extension layer (Parameters and Secrets)
+        run: bash scripts/fetch-lambda-extensions.sh
+
       - name: Build & push backend image
         id: image
         env:

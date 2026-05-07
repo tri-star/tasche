@@ -29,7 +29,8 @@ Plane 課題: TCH-19 「デプロイパイプライン構築」
 | prod タグ命名 | `release/frontend-prod/YYYY-MM-DD-N`, `release/backend-prod/YYYY-MM-DD-N` |
 | concurrency | `deploy-${env}-${app}` で同一環境を直列化 |
 | ロールバック | `workflow_dispatch` でタグ/コミット指定再デプロイ |
-| Secret 取得 | Parameters and Secrets Lambda Extension |
+| Secret 取得 | Parameters and Secrets Lambda Extension (Layer zip をコンテナイメージに焼き込み) |
+| Secret 構造 | 単一 Secret に JSON 形式で複数キー (費用削減) |
 | 外部 ARN 連携 | SSM Parameter Store の命名規約 `/tasche/${env}/...` を介して受け渡し |
 | 命名規約管理 | `docs/deploy/ssm-naming.md` (本タスクで作成) で明文化 |
 | ADR | 完了後に「Lambda パッケージ方式」「デプロイ戦略」の 2 本を起票 |
@@ -68,9 +69,7 @@ flowchart LR
 |---|---|---|---|
 | `/tasche/${env}/iam/lambda-execution-role-arn` | String | Backend Lambda の実行ロール ARN | backend SAM |
 | `/tasche/${env}/iam/github-deploy-role-arn` | String | GitHub Actions が AssumeRole する ARN | GitHub Actions workflow (Variables 経由でも可) |
-| `/tasche/${env}/secrets/db-url-arn` | String | DB 接続 URL を保持する Secrets Manager の ARN | backend (Secrets Extension) |
-| `/tasche/${env}/secrets/jwt-secret-arn` | String | 自前発行 JWT 用シークレットの ARN | backend |
-| `/tasche/${env}/secrets/google-oauth-arn` | String | Google OAuth Client ID/Secret の ARN | backend |
+| `/tasche/${env}/secrets/app-secret-arn` | String | アプリ機密値を JSON でまとめた SecretsManager Secret の ARN (db_url / jwt_secret / google_oauth_client_id / google_oauth_client_secret を含む) | backend (Secrets Extension) |
 | `/tasche/${env}/frontend/domain` | String | FE 独自ドメイン (`dev.tasche-app.com` 等) | frontend SAM |
 | `/tasche/${env}/frontend/acm-certificate-arn` | String | ACM 証明書 ARN (us-east-1) | frontend SAM |
 | `/tasche/${env}/frontend/hosted-zone-id` | String | Route53 Hosted Zone ID | frontend SAM (任意) |

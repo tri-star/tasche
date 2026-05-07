@@ -1,25 +1,39 @@
 """環境変数・設定管理.
 
 ローカル/CI 環境では従来通り環境変数 (`.env`) から値を読み込む (`SECRETS_BACKEND=env`).
-Lambda 上では boto3 経由で SecretsManager から取得する (`SECRETS_BACKEND=secretsmanager`).
-この場合、`*_SECRET_ARN` 環境変数で各 Secret の ARN を指定する。
+Lambda 上では AWS Parameters and Secrets Lambda Extension 経由で SecretsManager から
+取得する (`SECRETS_BACKEND=extension`).
 
-注: Parameters and Secrets Lambda Extension は Lambda Layer のみで配布されており、
-コンテナイメージ Lambda では使用できないため boto3 を直接利用している。
-プロセスがコールドスタート中に取得した値はモジュールレベルで保持されるため、
-ウォーム呼び出し時には API コールは発生しない。
+費用削減のため、機密値は単一の Secret に JSON 形式でまとめて格納する設計とした。
+`APP_SECRET_ARN` 環境変数で対象 Secret の ARN を指定する。期待する JSON 構造:
+
+    {
+      "db_url": "postgresql+asyncpg://...",
+      "jwt_secret": "...",
+      "google_oauth_client_id": "...",
+      "google_oauth_client_secret": "..."
+    }
+
+Extension は Lambda コンテナイメージにビルド時に焼き込む (`packages/backend/Dockerfile`
+参照). アプリケーションは `http://localhost:2773/secretsmanager/get?secretId=<ARN>` を
+叩くだけで、Extension 内部のキャッシュ (既定 5 分 TTL) によりウォーム呼び出し時の
+API コールは抑制される。
 """
 
 from __future__ import annotations
 
 import json
 import logging
-from functools import lru_cache
+import os
 
+import httpx
 from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 logger = logging.getLogger(__name__)
+
+
+SECRETS_EXTENSION_ENDPOINT = "http://localhost:2773/secretsmanager/get"
 
 
 class Settings(BaseSettings):
@@ -34,13 +48,11 @@ class Settings(BaseSettings):
 
     # Secrets バックエンド
     # env: 環境変数から直接読み込む (ローカル/CI)
-    # secretsmanager: boto3 で SecretsManager から取得 (Lambda)
+    # extension: Parameters and Secrets Lambda Extension 経由で取得 (Lambda)
     secrets_backend: str = "env"
 
-    # Secret ARN (secrets_backend=secretsmanager のときに使用)
-    db_url_secret_arn: str = ""
-    jwt_secret_arn: str = ""
-    google_oauth_secret_arn: str = ""
+    # 単一の Secret に複数キーをまとめる (費用削減)
+    app_secret_arn: str = ""
 
     # Google OAuth 2.0
     google_oauth_client_id: str = "dummy_client_id"
@@ -72,25 +84,26 @@ class Settings(BaseSettings):
     )
 
     @model_validator(mode="after")
-    def resolve_secrets_from_aws(self) -> Settings:
-        """secrets_backend=secretsmanager の場合に SecretsManager から値を取得して上書きする."""
-        if self.secrets_backend != "secretsmanager":
+    def resolve_secrets_from_extension(self) -> Settings:
+        """secrets_backend=extension の場合に SecretsManager から値を取得して上書きする."""
+        if self.secrets_backend != "extension":
             return self
 
-        # 単一値の Secret は plain string 想定
-        if self.db_url_secret_arn:
-            self.database_url = _fetch_secret_string(self.db_url_secret_arn)
-
-        if self.jwt_secret_arn:
-            self.jwt_secret = _fetch_secret_string(self.jwt_secret_arn)
-
-        # Google OAuth は JSON 形式 ({"client_id": ..., "client_secret": ...}) 想定
-        if self.google_oauth_secret_arn:
-            payload = _fetch_secret_json(self.google_oauth_secret_arn)
-            self.google_oauth_client_id = payload.get("client_id", self.google_oauth_client_id)
-            self.google_oauth_client_secret = payload.get(
-                "client_secret", self.google_oauth_client_secret
+        if not self.app_secret_arn:
+            raise ValueError(
+                "APP_SECRET_ARN must be set when SECRETS_BACKEND=extension"
             )
+
+        payload = _fetch_secret_json(self.app_secret_arn)
+        # Secret に値がある項目のみ上書き (環境変数で渡されたデフォルトより優先)
+        if "db_url" in payload:
+            self.database_url = payload["db_url"]
+        if "jwt_secret" in payload:
+            self.jwt_secret = payload["jwt_secret"]
+        if "google_oauth_client_id" in payload:
+            self.google_oauth_client_id = payload["google_oauth_client_id"]
+        if "google_oauth_client_secret" in payload:
+            self.google_oauth_client_secret = payload["google_oauth_client_secret"]
 
         return self
 
@@ -115,23 +128,38 @@ class Settings(BaseSettings):
         return [o.strip() for o in self.cors_allow_origins.split(",") if o.strip()]
 
 
-@lru_cache(maxsize=32)
-def _fetch_secret_string(secret_arn: str) -> str:
-    """SecretsManager から Secret の文字列値を取得する.
-
-    lru_cache でモジュールスコープのキャッシュを構成するため、
-    同一 Lambda インスタンス内で複数回呼ばれても API コールは初回のみ。
-    """
-    import boto3  # 遅延 import (ローカル env モードでは不要)
-
-    client = boto3.client("secretsmanager")
-    response = client.get_secret_value(SecretId=secret_arn)
-    return response["SecretString"]
-
-
 def _fetch_secret_json(secret_arn: str) -> dict:
-    """SecretsManager から JSON Secret を取得し dict として返す."""
-    return json.loads(_fetch_secret_string(secret_arn))
+    """Lambda Extension 経由で JSON Secret を取得し dict として返す."""
+    response = _call_extension(secret_arn)
+    return json.loads(response["SecretString"])
+
+
+def _call_extension(secret_arn: str) -> dict:
+    """Parameters and Secrets Lambda Extension に HTTP リクエストする.
+
+    Extension は AWS_SESSION_TOKEN を `X-Aws-Parameters-Secrets-Token` ヘッダで
+    受け取って認証する仕組みになっている (Lambda 実行時に自動設定される).
+    """
+    session_token = os.environ.get("AWS_SESSION_TOKEN")
+    if not session_token:
+        raise RuntimeError(
+            "AWS_SESSION_TOKEN is not set. Cannot call Parameters and Secrets Lambda Extension. "
+            "Confirm the extension is baked into the container image."
+        )
+
+    try:
+        response = httpx.get(
+            SECRETS_EXTENSION_ENDPOINT,
+            params={"secretId": secret_arn},
+            headers={"X-Aws-Parameters-Secrets-Token": session_token},
+            timeout=5.0,
+        )
+        response.raise_for_status()
+    except httpx.HTTPError as exc:
+        logger.error("Failed to fetch secret %s: %s", secret_arn, exc)
+        raise
+
+    return response.json()
 
 
 settings = Settings()

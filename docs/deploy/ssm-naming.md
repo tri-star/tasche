@@ -27,13 +27,24 @@ Tasche のデプロイにおいて、IAM ロール ARN や SecretsManager の AR
 
 ### SecretsManager (外部リポジトリで作成・管理)
 
-機密値そのものは SecretsManager に格納し、以下のパスに **その ARN** を保存する。
+費用削減のため、Tasche 全体で **1 環境あたり 1 本** の Secret に複数キーを JSON 形式でまとめる設計とする。
 
 | パス | 内容 | 利用先 |
 |---|---|---|
-| `/tasche/<env>/secrets/db-url-arn` | Neon PostgreSQL の接続 URL を保持する Secret の ARN。Secret 値は plain string で `postgresql+asyncpg://...` 形式を想定。 | backend (Parameters and Secrets Lambda Extension 経由で取得) |
-| `/tasche/<env>/secrets/jwt-secret-arn` | 自前発行 JWT の署名鍵を保持する Secret の ARN。Secret 値は plain string。 | backend (同上) |
-| `/tasche/<env>/secrets/google-oauth-arn` | Google OAuth の Client ID と Client Secret を保持する Secret の ARN。Secret 値は JSON 形式 `{"client_id": "...", "client_secret": "..."}`。 | backend (同上) |
+| `/tasche/<env>/secrets/app-secret-arn` | Tasche アプリケーションが必要とする全機密値を 1 本にまとめた Secret の ARN | backend (Parameters and Secrets Lambda Extension 経由で取得) |
+
+Secret 値の JSON 構造 (キーは固定):
+
+```json
+{
+  "db_url": "postgresql+asyncpg://user:pass@host/db?sslmode=require",
+  "jwt_secret": "<32文字以上のランダム値>",
+  "google_oauth_client_id": "<Google Cloud Console で発行>",
+  "google_oauth_client_secret": "<Google Cloud Console で発行>"
+}
+```
+
+新しいキーを追加する場合は、本リポの `tasche/core/config.py` の `resolve_secrets_from_extension` を更新する。
 
 ### Frontend 配信関連
 
@@ -62,12 +73,12 @@ Resources:
       Role: !Sub '{{resolve:ssm:/tasche/${Env}/iam/lambda-execution-role-arn}}'
       Environment:
         Variables:
-          DB_URL_SECRET_ARN: !Sub '{{resolve:ssm:/tasche/${Env}/secrets/db-url-arn}}'
+          APP_SECRET_ARN: !Sub '{{resolve:ssm:/tasche/${Env}/secrets/app-secret-arn}}'
 ```
 
 ### アプリケーションから（実行時取得）
 
-Backend Lambda は AWS Parameters and Secrets Lambda Extension を有効化し、`http://localhost:2773/secretsmanager/get?secretId=<ARN>` 経由で値を取得する。詳細は `tasche/core/config.py` の実装を参照。
+Backend Lambda は AWS Parameters and Secrets Lambda Extension を **コンテナイメージに焼き込んで** 有効化し、`http://localhost:2773/secretsmanager/get?secretId=<ARN>` 経由で値を取得する。Layer の取り込みは `packages/backend/scripts/fetch-lambda-extensions.sh` と `Dockerfile` を参照。詳細は `tasche/core/config.py` の実装を参照。
 
 ### GitHub Actions から
 

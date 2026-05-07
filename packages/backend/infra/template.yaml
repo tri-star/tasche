@@ -74,14 +74,19 @@ Resources:
         Variables:
           APP_ENV: !Ref AppEnv
           LOG_LEVEL: !Ref LogLevel
-          SECRETS_BACKEND: secretsmanager
+          SECRETS_BACKEND: extension
           # SecretsManager の ARN は SSM Parameter Store 経由で受け取る
-          DB_URL_SECRET_ARN: !Sub "{{resolve:ssm:/tasche/${Env}/secrets/db-url-arn}}"
-          JWT_SECRET_ARN: !Sub "{{resolve:ssm:/tasche/${Env}/secrets/jwt-secret-arn}}"
-          GOOGLE_OAUTH_SECRET_ARN: !Sub "{{resolve:ssm:/tasche/${Env}/secrets/google-oauth-arn}}"
+          # 単一 Secret に JSON 形式で複数キーを格納する設計 (費用削減)
+          APP_SECRET_ARN: !Sub "{{resolve:ssm:/tasche/${Env}/secrets/app-secret-arn}}"
           # Lambda Web Adapter のチューニング
           AWS_LWA_PORT: "8080"
           AWS_LWA_READINESS_CHECK_PATH: /health
+          # Parameters and Secrets Lambda Extension のチューニング
+          # (Layer はコンテナイメージに焼き込み済み, Dockerfile 参照)
+          PARAMETERS_SECRETS_EXTENSION_HTTP_PORT: "2773"
+          PARAMETERS_SECRETS_EXTENSION_LOG_LEVEL: info
+          PARAMETERS_SECRETS_EXTENSION_CACHE_SIZE: "100"
+          SECRETS_MANAGER_TTL: "300"
           # アプリ側の追加設定
           CORS_ALLOW_ORIGINS: !Ref CorsAllowOrigins
           # Cookie はクロスサイト想定 (CloudFront 同一オリジン経由でも secure 必須)
