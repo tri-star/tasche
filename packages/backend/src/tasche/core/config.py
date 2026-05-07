@@ -90,9 +90,7 @@ class Settings(BaseSettings):
             return self
 
         if not self.app_secret_arn:
-            raise ValueError(
-                "APP_SECRET_ARN must be set when SECRETS_BACKEND=extension"
-            )
+            raise ValueError("APP_SECRET_ARN must be set when SECRETS_BACKEND=extension")
 
         payload = _fetch_secret_json(self.app_secret_arn)
         # Secret に値がある項目のみ上書き (環境変数で渡されたデフォルトより優先)
