@@ -1,0 +1,132 @@
+name: deploy-frontend-dev
+
+# Frontend (S3 + CloudFront) を dev 環境にデプロイする。
+#
+# トリガー: release/frontend-dev/<version> タグの push、または workflow_dispatch (ロールバック用).
+# 流れ:
+#   1) OIDC で AssumeRole
+#   2) Backend スタックの Function URL を取得 → SAM Parameter として渡す
+#   3) sam deploy で S3 / CloudFront を作成・更新
+#   4) pnpm build → S3 sync → CloudFront invalidation
+on:
+  push:
+    tags:
+      - "release/frontend-dev/**"
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "デプロイするコミット/タグ (空なら main)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: deploy-dev-frontend
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: dev
+    env:
+      AWS_REGION: ap-southeast-1
+      ENV_NAME: dev
+      BACKEND_STACK_NAME: tasche-backend-dev
+      FRONTEND_STACK_NAME: tasche-frontend-dev
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502 # v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN_DEV }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Set up SAM CLI
+        uses: aws-actions/setup-sam@2360ef6d90015369947b45b496193ab9976a9b04 # v2
+        with:
+          use-installer: true
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4
+        with:
+          version: 9
+
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build frontend
+        working-directory: packages/frontend
+        run: pnpm build
+
+      - name: Resolve backend function URL host
+        id: backend
+        run: |
+          FUNCTION_URL=$(aws cloudformation describe-stacks \
+            --stack-name "$BACKEND_STACK_NAME" \
+            --query "Stacks[0].Outputs[?OutputKey=='BackendFunctionUrl'].OutputValue" \
+            --output text)
+          if [ -z "$FUNCTION_URL" ] || [ "$FUNCTION_URL" = "None" ]; then
+            echo "Backend stack output not found. Deploy backend first." >&2
+            exit 1
+          fi
+          # https://xxx.lambda-url.region.on.aws/ → xxx.lambda-url.region.on.aws
+          HOST=$(echo "$FUNCTION_URL" | sed -E 's#^https?://##; s#/$##')
+          echo "host=$HOST" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy frontend stack
+        working-directory: packages/frontend/infra
+        run: |
+          sam deploy \
+            --config-env dev \
+            --no-confirm-changeset \
+            --no-fail-on-empty-changeset \
+            --parameter-overrides "Env=dev BackendFunctionUrl=${{ steps.backend.outputs.host }}"
+
+      - name: Sync assets to S3 & invalidate CloudFront
+        run: |
+          BUCKET=$(aws cloudformation describe-stacks \
+            --stack-name "$FRONTEND_STACK_NAME" \
+            --query "Stacks[0].Outputs[?OutputKey=='AssetsBucketName'].OutputValue" \
+            --output text)
+          DIST_ID=$(aws cloudformation describe-stacks \
+            --stack-name "$FRONTEND_STACK_NAME" \
+            --query "Stacks[0].Outputs[?OutputKey=='DistributionId'].OutputValue" \
+            --output text)
+
+          # ハッシュ付き静的アセット (assets/) は長期キャッシュ
+          aws s3 sync packages/frontend/dist/ "s3://$BUCKET/" \
+            --delete \
+            --cache-control "public, max-age=31536000, immutable" \
+            --exclude "index.html" \
+            --exclude "*.html"
+
+          # HTML はキャッシュさせない (即時切替のため)
+          aws s3 sync packages/frontend/dist/ "s3://$BUCKET/" \
+            --cache-control "public, max-age=0, must-revalidate" \
+            --exclude "*" \
+            --include "*.html"
+
+          aws cloudfront create-invalidation \
+            --distribution-id "$DIST_ID" \
+            --paths "/index.html" "/"
+
+      - name: Show outputs
+        run: |
+          aws cloudformation describe-stacks \
+            --stack-name "$FRONTEND_STACK_NAME" \
+            --query "Stacks[0].Outputs" \
+            --output table

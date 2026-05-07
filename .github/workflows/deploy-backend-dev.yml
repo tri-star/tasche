@@ -1,0 +1,102 @@
+name: deploy-backend-dev
+
+# Backend (Lambda コンテナイメージ) を dev 環境にデプロイする。
+#
+# トリガー: release/backend-dev/<version> タグの push、または workflow_dispatch (ロールバック用).
+# 流れ:
+#   1) OIDC で AssumeRole
+#   2) ECR にコンテナイメージを build & push
+#   3) sam deploy (template + samconfig.toml の dev 設定)
+on:
+  push:
+    tags:
+      - "release/backend-dev/**"
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "デプロイするコミット/タグ (空なら main)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: deploy-dev-backend
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: dev
+    defaults:
+      run:
+        working-directory: packages/backend
+    env:
+      AWS_REGION: ap-southeast-1
+      ENV_NAME: dev
+      ECR_REPO_NAME: tasche-backend-dev
+      STACK_NAME: tasche-backend-dev
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502 # v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN_DEV }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Set up SAM CLI
+        uses: aws-actions/setup-sam@2360ef6d90015369947b45b496193ab9976a9b04 # v2
+        with:
+          use-installer: true
+
+      # SAM スタックは ECR リポジトリも作成する。
+      # 初回だけは Lambda にプッシュするイメージが無い状態でもスタック作成が成立する必要があるため、
+      # スタックが未作成の場合に限ってダミーイメージで先にスタックを作成し、ECR を確保する。
+      - name: Ensure SAM stack & ECR repository exist
+        run: |
+          if ! aws cloudformation describe-stacks --stack-name "$STACK_NAME" --region "$AWS_REGION" >/dev/null 2>&1; then
+            echo "Stack $STACK_NAME does not exist. Bootstrapping with placeholder image."
+            sam deploy \
+              --config-env dev \
+              --no-confirm-changeset \
+              --no-fail-on-empty-changeset \
+              --image-repositories "BackendFunction=$(aws sts get-caller-identity --query Account --output text).dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO_NAME" \
+              --parameter-overrides "Env=dev AppEnv=development LogLevel=info ImageUri=public.ecr.aws/lambda/python:3.12"
+          fi
+
+      - name: Login to ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076 # v2
+
+      - name: Build & push backend image
+        id: image
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          IMAGE_URI="$REGISTRY/$ECR_REPO_NAME:$IMAGE_TAG"
+          docker build --platform linux/arm64 -t "$IMAGE_URI" .
+          docker push "$IMAGE_URI"
+          echo "image_uri=$IMAGE_URI" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy backend stack
+        run: |
+          sam deploy \
+            --config-env dev \
+            --no-confirm-changeset \
+            --no-fail-on-empty-changeset \
+            --parameter-overrides "Env=dev AppEnv=development LogLevel=info ImageUri=${{ steps.image.outputs.image_uri }}"
+
+      - name: Show outputs
+        run: |
+          aws cloudformation describe-stacks \
+            --stack-name "$STACK_NAME" \
+            --query "Stacks[0].Outputs" \
+            --output table
