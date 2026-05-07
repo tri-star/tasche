@@ -1,6 +1,14 @@
 import { type FormEvent, useEffect, useId, useState } from "react"
 import type { TaskResponse } from "@/api/generated/model"
 import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 type TaskFormDialogProps = {
   open: boolean
@@ -9,7 +17,7 @@ type TaskFormDialogProps = {
   isSubmitting?: boolean
   errorMessage?: string | null
   onClose: () => void
-  onSubmit: (name: string) => Promise<void>
+  onSubmit: (name: string) => void | Promise<void>
 }
 
 export function TaskFormDialog({
@@ -64,37 +72,22 @@ export function TaskFormDialog({
     if (!trimmed || trimmed.length > 100) {
       return
     }
-    await onSubmit(trimmed)
+    await Promise.resolve(onSubmit(trimmed))
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
-      <div
-        role="dialog"
-        aria-modal="true"
+    <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && !isSubmitting && onClose()}>
+      <DialogContent
         aria-labelledby={titleId}
         aria-describedby={descriptionId}
-        className="w-full max-w-lg rounded-3xl border border-emerald-100 bg-white p-6 shadow-2xl"
+        className="border-emerald-100"
+        disabled={isSubmitting}
+        showCloseButton
       >
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h2 id={titleId} className="text-xl font-semibold text-emerald-950">
-              {heading}
-            </h2>
-            <p id={descriptionId} className="mt-2 text-sm text-muted-foreground">
-              {description}
-            </p>
-          </div>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            disabled={isSubmitting}
-          >
-            <span className="sr-only">閉じる</span>×
-          </Button>
-        </div>
+        <DialogHeader className="pr-10">
+          <DialogTitle id={titleId}>{heading}</DialogTitle>
+          <DialogDescription id={descriptionId}>{description}</DialogDescription>
+        </DialogHeader>
 
         <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
           <div className="space-y-2">
@@ -123,7 +116,7 @@ export function TaskFormDialog({
             </p>
           ) : null}
 
-          <div className="flex flex-wrap justify-end gap-2">
+          <DialogFooter>
             <Button type="button" variant="secondary" onClick={onClose} disabled={isSubmitting}>
               キャンセル
             </Button>
@@ -133,9 +126,9 @@ export function TaskFormDialog({
             >
               {mode === "create" ? "追加する" : "保存する"}
             </Button>
-          </div>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   )
 }

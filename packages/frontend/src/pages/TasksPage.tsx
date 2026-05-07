@@ -1,5 +1,6 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { ClipboardList, Loader2, Plus, RefreshCw } from "lucide-react"
-import { useCallback, useEffect, useState } from "react"
+import { useState } from "react"
 import {
   createTaskApiTasksPost,
   deleteTaskApiTasksTaskIdDelete,
@@ -16,6 +17,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 
 type TaskDialogState = { mode: "create"; task: null } | { mode: "edit"; task: TaskResponse } | null
+const tasksQueryKey = ["tasks", { includeArchived: false }] as const
 
 function logTaskPageError(message: string, error: unknown) {
   if (!import.meta.env.DEV || import.meta.env.MODE === "test") {
@@ -25,110 +27,102 @@ function logTaskPageError(message: string, error: unknown) {
   console.error(message, error)
 }
 
+async function fetchTasks() {
+  try {
+    const response = await getTasksApiTasksGet({ include_archived: false })
+    if (response.status !== 200) {
+      throw new Error(`Unexpected status: ${response.status}`)
+    }
+
+    return response.data.data.tasks.filter((task) => !task.is_archived)
+  } catch (error) {
+    logTaskPageError("タスク一覧の取得に失敗しました", error)
+    throw error
+  }
+}
+
 export function TasksPage() {
-  const [tasks, setTasks] = useState<TaskResponse[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const queryClient = useQueryClient()
   const [formDialog, setFormDialog] = useState<TaskDialogState>(null)
   const [deleteTarget, setDeleteTarget] = useState<TaskResponse | null>(null)
   const [formErrorMessage, setFormErrorMessage] = useState<string | null>(null)
   const [deleteErrorMessage, setDeleteErrorMessage] = useState<string | null>(null)
 
-  const fetchTasks = useCallback(async () => {
-    setIsLoading(true)
-    setErrorMessage(null)
+  const tasksQuery = useQuery({
+    queryKey: tasksQueryKey,
+    queryFn: fetchTasks,
+  })
 
-    try {
-      const response = await getTasksApiTasksGet({ include_archived: false })
-      if (response.status !== 200) {
-        setErrorMessage("タスク一覧の取得に失敗しました。")
-        return
-      }
-
-      setTasks(response.data.data.tasks.filter((task) => !task.is_archived))
-    } catch (error) {
-      logTaskPageError("タスク一覧の取得に失敗しました", error)
-      setErrorMessage("タスク一覧の取得に失敗しました。")
-    } finally {
-      setIsLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    void fetchTasks()
-  }, [fetchTasks])
-
-  const handleCreate = async (name: string) => {
-    setIsSubmitting(true)
-    setFormErrorMessage(null)
-
-    try {
+  const createTaskMutation = useMutation({
+    mutationFn: async (name: string) => {
       const response = await createTaskApiTasksPost({ name })
       if (response.status !== 201) {
-        setFormErrorMessage("タスクの登録に失敗しました。")
-        return
+        throw new Error(`Unexpected status: ${response.status}`)
       }
-
-      setTasks((prev) => [...prev, response.data.data])
+      return response.data.data
+    },
+    onSuccess: (createdTask) => {
+      queryClient.setQueryData<TaskResponse[]>(tasksQueryKey, (previous = []) => [
+        ...previous,
+        createdTask,
+      ])
       setFormDialog(null)
-    } catch (error) {
+      setFormErrorMessage(null)
+    },
+    onError: (error) => {
       logTaskPageError("タスクの登録に失敗しました", error)
       setFormErrorMessage("タスクの登録に失敗しました。")
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
+    },
+  })
 
-  const handleUpdate = async (taskId: string, name: string) => {
-    setIsSubmitting(true)
-    setFormErrorMessage(null)
-
-    try {
+  const updateTaskMutation = useMutation({
+    mutationFn: async ({ taskId, name }: { taskId: string; name: string }) => {
       const response = await updateTaskApiTasksTaskIdPut(taskId, { name })
       if (response.status !== 200) {
-        setFormErrorMessage("タスクの更新に失敗しました。")
-        return
+        throw new Error(`Unexpected status: ${response.status}`)
       }
-
-      setTasks((prev) =>
-        prev
-          .map((task) => (task.id === taskId ? response.data.data : task))
+      return response.data.data
+    },
+    onSuccess: (updatedTask) => {
+      queryClient.setQueryData<TaskResponse[]>(tasksQueryKey, (previous = []) =>
+        previous
+          .map((task) => (task.id === updatedTask.id ? updatedTask : task))
           .filter((task) => !task.is_archived),
       )
       setFormDialog(null)
-    } catch (error) {
+      setFormErrorMessage(null)
+    },
+    onError: (error) => {
       logTaskPageError("タスクの更新に失敗しました", error)
       setFormErrorMessage("タスクの更新に失敗しました。")
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
+    },
+  })
 
-  const handleDelete = async () => {
-    if (!deleteTarget) {
-      return
-    }
-
-    setIsSubmitting(true)
-    setDeleteErrorMessage(null)
-
-    try {
-      const response = await deleteTaskApiTasksTaskIdDelete(deleteTarget.id)
+  const deleteTaskMutation = useMutation({
+    mutationFn: async (taskId: string) => {
+      const response = await deleteTaskApiTasksTaskIdDelete(taskId)
       if (response.status !== 200) {
-        setDeleteErrorMessage("削除に失敗しました。時間をおいて再度お試しください。")
-        return
+        throw new Error(`Unexpected status: ${response.status}`)
       }
-
-      setTasks((prev) => prev.filter((task) => task.id !== deleteTarget.id))
+      return taskId
+    },
+    onSuccess: (taskId) => {
+      queryClient.setQueryData<TaskResponse[]>(tasksQueryKey, (previous = []) =>
+        previous.filter((task) => task.id !== taskId),
+      )
       setDeleteTarget(null)
-    } catch (error) {
+      setDeleteErrorMessage(null)
+    },
+    onError: (error) => {
       logTaskPageError("タスクの削除に失敗しました", error)
       setDeleteErrorMessage("削除に失敗しました。時間をおいて再度お試しください。")
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
+    },
+  })
+
+  const isSubmitting =
+    createTaskMutation.isPending || updateTaskMutation.isPending || deleteTaskMutation.isPending
+  const tasks = tasksQuery.data ?? []
+  const errorMessage = tasksQuery.isError ? "タスク一覧の取得に失敗しました。" : null
 
   const openCreateDialog = () => {
     setFormErrorMessage(null)
@@ -143,6 +137,10 @@ export function TasksPage() {
   const openDeleteDialog = (task: TaskResponse) => {
     setDeleteErrorMessage(null)
     setDeleteTarget(task)
+  }
+
+  const handleRefresh = () => {
+    void tasksQuery.refetch()
   }
 
   return (
@@ -169,10 +167,10 @@ export function TasksPage() {
             <Button
               type="button"
               variant="outline"
-              onClick={() => void fetchTasks()}
-              disabled={isLoading}
+              onClick={handleRefresh}
+              disabled={tasksQuery.isFetching}
             >
-              <RefreshCw className={isLoading ? "animate-spin" : undefined} />
+              <RefreshCw className={tasksQuery.isFetching ? "animate-spin" : undefined} />
               再読み込み
             </Button>
             <Button type="button" onClick={openCreateDialog}>
@@ -184,28 +182,28 @@ export function TasksPage() {
 
         <Card className="border-emerald-100 shadow-sm">
           <CardContent className="p-6">
-            {isLoading ? (
+            {tasksQuery.isPending ? (
               <div className="flex min-h-[240px] flex-col items-center justify-center gap-3 text-sm text-muted-foreground">
                 <Loader2 className="h-6 w-6 animate-spin text-emerald-600" />
                 <p>読み込み中...</p>
               </div>
             ) : null}
 
-            {!isLoading && errorMessage ? (
+            {!tasksQuery.isPending && errorMessage ? (
               <div className="flex min-h-[240px] flex-col items-center justify-center gap-4 rounded-2xl border border-rose-100 bg-rose-50/70 px-6 py-10 text-center">
                 <p className="text-sm text-rose-700">{errorMessage}</p>
-                <Button type="button" variant="secondary" onClick={() => void fetchTasks()}>
+                <Button type="button" variant="secondary" onClick={handleRefresh}>
                   <RefreshCw />
                   再読み込み
                 </Button>
               </div>
             ) : null}
 
-            {!isLoading && !errorMessage && tasks.length === 0 ? (
+            {!tasksQuery.isPending && !errorMessage && tasks.length === 0 ? (
               <TaskEmptyState onCreate={openCreateDialog} />
             ) : null}
 
-            {!isLoading && !errorMessage && tasks.length > 0 ? (
+            {!tasksQuery.isPending && !errorMessage && tasks.length > 0 ? (
               <TaskTable
                 tasks={tasks}
                 disabled={isSubmitting}
@@ -232,8 +230,8 @@ export function TasksPage() {
         }}
         onSubmit={(name) =>
           formDialog?.mode === "edit" && formDialog.task
-            ? handleUpdate(formDialog.task.id, name)
-            : handleCreate(name)
+            ? updateTaskMutation.mutate({ taskId: formDialog.task.id, name })
+            : createTaskMutation.mutate(name)
         }
       />
 
@@ -249,7 +247,9 @@ export function TasksPage() {
           setDeleteTarget(null)
           setDeleteErrorMessage(null)
         }}
-        onConfirm={handleDelete}
+        onConfirm={() =>
+          deleteTarget ? deleteTaskMutation.mutate(deleteTarget.id) : Promise.resolve()
+        }
       />
     </DashboardLayout>
   )
