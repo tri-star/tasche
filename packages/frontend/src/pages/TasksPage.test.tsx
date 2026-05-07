@@ -190,4 +190,66 @@ describe("TasksPage", () => {
       expect(screen.getByText("まだタスクが登録されていません")).toBeInTheDocument()
     })
   })
+
+  it("追加に失敗した場合はダイアログを開いたままエラーを表示する", async () => {
+    const user = userEvent.setup()
+    mockCreateTask.mockRejectedValueOnce(new Error("create failed"))
+    renderWithRouter()
+
+    await waitFor(() => {
+      expect(screen.getByText("英語学習")).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByRole("button", { name: "タスクを追加" }))
+    await user.type(screen.getByLabelText("タスク名"), "読書")
+    await user.click(screen.getByRole("button", { name: "追加する" }))
+
+    await waitFor(() => {
+      expect(screen.getByRole("alert")).toHaveTextContent("タスクの登録に失敗しました。")
+    })
+    expect(screen.getByRole("dialog", { name: "タスクを追加" })).toBeInTheDocument()
+  })
+
+  it("編集に失敗した場合はダイアログを開いたままエラーを表示する", async () => {
+    const user = userEvent.setup()
+    mockUpdateTask.mockRejectedValueOnce(new Error("update failed"))
+    renderWithRouter()
+
+    await waitFor(() => {
+      expect(screen.getByText("英語学習")).toBeInTheDocument()
+    })
+
+    const row = screen.getByRole("row", { name: /英語学習/ })
+    await user.click(within(row).getByRole("button", { name: "英語学習を編集" }))
+    const input = screen.getByLabelText("タスク名")
+    await user.clear(input)
+    await user.type(input, "英語の復習")
+    await user.click(screen.getByRole("button", { name: "保存する" }))
+
+    await waitFor(() => {
+      expect(screen.getByRole("alert")).toHaveTextContent("タスクの更新に失敗しました。")
+    })
+    expect(screen.getByRole("dialog", { name: "タスクを編集" })).toBeInTheDocument()
+  })
+
+  it("削除に失敗した場合はダイアログを開いたままエラーを表示する", async () => {
+    const user = userEvent.setup()
+    mockDeleteTask.mockRejectedValueOnce(new Error("delete failed"))
+    renderWithRouter()
+
+    await waitFor(() => {
+      expect(screen.getByText("筋トレ")).toBeInTheDocument()
+    })
+
+    const row = screen.getByRole("row", { name: /筋トレ/ })
+    await user.click(within(row).getByRole("button", { name: "筋トレを削除" }))
+    await user.click(screen.getByRole("button", { name: "削除する" }))
+
+    await waitFor(() => {
+      expect(screen.getByRole("alert")).toHaveTextContent(
+        "削除に失敗しました。時間をおいて再度お試しください。",
+      )
+    })
+    expect(screen.getByRole("dialog", { name: "タスクを削除しますか？" })).toBeInTheDocument()
+  })
 })

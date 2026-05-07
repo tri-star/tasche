@@ -17,6 +17,14 @@ import { Card, CardContent } from "@/components/ui/card"
 
 type TaskDialogState = { mode: "create"; task: null } | { mode: "edit"; task: TaskResponse } | null
 
+function logTaskPageError(message: string, error: unknown) {
+  if (!import.meta.env.DEV || import.meta.env.MODE === "test") {
+    return
+  }
+
+  console.error(message, error)
+}
+
 export function TasksPage() {
   const [tasks, setTasks] = useState<TaskResponse[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -40,7 +48,7 @@ export function TasksPage() {
 
       setTasks(response.data.data.tasks.filter((task) => !task.is_archived))
     } catch (error) {
-      console.error(error)
+      logTaskPageError("タスク一覧の取得に失敗しました", error)
       setErrorMessage("タスク一覧の取得に失敗しました。")
     } finally {
       setIsLoading(false)
@@ -65,7 +73,7 @@ export function TasksPage() {
       setTasks((prev) => [...prev, response.data.data])
       setFormDialog(null)
     } catch (error) {
-      console.error(error)
+      logTaskPageError("タスクの登録に失敗しました", error)
       setFormErrorMessage("タスクの登録に失敗しました。")
     } finally {
       setIsSubmitting(false)
@@ -90,7 +98,7 @@ export function TasksPage() {
       )
       setFormDialog(null)
     } catch (error) {
-      console.error(error)
+      logTaskPageError("タスクの更新に失敗しました", error)
       setFormErrorMessage("タスクの更新に失敗しました。")
     } finally {
       setIsSubmitting(false)
@@ -115,7 +123,7 @@ export function TasksPage() {
       setTasks((prev) => prev.filter((task) => task.id !== deleteTarget.id))
       setDeleteTarget(null)
     } catch (error) {
-      console.error(error)
+      logTaskPageError("タスクの削除に失敗しました", error)
       setDeleteErrorMessage("削除に失敗しました。時間をおいて再度お試しください。")
     } finally {
       setIsSubmitting(false)

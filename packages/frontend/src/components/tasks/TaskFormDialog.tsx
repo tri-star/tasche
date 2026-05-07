@@ -23,6 +23,7 @@ export function TaskFormDialog({
 }: TaskFormDialogProps) {
   const titleId = useId()
   const descriptionId = useId()
+  const errorId = useId()
   const [name, setName] = useState("")
 
   useEffect(() => {
@@ -60,7 +61,7 @@ export function TaskFormDialog({
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const trimmed = name.trim()
-    if (!trimmed) {
+    if (!trimmed || trimmed.length > 100) {
       return
     }
     await onSubmit(trimmed)
@@ -105,13 +106,19 @@ export function TaskFormDialog({
               value={name}
               onChange={(event) => setName(event.target.value)}
               placeholder="例: 英語学習"
+              maxLength={100}
               className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm shadow-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
               disabled={isSubmitting}
             />
+            <p className="text-xs text-muted-foreground">100文字以内で入力してください。</p>
           </div>
 
           {errorMessage ? (
-            <p className="rounded-xl border border-rose-100 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+            <p
+              id={errorId}
+              role="alert"
+              className="rounded-xl border border-rose-100 bg-rose-50 px-3 py-2 text-sm text-rose-700"
+            >
               {errorMessage}
             </p>
           ) : null}
@@ -120,7 +127,10 @@ export function TaskFormDialog({
             <Button type="button" variant="secondary" onClick={onClose} disabled={isSubmitting}>
               キャンセル
             </Button>
-            <Button type="submit" disabled={!name.trim() || isSubmitting}>
+            <Button
+              type="submit"
+              disabled={!name.trim() || name.trim().length > 100 || isSubmitting}
+            >
               {mode === "create" ? "追加する" : "保存する"}
             </Button>
           </div>
