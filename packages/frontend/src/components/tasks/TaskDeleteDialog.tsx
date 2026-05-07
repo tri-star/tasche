@@ -21,6 +21,7 @@ export function TaskDeleteDialog({
 }: TaskDeleteDialogProps) {
   const titleId = useId()
   const descriptionId = useId()
+  const errorId = useId()
 
   useEffect(() => {
     if (!open) {
@@ -62,7 +63,11 @@ export function TaskDeleteDialog({
         </div>
 
         {errorMessage ? (
-          <p className="mt-4 rounded-xl border border-rose-100 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+          <p
+            id={errorId}
+            role="alert"
+            className="mt-4 rounded-xl border border-rose-100 bg-rose-50 px-3 py-2 text-sm text-rose-700"
+          >
             {errorMessage}
           </p>
         ) : null}

@@ -18,16 +18,17 @@ type TaskTableProps = {
 }
 
 function formatDateTime(value: string): string {
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) {
+  const datePart = value.split("T")[0]
+  if (!datePart) {
     return "-"
   }
 
-  return new Intl.DateTimeFormat("ja-JP", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(date)
+  const [year, month, day] = datePart.split("-")
+  if (!year || !month || !day) {
+    return "-"
+  }
+
+  return `${year}/${month}/${day}`
 }
 
 export function TaskTable({ tasks, onEdit, onDelete, disabled = false }: TaskTableProps) {
