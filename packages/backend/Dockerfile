@@ -39,7 +39,7 @@ COPY --from=builder /build/src /var/task/src
 ENV PYTHONPATH=/var/task/src \
     AWS_LWA_PORT=8080 \
     AWS_LWA_READINESS_CHECK_PATH=/health \
-    SECRETS_BACKEND=extension \
+    SECRETS_BACKEND=secretsmanager \
     PORT=8080
 
 WORKDIR /var/task

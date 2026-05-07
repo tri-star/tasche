@@ -1,0 +1,114 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: |
+  Tasche Backend - Lambda (Container Image + Lambda Web Adapter) + ECR Repository.
+  詳細は docs/work-logs/20260508-deploy-pipeline/plan.md を参照。
+
+Parameters:
+  Env:
+    Type: String
+    AllowedValues: [dev, prod]
+    Description: 環境名 (dev / prod). SSM パラメータの解決パスに使用
+  ImageUri:
+    Type: String
+    Description: |
+      Lambda にデプロイするコンテナイメージの URI (タグ込み).
+      CI から `--parameter-overrides ImageUri=<...>` で指定する。
+  AppEnv:
+    Type: String
+    Default: development
+    Description: アプリケーション側の APP_ENV 値 (local / development / staging / production)
+  LogLevel:
+    Type: String
+    Default: info
+    AllowedValues: [debug, info, warning, error]
+  CorsAllowOrigins:
+    Type: String
+    Default: ""
+    Description: CORS 許可オリジン (カンマ区切り). 空の場合は同一オリジン運用前提
+
+Resources:
+  # ----------------------------------------------------------------------------
+  # ECR リポジトリ (Lambda 用コンテナイメージの保管先)
+  # ----------------------------------------------------------------------------
+  EcrRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub "tasche-backend-${Env}"
+      ImageScanningConfiguration:
+        ScanOnPush: true
+      ImageTagMutability: MUTABLE
+      LifecyclePolicy:
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "Keep last 10 images",
+                "selection": {
+                  "tagStatus": "any",
+                  "countType": "imageCountMoreThan",
+                  "countNumber": 10
+                },
+                "action": { "type": "expire" }
+              }
+            ]
+          }
+
+  # ----------------------------------------------------------------------------
+  # Backend Lambda (FastAPI on Lambda Web Adapter)
+  # ----------------------------------------------------------------------------
+  BackendFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "tasche-backend-${Env}"
+      PackageType: Image
+      ImageUri: !Ref ImageUri
+      Architectures: [arm64]
+      MemorySize: 1024
+      Timeout: 30
+      # 実行ロールは外部リポジトリで管理 (docs/deploy/ssm-naming.md 参照)
+      # SecretsManager 取得権限は外部リポ側のロール定義で付与する想定
+      Role: !Sub "{{resolve:ssm:/tasche/${Env}/iam/lambda-execution-role-arn}}"
+      Environment:
+        Variables:
+          APP_ENV: !Ref AppEnv
+          LOG_LEVEL: !Ref LogLevel
+          SECRETS_BACKEND: secretsmanager
+          # SecretsManager の ARN は SSM Parameter Store 経由で受け取る
+          DB_URL_SECRET_ARN: !Sub "{{resolve:ssm:/tasche/${Env}/secrets/db-url-arn}}"
+          JWT_SECRET_ARN: !Sub "{{resolve:ssm:/tasche/${Env}/secrets/jwt-secret-arn}}"
+          GOOGLE_OAUTH_SECRET_ARN: !Sub "{{resolve:ssm:/tasche/${Env}/secrets/google-oauth-arn}}"
+          # Lambda Web Adapter のチューニング
+          AWS_LWA_PORT: "8080"
+          AWS_LWA_READINESS_CHECK_PATH: /health
+          # アプリ側の追加設定
+          CORS_ALLOW_ORIGINS: !Ref CorsAllowOrigins
+          # Cookie はクロスサイト想定 (CloudFront 同一オリジン経由でも secure 必須)
+          COOKIE_SECURE: "true"
+          COOKIE_SAMESITE: lax
+      FunctionUrlConfig:
+        AuthType: NONE
+        InvokeMode: BUFFERED
+
+Outputs:
+  EcrRepositoryUri:
+    Description: Backend container image を push する ECR リポジトリの URI
+    Value: !GetAtt EcrRepository.RepositoryUri
+    Export:
+      Name: !Sub "tasche-backend-${Env}-ecr-uri"
+  BackendFunctionName:
+    Description: Backend Lambda 関数名
+    Value: !Ref BackendFunction
+    Export:
+      Name: !Sub "tasche-backend-${Env}-function-name"
+  BackendFunctionArn:
+    Description: Backend Lambda 関数 ARN
+    Value: !GetAtt BackendFunction.Arn
+  BackendFunctionUrl:
+    Description: |
+      Backend Lambda Function URL (CloudFront のオリジンとして利用).
+      CloudFront からのアクセスは Origin Access Control 経由に絞ること。
+    Value: !GetAtt BackendFunctionUrl.FunctionUrl
+    Export:
+      Name: !Sub "tasche-backend-${Env}-function-url"

@@ -1,0 +1,28 @@
+version = 0.1
+
+# 共通設定
+[default.global.parameters]
+stack_name = "tasche-backend"
+region = "ap-southeast-1"
+
+# dev 環境
+[dev.deploy.parameters]
+stack_name = "tasche-backend-dev"
+region = "ap-southeast-1"
+capabilities = "CAPABILITY_NAMED_IAM"
+confirm_changeset = false
+fail_on_empty_changeset = false
+parameter_overrides = "Env=dev AppEnv=development LogLevel=info"
+resolve_image_repos = false
+image_repositories = []
+
+# prod 環境 (枠のみ; 別タスクで完成させる)
+[prod.deploy.parameters]
+stack_name = "tasche-backend-prod"
+region = "ap-southeast-1"
+capabilities = "CAPABILITY_NAMED_IAM"
+confirm_changeset = true
+fail_on_empty_changeset = false
+parameter_overrides = "Env=prod AppEnv=production LogLevel=info"
+resolve_image_repos = false
+image_repositories = []
