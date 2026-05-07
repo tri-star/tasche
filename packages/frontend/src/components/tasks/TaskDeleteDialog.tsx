@@ -1,5 +1,13 @@
-import { useEffect, useId } from "react"
+import { useId } from "react"
 import type { TaskResponse } from "@/api/generated/model"
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 
 type TaskDeleteDialogProps = {
@@ -8,7 +16,7 @@ type TaskDeleteDialogProps = {
   isSubmitting?: boolean
   errorMessage?: string | null
   onClose: () => void
-  onConfirm: () => Promise<void>
+  onConfirm: () => void | Promise<void>
 }
 
 export function TaskDeleteDialog({
@@ -23,44 +31,29 @@ export function TaskDeleteDialog({
   const descriptionId = useId()
   const errorId = useId()
 
-  useEffect(() => {
-    if (!open) {
-      return
-    }
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && !isSubmitting) {
-        onClose()
-      }
-    }
-
-    window.addEventListener("keydown", handleKeyDown)
-    return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [isSubmitting, onClose, open])
-
   if (!open || !task) {
     return null
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
-      <div
-        role="dialog"
-        aria-modal="true"
+    <AlertDialog open={open} onOpenChange={(nextOpen) => !nextOpen && !isSubmitting && onClose()}>
+      <AlertDialogContent
         aria-labelledby={titleId}
         aria-describedby={descriptionId}
-        className="w-full max-w-lg rounded-3xl border border-rose-100 bg-white p-6 shadow-2xl"
+        disabled={isSubmitting}
       >
-        <h2 id={titleId} className="text-xl font-semibold text-foreground">
-          タスクを削除しますか？
-        </h2>
-        <div id={descriptionId} className="mt-3 space-y-2 text-sm text-muted-foreground">
-          <p>
-            <span className="font-medium text-foreground">「{task.name}」</span>
-            を削除すると、一覧から非表示になります。
-          </p>
-          <p>削除したタスクは一覧から非表示になります。過去の記録ではタスク名が保持されます。</p>
-        </div>
+        <AlertDialogHeader>
+          <AlertDialogTitle id={titleId}>タスクを削除しますか？</AlertDialogTitle>
+          <div id={descriptionId} className="space-y-2 text-sm text-muted-foreground">
+            <AlertDialogDescription>
+              <span className="font-medium text-foreground">「{task.name}」</span>
+              を削除すると、一覧から非表示になります。
+            </AlertDialogDescription>
+            <AlertDialogDescription>
+              削除したタスクは一覧から非表示になります。過去の記録ではタスク名が保持されます。
+            </AlertDialogDescription>
+          </div>
+        </AlertDialogHeader>
 
         {errorMessage ? (
           <p
@@ -72,15 +65,15 @@ export function TaskDeleteDialog({
           </p>
         ) : null}
 
-        <div className="mt-6 flex flex-wrap justify-end gap-2">
+        <AlertDialogFooter className="mt-6">
           <Button type="button" variant="secondary" onClick={onClose} disabled={isSubmitting}>
             キャンセル
           </Button>
           <Button type="button" variant="destructive" onClick={onConfirm} disabled={isSubmitting}>
             削除する
           </Button>
-        </div>
-      </div>
-    </div>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   )
 }
