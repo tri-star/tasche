@@ -15,7 +15,7 @@ from typing import Any
 
 MODEL_MAP = {
     "opus": ("gpt-5.5", "xhigh"),
-    "sonnet": ("gpt-5.4-mini", "medium"),
+    "sonnet": ("gpt-5.4", "medium"),
     "haiku": ("gpt-5.4", "low"),
 }
 
