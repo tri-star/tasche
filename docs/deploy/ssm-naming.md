@@ -46,6 +46,10 @@ Secret 値の JSON 構造 (キーは固定):
 
 新しいキーを追加する場合は、本リポの `tasche/core/config.py` の `resolve_secrets_from_extension` を更新する。
 
+### ECR リポジトリ (外部リポジトリで作成・管理)
+
+ECR リポジトリは命名規約 `tasche-backend-<env>` で固定するため、SSM Parameter での受け渡しは行わない。CI 側は AWS アカウント ID とリージョンから URI を組み立てて利用する。詳細は `tmp/plan/external-repo-requirements.md` を参照。
+
 ### Frontend 配信関連
 
 | パス | 内容 | 利用先 |

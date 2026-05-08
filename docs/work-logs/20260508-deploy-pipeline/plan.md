@@ -165,7 +165,8 @@ flowchart LR
 
 ## 完了基準への追加項目
 
-- [ ] `tmp/plan/external-repo-requirements.md` が作成され、外部リポへの依頼内容が明文化されている。
+- [ ] `tmp/plan/external-repo-requirements.md` が作成され、外部リポへの依頼内容が明文化されている (ECR を含む)。
+- [ ] `docs/manual-deploy.md` が作成され、frontend / backend それぞれの手動デプロイ手順がまとまっている。
 - [ ] prod workflow 作成のフォロータスクが Plane に登録されている。
 
 ## 動作確認手順 (ユーザー実施)
@@ -181,7 +182,7 @@ flowchart LR
 - **Parameters and Secrets Lambda Extension のコンテナ対応**: コンテナ Lambda にも `Layers:` でアタッチ可能だが、対応 Layer ARN はリージョン別。`ap-southeast-1` の ARN を SAM Mappings に登録する必要あり。
 - **CloudFront → Function URL のオリジン認証**: 当面は AuthType=NONE で公開 + CloudFront の Origin Access Control (Lambda Function URL 用) を有効化 (2024 年に GA)。
 - **ACM 証明書は us-east-1 必須**: 外部リポ側で us-east-1 に発行してもらう。
-- **デプロイ初回は ECR リポジトリの事前作成が必要**: SAM で同居作成も可だが、外部リポ管理に揃える方が良いか別途相談。
+- **ECR リポジトリは外部リポジトリで事前作成**: SAM テンプレートには ECR リソースを含めない。外部リポ側で `tasche-backend-<env>` を作成しライフサイクルポリシーを管理する (`tmp/plan/external-repo-requirements.md` 参照)。
 
 ## 完了基準
 

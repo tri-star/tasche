@@ -56,21 +56,8 @@ jobs:
         with:
           use-installer: true
 
-      # SAM スタックは ECR リポジトリも作成する。
-      # 初回だけは Lambda にプッシュするイメージが無い状態でもスタック作成が成立する必要があるため、
-      # スタックが未作成の場合に限ってダミーイメージで先にスタックを作成し、ECR を確保する。
-      - name: Ensure SAM stack & ECR repository exist
-        run: |
-          if ! aws cloudformation describe-stacks --stack-name "$STACK_NAME" --region "$AWS_REGION" >/dev/null 2>&1; then
-            echo "Stack $STACK_NAME does not exist. Bootstrapping with placeholder image."
-            sam deploy \
-              --config-env dev \
-              --no-confirm-changeset \
-              --no-fail-on-empty-changeset \
-              --image-repositories "BackendFunction=$(aws sts get-caller-identity --query Account --output text).dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO_NAME" \
-              --parameter-overrides "Env=dev AppEnv=development LogLevel=info ImageUri=public.ecr.aws/lambda/python:3.12"
-          fi
-
+      # ECR リポジトリは外部リポジトリで事前作成済みである前提
+      # (tmp/plan/external-repo-requirements.md 参照)
       - name: Login to ECR
         id: ecr
         uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076 # v2

@@ -1,7 +1,8 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: |
-  Tasche Backend - Lambda (Container Image + Lambda Web Adapter) + ECR Repository.
+  Tasche Backend - Lambda (Container Image + Lambda Web Adapter).
+  ECR リポジトリは外部リポジトリで事前作成する想定 (tmp/plan/external-repo-requirements.md 参照)。
   詳細は docs/work-logs/20260508-deploy-pipeline/plan.md を参照。
 
 Parameters:
@@ -28,33 +29,6 @@ Parameters:
     Description: CORS 許可オリジン (カンマ区切り). 空の場合は同一オリジン運用前提
 
 Resources:
-  # ----------------------------------------------------------------------------
-  # ECR リポジトリ (Lambda 用コンテナイメージの保管先)
-  # ----------------------------------------------------------------------------
-  EcrRepository:
-    Type: AWS::ECR::Repository
-    Properties:
-      RepositoryName: !Sub "tasche-backend-${Env}"
-      ImageScanningConfiguration:
-        ScanOnPush: true
-      ImageTagMutability: MUTABLE
-      LifecyclePolicy:
-        LifecyclePolicyText: |
-          {
-            "rules": [
-              {
-                "rulePriority": 1,
-                "description": "Keep last 10 images",
-                "selection": {
-                  "tagStatus": "any",
-                  "countType": "imageCountMoreThan",
-                  "countNumber": 10
-                },
-                "action": { "type": "expire" }
-              }
-            ]
-          }
-
   # ----------------------------------------------------------------------------
   # Backend Lambda (FastAPI on Lambda Web Adapter)
   # ----------------------------------------------------------------------------
@@ -97,11 +71,6 @@ Resources:
         InvokeMode: BUFFERED
 
 Outputs:
-  EcrRepositoryUri:
-    Description: Backend container image を push する ECR リポジトリの URI
-    Value: !GetAtt EcrRepository.RepositoryUri
-    Export:
-      Name: !Sub "tasche-backend-${Env}-ecr-uri"
   BackendFunctionName:
     Description: Backend Lambda 関数名
     Value: !Ref BackendFunction
