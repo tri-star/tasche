@@ -59,7 +59,11 @@
       "Bash(git checkout *)",
       "Bash(git pull *)",
       "mcp__plane__create_work_item_comment",
-      "mcp__deepwiki__read_wiki_structure"
+      "mcp__deepwiki__read_wiki_structure",
+      "WebFetch(domain:pypi.org)",
+      "WebFetch(domain:aws-serverless-tools-telemetry.us-west-2.amazonaws.com)",
+      "WebFetch(domain:files.pythonhosted.org)",
+      "WebFetch(domain:aws.amazon.com)"
     ]
   },
   "hooks": {
