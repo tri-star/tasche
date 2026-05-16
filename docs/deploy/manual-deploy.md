@@ -165,12 +165,12 @@ sam deploy \
 ```bash
 cd ../../..  # repo root
 BUCKET=$(aws cloudformation describe-stacks \
-  --stack-name "tasche-frontend-${ENV_NAME}" \
+  --stack-name "${ENV_NAME}-tasche-frontend" \
   --region "$AWS_REGION" \
   --query "Stacks[0].Outputs[?OutputKey=='AssetsBucketName'].OutputValue" \
   --output text)
 DIST_ID=$(aws cloudformation describe-stacks \
-  --stack-name "tasche-frontend-${ENV_NAME}" \
+  --stack-name "${ENV_NAME}-tasche-frontend" \
   --region "$AWS_REGION" \
   --query "Stacks[0].Outputs[?OutputKey=='DistributionId'].OutputValue" \
   --output text)
