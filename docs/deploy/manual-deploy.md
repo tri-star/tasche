@@ -62,9 +62,6 @@ bash scripts/fetch-lambda-extensions.sh
 ```bash
 cd infra
 
-# x86_64 ホストで arm64 Lambda イメージを作る場合は明示しておく
-export DOCKER_DEFAULT_PLATFORM=linux/arm64
-
 sam build \
   --config-env "$ENV_NAME"
 ```
