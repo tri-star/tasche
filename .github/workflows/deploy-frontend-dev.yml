@@ -70,7 +70,7 @@ jobs:
 
       - name: Build frontend
         working-directory: packages/frontend
-        run: pnpm build
+        run: pnpm build:dev
 
       - name: Resolve backend function URL host
         id: backend
