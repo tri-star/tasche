@@ -27,7 +27,7 @@ import logging
 import os
 
 import httpx
-from pydantic import model_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 logger = logging.getLogger(__name__)
@@ -82,6 +82,31 @@ class Settings(BaseSettings):
         case_sensitive=False,
         extra="ignore",
     )
+
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def ensure_asyncpg_scheme(cls, v: str) -> str:
+        """postgresql:// / postgres:// を asyncpg ドライバ指定に正規化し、非対応パラメータを変換する."""
+        from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
+
+        for prefix in ("postgresql://", "postgres://"):
+            if v.startswith(prefix):
+                v = "postgresql+asyncpg://" + v[len(prefix):]
+                break
+
+        parsed = urlparse(v)
+        params = parse_qs(parsed.query, keep_blank_values=True)
+
+        # sslmode=require/verify-* → asyncpg の ssl=require に変換
+        sslmode = params.pop("sslmode", [None])[0]
+        if sslmode in ("require", "verify-ca", "verify-full"):
+            params["ssl"] = ["require"]
+
+        # asyncpg 非対応パラメータを除去
+        params.pop("channel_binding", None)
+
+        new_query = urlencode({k: vals[0] for k, vals in params.items()})
+        return urlunparse(parsed._replace(query=new_query))
 
     @model_validator(mode="after")
     def resolve_secrets_from_extension(self) -> Settings:
