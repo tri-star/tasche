@@ -2,7 +2,7 @@ AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: |
   Tasche Backend - Lambda (Container Image + Lambda Web Adapter).
-  ECR リポジトリは外部リポジトリで事前作成する想定 (tmp/plan/external-repo-requirements.md 参照)。
+  ECR リポジトリは `sam deploy --resolve-image-repos` で SAM CLI に自動作成させる。
   詳細は docs/work-logs/20260508-deploy-pipeline/plan.md を参照。
 
 Parameters:
@@ -10,11 +10,6 @@ Parameters:
     Type: String
     AllowedValues: [dev, prod]
     Description: 環境名 (dev / prod). SSM パラメータの解決パスに使用
-  ImageUri:
-    Type: String
-    Description: |
-      Lambda にデプロイするコンテナイメージの URI (タグ込み).
-      CI から `--parameter-overrides ImageUri=<...>` で指定する。
   AppEnv:
     Type: String
     Default: development
@@ -34,11 +29,14 @@ Resources:
   # ----------------------------------------------------------------------------
   BackendFunction:
     Type: AWS::Serverless::Function
+    Metadata:
+      DockerContext: ..
+      Dockerfile: Dockerfile
+      DockerTag: backend-latest
     Properties:
-      FunctionName: !Sub "tasche-backend-${Env}"
+      FunctionName: !Sub "${Env}-tasche-backend"
       PackageType: Image
-      ImageUri: !Ref ImageUri
-      Architectures: [arm64]
+      Architectures: [x86_64]
       MemorySize: 1024
       Timeout: 30
       # 実行ロールは外部リポジトリで管理 (docs/deploy/ssm-naming.md 参照)
@@ -70,12 +68,23 @@ Resources:
         AuthType: NONE
         InvokeMode: BUFFERED
 
+  # Lambda Function URL のホスト名を SSM に格納 (Frontend スタックが参照)
+  # https://xxx.lambda-url.region.on.aws/ → xxx.lambda-url.region.on.aws
+  BackendFunctionUrlSsmParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/tasche/${Env}/sam/backend-function-url"
+      Type: String
+      Value: !Sub
+        - "${Host}"
+        - Host: !Select [2, !Split ["/", !GetAtt BackendFunctionUrl.FunctionUrl]]
+
 Outputs:
   BackendFunctionName:
     Description: Backend Lambda 関数名
     Value: !Ref BackendFunction
     Export:
-      Name: !Sub "tasche-backend-${Env}-function-name"
+      Name: !Sub "${Env}-tasche-backend-function-name"
   BackendFunctionArn:
     Description: Backend Lambda 関数 ARN
     Value: !GetAtt BackendFunction.Arn
@@ -85,4 +94,4 @@ Outputs:
       CloudFront からのアクセスは Origin Access Control 経由に絞ること。
     Value: !GetAtt BackendFunctionUrl.FunctionUrl
     Export:
-      Name: !Sub "tasche-backend-${Env}-function-url"
+      Name: !Sub "${Env}-tasche-backend-function-url"

@@ -1,7 +1,8 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: |
-  Tasche Frontend - S3 (静的ホスティング) + CloudFront + 独自ドメイン.
+  Tasche Frontend - S3 (静的ホスティング) + CloudFront + 独自ドメイン (オプション).
   /api/* は Backend Lambda Function URL にルーティングして同一オリジン運用とする。
+  Domain が空の場合は CloudFront デフォルトドメインで動作する。
   詳細は docs/work-logs/20260508-deploy-pipeline/plan.md を参照。
 
 Parameters:
@@ -9,19 +10,30 @@ Parameters:
     Type: String
     AllowedValues: [dev, prod]
   BackendFunctionUrl:
-    Type: String
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /tasche/dev/sam/backend-function-url
     Description: |
-      Backend Lambda Function URL のホスト名 (例: xxxxx.lambda-url.ap-southeast-1.on.aws).
-      Backend スタックの BackendFunctionUrl Output からホスト部のみ抜き出して渡す。
-      CI から `--parameter-overrides BackendFunctionUrl=<...>` で指定する。
+      Backend Lambda Function URL のホスト名を格納した SSM パラメータのパス.
+      Backend スタックのデプロイ時に /tasche/${Env}/sam/backend-function-url へ自動格納される.
   Domain:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /tasche/dev/frontend/domain
-    Description: CloudFront に割り当てる独自ドメイン名 (SSM Parameter から解決)
+    Type: String
+    Default: ""
+    Description: |
+      CloudFront に割り当てる独自ドメイン名.
+      空の場合は CloudFront デフォルトドメイン (xxx.cloudfront.net) を使用する。
   AcmCertificateArn:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /tasche/dev/frontend/acm-certificate-arn
-    Description: ACM 証明書 ARN (us-east-1) (SSM Parameter から解決)
+    Type: String
+    Default: ""
+    Description: |
+      ACM 証明書 ARN (us-east-1). Domain を指定する場合は必須。
+      空の場合は CloudFront デフォルト証明書を使用する。
+
+Conditions:
+  HasCustomDomain:
+    Fn::Not:
+      - Fn::Equals:
+          - !Ref Domain
+          - ""
 
 Resources:
   # ----------------------------------------------------------------------------
@@ -30,7 +42,7 @@ Resources:
   AssetsBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub "tasche-frontend-${Env}-${AWS::AccountId}"
+      BucketName: !Sub "${Env}-tasche-frontend-${AWS::AccountId}"
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true
@@ -47,7 +59,7 @@ Resources:
     Type: AWS::CloudFront::OriginAccessControl
     Properties:
       OriginAccessControlConfig:
-        Name: !Sub "tasche-frontend-${Env}-s3-oac"
+        Name: !Sub "${Env}-tasche-frontend-s3-oac"
         OriginAccessControlOriginType: s3
         SigningBehavior: always
         SigningProtocol: sigv4
@@ -58,7 +70,7 @@ Resources:
     Type: AWS::CloudFront::OriginAccessControl
     Properties:
       OriginAccessControlConfig:
-        Name: !Sub "tasche-frontend-${Env}-lambda-oac"
+        Name: !Sub "${Env}-tasche-frontend-lambda-oac"
         OriginAccessControlOriginType: lambda
         SigningBehavior: always
         SigningProtocol: sigv4
@@ -71,15 +83,19 @@ Resources:
     Properties:
       DistributionConfig:
         Enabled: true
-        Comment: !Sub "Tasche frontend (${Env})"
+        Comment: !Sub "${Env}-tasche-frontend"
         HttpVersion: http2and3
         PriceClass: PriceClass_200
-        Aliases:
-          - !Ref Domain
-        ViewerCertificate:
-          AcmCertificateArn: !Ref AcmCertificateArn
-          MinimumProtocolVersion: TLSv1.2_2021
-          SslSupportMethod: sni-only
+        Aliases: !If
+          - HasCustomDomain
+          - - !Ref Domain
+          - !Ref AWS::NoValue
+        ViewerCertificate: !If
+          - HasCustomDomain
+          - AcmCertificateArn: !Ref AcmCertificateArn
+            MinimumProtocolVersion: TLSv1.2_2021
+            SslSupportMethod: sni-only
+          - CloudFrontDefaultCertificate: true
         Origins:
           - Id: s3-assets
             DomainName: !GetAtt AssetsBucket.RegionalDomainName
@@ -148,12 +164,12 @@ Outputs:
     Description: 静的ファイルを配置する S3 バケット名 (CI からの aws s3 sync 先)
     Value: !Ref AssetsBucket
     Export:
-      Name: !Sub "tasche-frontend-${Env}-bucket"
+      Name: !Sub "${Env}-tasche-frontend-bucket"
   DistributionId:
     Description: CloudFront Distribution ID (CI からの cache invalidation 用)
     Value: !Ref Distribution
     Export:
-      Name: !Sub "tasche-frontend-${Env}-distribution-id"
+      Name: !Sub "${Env}-tasche-frontend-distribution-id"
   DistributionDomainName:
     Description: CloudFront のデフォルトドメイン名 (動作確認 / Route53 alias 用)
     Value: !GetAtt Distribution.DomainName

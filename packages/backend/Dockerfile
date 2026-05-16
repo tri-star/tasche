@@ -13,12 +13,14 @@
 #   - docs/work-logs/20260508-deploy-pipeline/plan.md
 #   - https://aws.amazon.com/jp/blogs/compute/working-with-lambda-layers-and-extensions-in-container-images/
 
-FROM python:3.12-slim AS builder
+FROM --platform=linux/amd64 ghcr.io/astral-sh/uv:latest AS uv
+
+FROM --platform=linux/amd64 python:3.12-slim AS builder
 
 WORKDIR /build
 
 # uv インストール
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+COPY --from=uv /uv /usr/local/bin/uv
 
 # 依存関係解決のための最小ファイルをコピー
 COPY pyproject.toml uv.lock ./
@@ -29,11 +31,13 @@ RUN uv pip install --system --no-cache-dir .
 
 # ----------------------------------------------------------------------------
 
-FROM python:3.12-slim
+FROM --platform=linux/amd64 public.ecr.aws/awsguru/aws-lambda-adapter:0.9.0 AS lambda-adapter
+
+FROM --platform=linux/amd64 python:3.12-slim
 
 # Lambda Web Adapter を取り込む
 # AWS_LWA_PORT で uvicorn の待ち受けポートを LWA に通知する
-COPY --from=public.ecr.aws/awsguru/aws-lambda-adapter:0.9.0 /lambda-adapter /opt/extensions/lambda-adapter
+COPY --from=lambda-adapter /lambda-adapter /opt/extensions/lambda-adapter
 
 # AWS Parameters and Secrets Lambda Extension を /opt 直下へ展開
 # build/lambda-extensions/ 下には Layer zip 展開後の extensions/ ディレクトリ等が含まれる前提

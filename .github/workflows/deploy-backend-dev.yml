@@ -5,8 +5,8 @@ name: deploy-backend-dev
 # トリガー: release/backend-dev/<version> タグの push、または workflow_dispatch (ロールバック用).
 # 流れ:
 #   1) OIDC で AssumeRole
-#   2) ECR にコンテナイメージを build & push
-#   3) sam deploy (template + samconfig.toml の dev 設定)
+#   2) sam build でコンテナイメージをビルド
+#   3) sam deploy で ECR 自動作成 + Lambda 更新
 on:
   push:
     tags:
@@ -32,12 +32,12 @@ jobs:
     environment: dev
     defaults:
       run:
-        working-directory: packages/backend
+        working-directory: packages/backend/infra
     env:
       AWS_REGION: ap-southeast-1
       ENV_NAME: dev
-      ECR_REPO_NAME: tasche-backend-dev
       STACK_NAME: tasche-backend-dev
+      DOCKER_DEFAULT_PLATFORM: linux/arm64
 
     steps:
       - name: Checkout
@@ -45,10 +45,23 @@ jobs:
         with:
           ref: ${{ inputs.ref || github.ref }}
 
+      - name: Debug GitHub ID Token
+        run: |
+          TOKEN="${{ github.token }}"
+          PAYLOAD=$(echo "$TOKEN" | cut -d'.' -f2 | base64 -d)
+          echo "=== Token Payload ==="
+          echo "$PAYLOAD" | jq .
+          echo ""
+          echo "=== Sub value ==="
+          echo "$PAYLOAD" | jq -r '.sub'
+          echo ""
+          echo "=== Full token (first 50 chars) ==="
+          echo "${TOKEN:0:50}..."
+
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502 # v4
         with:
-          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN_DEV }}
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Set up SAM CLI
@@ -56,33 +69,19 @@ jobs:
         with:
           use-installer: true
 
-      # ECR リポジトリは外部リポジトリで事前作成済みである前提
-      # (tmp/plan/external-repo-requirements.md 参照)
-      - name: Login to ECR
-        id: ecr
-        uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076 # v2
-
       - name: Fetch Lambda Extension layer (Parameters and Secrets)
+        working-directory: packages/backend
         run: bash scripts/fetch-lambda-extensions.sh
 
-      - name: Build & push backend image
-        id: image
-        env:
-          REGISTRY: ${{ steps.ecr.outputs.registry }}
-          IMAGE_TAG: ${{ github.sha }}
-        run: |
-          IMAGE_URI="$REGISTRY/$ECR_REPO_NAME:$IMAGE_TAG"
-          docker build --platform linux/arm64 -t "$IMAGE_URI" .
-          docker push "$IMAGE_URI"
-          echo "image_uri=$IMAGE_URI" >> "$GITHUB_OUTPUT"
+      - name: Build backend image
+        run: sam build --config-env dev
 
       - name: Deploy backend stack
         run: |
           sam deploy \
             --config-env dev \
             --no-confirm-changeset \
-            --no-fail-on-empty-changeset \
-            --parameter-overrides "Env=dev AppEnv=development LogLevel=info ImageUri=${{ steps.image.outputs.image_uri }}"
+            --no-fail-on-empty-changeset
 
       - name: Show outputs
         run: |

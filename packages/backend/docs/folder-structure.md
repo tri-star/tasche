@@ -248,7 +248,7 @@ Pydantic スキーマ（API リクエスト/レスポンスの型定義）。
 
 - ローカル/Lambda ともに `main.py` の `app` を uvicorn で起動する。
 - Lambda 上では Lambda Web Adapter が Lambda Runtime API ↔ HTTP のプロキシを担うため、アプリケーションコードは Lambda 専用のエントリポイントを持たない。
-- パッケージング: コンテナイメージ（`packages/backend/Dockerfile`）を ECR にプッシュし、SAM で Lambda に紐付ける。
+- パッケージング: コンテナイメージ（`packages/backend/Dockerfile`）を SAM CLI が build / push し、ECR と Lambda を更新する。
 
 ## テスト方針
 

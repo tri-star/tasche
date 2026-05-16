@@ -7,7 +7,7 @@
 - パイプライン全体像: `docs/work-logs/20260508-deploy-pipeline/plan.md`
 - 命名規約: `docs/deploy/ssm-naming.md`
 - 外部リポ依頼事項: `tmp/plan/external-repo-requirements.md`
-- ADR: `docs/adr/ADR005-backend-lambda-packaging.md`, `docs/adr/ADR006-deploy-trigger-strategy.md`
+- ADR: `docs/adr/ADR-005-backend-lambda-packaging.md`, `docs/adr/ADR-006-deploy-trigger-strategy.md`
 
 ## 前提
 
@@ -25,7 +25,7 @@
   export ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
   ```
 
-- 外部リポジトリ側のセットアップ (ECR, IAM, SecretsManager, ACM, SSM Parameter) が完了していること
+- 外部リポジトリ側のセットアップ (IAM, SecretsManager, ACM, SSM Parameter) が完了していること
 
 ## 共通の事前確認
 
@@ -36,11 +36,6 @@ aws ssm get-parameters-by-path \
   --recursive \
   --region "$AWS_REGION" \
   --query "Parameters[].Name"
-
-# ECR リポジトリが存在するか確認
-aws ecr describe-repositories \
-  --repository-names "tasche-backend-${ENV_NAME}" \
-  --region "$AWS_REGION"
 ```
 
 ## Backend (Lambda コンテナイメージ) を手動デプロイする
@@ -62,36 +57,31 @@ bash scripts/fetch-lambda-extensions.sh
 # build/lambda-extensions/ に layer の中身が展開される
 ```
 
-### 3. ECR ログイン
-
-```bash
-aws ecr get-login-password --region "$AWS_REGION" \
-  | docker login --username AWS --password-stdin \
-    "${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
-```
-
-### 4. コンテナイメージの build & push
-
-```bash
-IMAGE_TAG=$(git rev-parse --short HEAD)
-IMAGE_URI="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/tasche-backend-${ENV_NAME}:${IMAGE_TAG}"
-
-docker build --platform linux/arm64 -t "$IMAGE_URI" .
-docker push "$IMAGE_URI"
-```
-
-### 5. SAM デプロイ
+### 3. SAM ビルド
 
 ```bash
 cd infra
+
+# x86_64 ホストで arm64 Lambda イメージを作る場合は明示しておく
+export DOCKER_DEFAULT_PLATFORM=linux/arm64
+
+sam build \
+  --config-env "$ENV_NAME"
+```
+
+### 4. SAM デプロイ
+
+```bash
 sam deploy \
   --config-env "$ENV_NAME" \
   --no-confirm-changeset \
-  --no-fail-on-empty-changeset \
-  --parameter-overrides "Env=${ENV_NAME} AppEnv=development LogLevel=info ImageUri=${IMAGE_URI}"
+  --no-fail-on-empty-changeset
 ```
 
-### 6. 動作確認
+初回デプロイ時は、`packages/backend/infra/samconfig.toml` の `resolve_image_repos = true` に従って、
+SAM CLI が backend 用 ECR リポジトリを自動作成した上でイメージを push する。
+
+### 5. 動作確認
 
 ```bash
 # Function URL を取得
@@ -105,24 +95,19 @@ curl -i "${FUNCTION_URL}health"
 # 200 OK が返ればデプロイ成功
 ```
 
-### 7. ロールバック手順
+### 6. ロールバック手順
 
-過去に push 済みのイメージタグを指定して `sam deploy` を再実行する。
+過去に deploy したいコミット / タグを checkout し、同じ `sam build` / `sam deploy` を再実行する。
 
 ```bash
-# ECR から過去イメージを確認
-aws ecr describe-images \
-  --repository-name "tasche-backend-${ENV_NAME}" \
-  --region "$AWS_REGION" \
-  --query "sort_by(imageDetails,&imagePushedAt)[*].[imageTags[0],imagePushedAt]" \
-  --output table
-
-# 任意のタグを ImageUri に指定して再デプロイ
-PREV_TAG=<過去のタグ>
+git checkout <ロールバック先のコミットまたはタグ>
+cd packages/backend
+bash scripts/fetch-lambda-extensions.sh
+cd infra
+sam build --config-env "$ENV_NAME"
 sam deploy \
   --config-env "$ENV_NAME" \
-  --no-confirm-changeset \
-  --parameter-overrides "Env=${ENV_NAME} AppEnv=development LogLevel=info ImageUri=${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/tasche-backend-${ENV_NAME}:${PREV_TAG}"
+  --no-confirm-changeset
 ```
 
 ## Frontend (S3 + CloudFront) を手動デプロイする
@@ -135,19 +120,18 @@ git checkout <commit-or-tag>
 pnpm install --frozen-lockfile
 ```
 
-### 2. Backend Function URL の取得
+### 2. 事前確認: Backend が先にデプロイ済みであること
 
 Frontend の CloudFront は Backend Function URL をオリジンに利用するため、先に backend スタックがデプロイされている必要がある。
+Backend のデプロイ時に SSM パラメータ `/tasche/${ENV_NAME}/sam/backend-function-url` へホスト名が自動格納される。
+Frontend テンプレートはこの SSM パラメータを直接参照するため、手動での URL 取得・加工は不要。
 
 ```bash
-FUNCTION_URL=$(aws cloudformation describe-stacks \
-  --stack-name "tasche-backend-${ENV_NAME}" \
+# SSM に格納済みか確認
+aws ssm get-parameter \
+  --name "/tasche/${ENV_NAME}/sam/backend-function-url" \
   --region "$AWS_REGION" \
-  --query "Stacks[0].Outputs[?OutputKey=='BackendFunctionUrl'].OutputValue" \
-  --output text)
-# https://xxx.lambda-url.ap-southeast-1.on.aws/ → xxx.lambda-url.ap-southeast-1.on.aws
-BACKEND_HOST=$(echo "$FUNCTION_URL" | sed -E 's#^https?://##; s#/$##')
-echo "$BACKEND_HOST"
+  --query "Parameter.Value" --output text
 ```
 
 ### 3. ビルド
@@ -171,9 +155,10 @@ cd infra
 sam deploy \
   --config-env "$ENV_NAME" \
   --no-confirm-changeset \
-  --no-fail-on-empty-changeset \
-  --parameter-overrides "Env=${ENV_NAME} BackendFunctionUrl=${BACKEND_HOST}"
+  --no-fail-on-empty-changeset
 ```
+
+`BackendFunctionUrl` は `samconfig.toml` に SSM パスが定義済みのため、`--parameter-overrides` での指定は不要。
 
 ### 5. アセットを S3 に同期
 

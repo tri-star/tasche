@@ -113,8 +113,8 @@ flowchart LR
     - `Role: !Sub '{{resolve:ssm:/tasche/${Env}/iam/lambda-execution-role-arn}}'`
     - `FunctionUrlConfig` で公開 (CloudFront から参照)
     - `Environment.Variables` に `APP_ENV`, `SECRETS_BACKEND=extension`, 各 SSM 参照値
-    - `Layers` に Parameters and Secrets Lambda Extension の Layer ARN (region別、SAM Mappings で管理)
-- `Parameters: Env (dev|prod)`, `ImageUri` を CI から渡す。
+    - Parameters and Secrets Lambda Extension は `packages/backend/Dockerfile` に焼き込む
+- `Parameters: Env (dev|prod)` を受け取り、コンテナイメージ自体は SAM CLI の `Metadata` + `resolve_image_repos` で build / push する。
 - Outputs: Function URL, Function Name, Function Role 名。
 
 ### Step 6. frontend: SAM テンプレート作成
@@ -143,7 +143,7 @@ flowchart LR
 - Step:
   1. `actions/checkout@v4`
   2. `aws-actions/configure-aws-credentials@v4` (OIDC, role ARN は GitHub Variables から)
-  3. backend のみ: ECR ログイン → `sam build` → `sam deploy`
+  3. backend のみ: Lambda Extension 取得 → `sam build` → `sam deploy`
   4. frontend のみ: pnpm install → `pnpm --filter @tasche/frontend build` → `aws s3 sync` → CloudFront invalidation → `sam deploy`
 - prod workflow は **本タスクでは作成しない**。別タスクで対応 (Step 9 を参照)。
 
@@ -160,13 +160,13 @@ flowchart LR
 
 ### Step 10. ADR 起票 (作業完了後)
 
-- `docs/adr/ADR005-backend-lambda-packaging.md` (LWA+コンテナ+ADOT 採用)
-- `docs/adr/ADR006-deploy-trigger-strategy.md` (タグベースデプロイ戦略)
+- `docs/adr/ADR-005-backend-lambda-packaging.md` (LWA+コンテナ+ADOT 採用)
+- `docs/adr/ADR-006-deploy-trigger-strategy.md` (タグベースデプロイ戦略)
 
 ## 完了基準への追加項目
 
-- [ ] `tmp/plan/external-repo-requirements.md` が作成され、外部リポへの依頼内容が明文化されている (ECR を含む)。
-- [ ] `docs/manual-deploy.md` が作成され、frontend / backend それぞれの手動デプロイ手順がまとまっている。
+- [ ] `tmp/plan/external-repo-requirements.md` が作成され、外部リポへの依頼内容が明文化されている (IAM / Secrets / ACM / SSM を含む)。
+- [ ] `docs/deploy/manual-deploy.md` が作成され、frontend / backend それぞれの手動デプロイ手順がまとまっている。
 - [ ] prod workflow 作成のフォロータスクが Plane に登録されている。
 
 ## 動作確認手順 (ユーザー実施)
@@ -179,10 +179,10 @@ flowchart LR
 
 ## リスク / 留意点
 
-- **Parameters and Secrets Lambda Extension のコンテナ対応**: コンテナ Lambda にも `Layers:` でアタッチ可能だが、対応 Layer ARN はリージョン別。`ap-southeast-1` の ARN を SAM Mappings に登録する必要あり。
+- **Parameters and Secrets Lambda Extension のコンテナ対応**: Layer を Lambda 設定から付与するのではなく、zip 展開物を `Dockerfile` から `/opt` に焼き込む必要がある。
 - **CloudFront → Function URL のオリジン認証**: 当面は AuthType=NONE で公開 + CloudFront の Origin Access Control (Lambda Function URL 用) を有効化 (2024 年に GA)。
 - **ACM 証明書は us-east-1 必須**: 外部リポ側で us-east-1 に発行してもらう。
-- **ECR リポジトリは外部リポジトリで事前作成**: SAM テンプレートには ECR リソースを含めない。外部リポ側で `tasche-backend-<env>` を作成しライフサイクルポリシーを管理する (`tmp/plan/external-repo-requirements.md` 参照)。
+- **ECR リポジトリは SAM CLI が自動作成**: backend は `sam deploy --resolve-image-repos` を前提とし、外部リポ側では ECR を管理しない。
 
 ## 完了基準
 
