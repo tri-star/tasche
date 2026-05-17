@@ -13,9 +13,13 @@
 
 set -euo pipefail
 
-# AWS Parameters and Secrets Lambda Extension (arm64).
+# AWS Parameters and Secrets Lambda Extension (x86_64).
+# Lambda 関数の Architectures は x86_64 のため、x86_64 用 Layer を取得する。
+# (arm64 用は Layer 名末尾が `-Arm64` のもの。アーキテクチャ不整合だと
+#  /opt/extensions/bootstrap で `exec format error` になるので注意.)
 # バージョンは適宜更新する (公式 Layer の最新版に追従).
-LAYER_ARN="${LAYER_ARN:-arn:aws:lambda:ap-southeast-1:044395824272:layer:AWS-Parameters-and-Secrets-Lambda-Extension-Arm64:12}"
+# 参考: https://docs.aws.amazon.com/secretsmanager/latest/userguide/retrieving-secrets_lambda.html
+LAYER_ARN="${LAYER_ARN:-arn:aws:lambda:ap-southeast-1:044395824272:layer:AWS-Parameters-and-Secrets-Lambda-Extension:11}"
 REGION="${REGION:-ap-southeast-1}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
