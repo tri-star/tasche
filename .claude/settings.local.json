@@ -63,7 +63,11 @@
       "WebFetch(domain:pypi.org)",
       "WebFetch(domain:aws-serverless-tools-telemetry.us-west-2.amazonaws.com)",
       "WebFetch(domain:files.pythonhosted.org)",
-      "WebFetch(domain:aws.amazon.com)"
+      "WebFetch(domain:aws.amazon.com)",
+      "mcp__aws-mcp__aws___call_aws",
+      "mcp__aws-mcp__aws___list_regions",
+      "mcp__aws-mcp__aws___search_documentation",
+      "mcp__aws-mcp__aws___read_documentation"
     ]
   },
   "hooks": {
