@@ -28,7 +28,7 @@ import os
 import time
 import urllib.request
 
-from pydantic import field_validator, model_validator
+from pydantic import PrivateAttr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 logger = logging.getLogger(__name__)
@@ -118,13 +118,48 @@ class Settings(BaseSettings):
     def ensure_asyncpg_scheme(cls, v: str) -> str:
         return _normalize_database_url(v)
 
+    # Secret 解決済みフラグ (idempotent な ensure_secrets_resolved のため)
+    _secrets_resolved: bool = PrivateAttr(default=False)
+
     @model_validator(mode="after")
-    def resolve_secrets_from_extension(self) -> Settings:
-        """secrets_backend=extension の場合に SecretsManager から値を取得して上書きする."""
+    def validate_secrets_backend(self) -> Settings:
+        """secrets_backend の事前検証 (Secret 取得は遅延)."""
         if self.secrets_backend == "extension":
             if not self.app_secret_arn:
                 raise ValueError("APP_SECRET_ARN must be set when SECRETS_BACKEND=extension")
+            # extension モードでは database_url は ensure_secrets_resolved() で注入されるため
+            # ここでは必須チェックを行わない
+            return self
 
+        # env モードでは Settings() 時点で database_url が必須
+        if not self.database_url:
+            raise ValueError(
+                "database_url must be provided via DATABASE_URL env var "
+                "or via the app secret (key: db_url) when SECRETS_BACKEND=extension"
+            )
+        return self
+
+    @model_validator(mode="after")
+    def validate_stub_secret(self) -> Settings:
+        """スタブ有効時に auth_stub_jwt_secret が空の場合は起動を拒否する."""
+        from tasche.core.env import is_auth_stub_enabled
+
+        if is_auth_stub_enabled(self.app_env, self.auth_stub_enabled):
+            if not self.auth_stub_jwt_secret:
+                raise ValueError("AUTH_STUB_JWT_SECRET must be set when AUTH_STUB_ENABLED=true")
+        return self
+
+    def ensure_secrets_resolved(self) -> None:
+        """secrets_backend=extension の場合に Secret を取得して値を上書きする.
+
+        idempotent。FastAPI lifespan から起動時に呼び出すことで、
+        Lambda + Parameters and Secrets Lambda Extension 構成における
+        Extension 登録完了待ちのタイミング競合を回避する。
+        """
+        if self._secrets_resolved:
+            return
+
+        if self.secrets_backend == "extension":
             payload = _fetch_secret_json(self.app_secret_arn)
             # Secret に値がある項目のみ上書き (環境変数で渡されたデフォルトより優先)
             if "db_url" in payload:
@@ -137,24 +172,13 @@ class Settings(BaseSettings):
             if "google_oauth_client_secret" in payload:
                 self.google_oauth_client_secret = payload["google_oauth_client_secret"]
 
-        # Secrets 解決後の必須チェック (env / extension いずれの経路でも空なら起動拒否)
-        if not self.database_url:
-            raise ValueError(
-                "database_url must be provided via DATABASE_URL env var "
-                "or via the app secret (key: db_url) when SECRETS_BACKEND=extension"
-            )
+            if not self.database_url:
+                raise RuntimeError(
+                    "database_url is empty after resolving secrets from Extension. "
+                    "Verify the app secret JSON contains a 'db_url' key."
+                )
 
-        return self
-
-    @model_validator(mode="after")
-    def validate_stub_secret(self) -> Settings:
-        """スタブ有効時に auth_stub_jwt_secret が空の場合は起動を拒否する."""
-        from tasche.core.env import is_auth_stub_enabled
-
-        if is_auth_stub_enabled(self.app_env, self.auth_stub_enabled):
-            if not self.auth_stub_jwt_secret:
-                raise ValueError("AUTH_STUB_JWT_SECRET must be set when AUTH_STUB_ENABLED=true")
-        return self
+        self._secrets_resolved = True
 
     @property
     def google_oauth_redirect_uri_list(self) -> list[str]:
@@ -206,14 +230,18 @@ def _call_extension(secret_arn: str) -> dict:
     _EXTENSION_REQUEST_TIMEOUT_SECONDS = 2
 
     last_error_body = ""
+    last_exception: Exception | None = None
     for attempt in range(_EXTENSION_MAX_ATTEMPTS):
         try:
             with urllib.request.urlopen(req, timeout=_EXTENSION_REQUEST_TIMEOUT_SECONDS) as resp:  # noqa: S310
                 body = resp.read().decode()
+            if attempt > 0:
+                print(f"[config] Extension ready after {attempt + 1} attempts", flush=True)  # noqa: T201
             return json.loads(body)
         except urllib.error.HTTPError as exc:
             error_body = exc.read().decode() if exc.fp else ""
             last_error_body = error_body
+            last_exception = exc
             # Extension 初期化中の一時的な 400 はリトライする
             if exc.code == 400 and "not ready" in error_body:
                 if attempt < _EXTENSION_MAX_ATTEMPTS - 1:
@@ -228,7 +256,18 @@ def _call_extension(secret_arn: str) -> dict:
                 f"Failed to fetch secret from Extension: HTTP {exc.code} - {error_body}"
             ) from exc
         except urllib.error.URLError as exc:
-            print(f"[config] Extension URL error for {secret_arn!r}: {exc.reason}", flush=True)  # noqa: T201
+            # Extension がまだ port 2773 で LISTEN を開始していない場合の
+            # Connection refused / timeout もリトライ対象とする
+            last_exception = exc
+            if attempt < _EXTENSION_MAX_ATTEMPTS - 1:
+                if attempt == 0 or attempt % 10 == 0:
+                    print(  # noqa: T201
+                        f"[config] Extension URL error (attempt {attempt + 1}): {exc.reason}",
+                        flush=True,
+                    )
+                time.sleep(_EXTENSION_RETRY_INTERVAL_SECONDS)
+                continue
+            print(f"[config] Extension URL error (final): {exc.reason}", flush=True)  # noqa: T201
             raise RuntimeError(
                 f"Failed to fetch secret from Extension: {exc.reason}"
             ) from exc
@@ -237,32 +276,8 @@ def _call_extension(secret_arn: str) -> dict:
     raise RuntimeError(
         f"Extension did not become ready within "
         f"{_EXTENSION_MAX_ATTEMPTS * _EXTENSION_RETRY_INTERVAL_SECONDS:.0f}s. "
-        f"Last error: {last_error_body}"
+        f"Last error: {last_error_body or last_exception}"
     )
 
 
-class _LazySettings:
-    """Settings の遅延初期化プロキシ.
-
-    Lambda + Parameters and Secrets Lambda Extension 構成では、コンテナ起動と
-    Extension の Runtime API 登録が並行して走るため、モジュール import 時点で
-    Settings() を即時評価すると Extension が "not ready" を返す競合状態になる。
-
-    属性アクセス時まで初期化を遅延することで、Settings() 呼び出しが
-    FastAPI lifespan や最初のリクエスト処理時 (= Extension 登録完了後) に
-    走るようにする。
-    """
-
-    __slots__ = ()
-    _instance: Settings | None = None
-
-    def _resolve(self) -> Settings:
-        if _LazySettings._instance is None:
-            _LazySettings._instance = Settings()
-        return _LazySettings._instance
-
-    def __getattr__(self, name: str):
-        return getattr(self._resolve(), name)
-
-
-settings: Settings = _LazySettings()  # type: ignore[assignment]
+settings = Settings()

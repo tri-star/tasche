@@ -25,6 +25,16 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 
+# Lambda + Parameters and Secrets Lambda Extension 構成における起動シーケンス:
+#   1. uvicorn が import を完了し、ASGI startup を即時完了する
+#      (Settings() は env 変数のみで初期化、Secret 取得は遅延)
+#   2. /health が応答可能になり、Lambda Web Adapter の readiness check が通過
+#   3. Lambda が invoke を開始
+#   4. 最初の /api/* リクエストで require_secrets_resolved dependency が
+#      Secret を取得 (この時点では Extension の登録が完了している)
+# lifespan で Secret 取得をすると ASGI startup が完了せず /health が
+# 応答できないため、dependency 方式に分離している。
+
 app = FastAPI(
     title="Tasche API",
     version="0.1.0",
