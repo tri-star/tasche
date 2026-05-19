@@ -88,6 +88,7 @@ async def google_callback(
     Returns:
         APIResponse[TokenResponse]: アクセストークン
     """
+    logger.info("google_callback: received redirect_uri=%r", body.redirect_uri)
     # redirect_uri 許可リスト検証
     if body.redirect_uri not in settings.google_oauth_redirect_uri_list:
         logger.warning("redirect_uri not allowed: %r", body.redirect_uri)

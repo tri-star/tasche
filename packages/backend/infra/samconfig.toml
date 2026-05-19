@@ -15,7 +15,7 @@ region = "ap-southeast-1"
 capabilities = "CAPABILITY_NAMED_IAM"
 confirm_changeset = false
 fail_on_empty_changeset = false
-parameter_overrides = "Env=dev AppEnv=development LogLevel=info"
+parameter_overrides = "Env=dev AppEnv=development LogLevel=debug GoogleOAuthRedirectUris=https://d24uwhdoe5bq1j.cloudfront.net/auth/callback CloudFrontDistributionId=E1QVS9ESSNDTIH"
 resolve_image_repos = true
 resolve_s3 = true
 

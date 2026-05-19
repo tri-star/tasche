@@ -1,5 +1,6 @@
 import { useAtom, useAtomValue, useSetAtom } from "jotai"
 import { useNavigate } from "react-router-dom"
+import { logger } from "@/lib/logger"
 import { accessTokenAtom, authStatusAtom, currentUserAtom } from "./atoms"
 import { createPkcePair } from "./pkce"
 import { clearPendingOAuth, readPendingOAuth, savePendingOAuth } from "./storage"
@@ -7,16 +8,35 @@ import type { AuthUser, TokenResponse } from "./types"
 
 const BASE_URL = ""
 
+/**
+ * レスポンスが JSON であることを検証し、そうでなければエラーを投げる。
+ * HTML が返された場合は CloudFront のカスタムエラーページによる置き換えを示す可能性が高い。
+ */
+async function parseJsonResponse<T>(res: Response, context: string): Promise<T> {
+  const contentType = res.headers.get("Content-Type") ?? ""
+  logger.debug(`[${context}] status=${res.status} content-type=${contentType}`)
+  if (!contentType.includes("application/json")) {
+    const body = await res.text()
+    logger.error(
+      `[${context}] Non-JSON response received. status=${res.status} content-type=${contentType} body(first 200)=${body.slice(0, 200)}`,
+    )
+    throw new Error(`サーバーから予期しない応答が返されました (status: ${res.status})`)
+  }
+  return res.json() as Promise<T>
+}
+
 async function fetchUserMe(token: string): Promise<AuthUser> {
+  logger.debug("[fetchUserMe] start")
   const res = await fetch(`${BASE_URL}/api/users/me`, {
     headers: { Authorization: `Bearer ${token}` },
     credentials: "include",
   })
   if (!res.ok) {
+    logger.error(`[fetchUserMe] failed: status=${res.status}`)
     throw new Error("Failed to fetch user info")
   }
-  const json = await res.json()
-  return (json as { data: AuthUser }).data
+  const json = await parseJsonResponse<{ data: AuthUser }>(res, "fetchUserMe")
+  return json.data
 }
 
 export function useAuth() {
@@ -41,18 +61,21 @@ export function useAuth() {
       redirect_uri: redirectUri,
     })
 
+    logger.debug("[startGoogleLogin] requesting authorize URL")
     const res = await fetch(`${BASE_URL}/api/auth/google/authorize?${params.toString()}`, {
       credentials: "include",
     })
 
     if (!res.ok) {
+      logger.error(`[startGoogleLogin] failed: status=${res.status}`)
       throw new Error("Failed to get authorization URL")
     }
 
-    const json = await res.json()
-    const { authorization_url: authorizationUrl, state } = (
-      json as { data: { authorization_url: string; state: string } }
-    ).data
+    const json = await parseJsonResponse<{ data: { authorization_url: string; state: string } }>(
+      res,
+      "startGoogleLogin",
+    )
+    const { authorization_url: authorizationUrl, state } = json.data
 
     savePendingOAuth({
       state,
@@ -82,6 +105,7 @@ export function useAuth() {
       throw new Error("セキュリティ検証に失敗しました")
     }
 
+    logger.debug("[handleCallback] posting to /api/auth/google/callback")
     const res = await fetch(`${BASE_URL}/api/auth/google/callback`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -95,11 +119,12 @@ export function useAuth() {
     })
 
     if (!res.ok) {
+      logger.error(`[handleCallback] callback API failed: status=${res.status}`)
       throw new Error("ログインに失敗しました")
     }
 
-    const json = await res.json()
-    const tokenData = (json as { data: TokenResponse }).data
+    const json = await parseJsonResponse<{ data: TokenResponse }>(res, "handleCallback")
+    const tokenData = json.data
     const { access_token } = tokenData
 
     setAccessToken(access_token)
@@ -116,6 +141,7 @@ export function useAuth() {
    * スタブログイン（開発用）
    */
   async function stubLogin(email: string, name?: string): Promise<void> {
+    logger.debug("[stubLogin] posting to /api/auth/stub-login")
     const res = await fetch(`${BASE_URL}/api/auth/stub-login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -124,11 +150,12 @@ export function useAuth() {
     })
 
     if (!res.ok) {
+      logger.error(`[stubLogin] failed: status=${res.status}`)
       throw new Error("スタブログインに失敗しました")
     }
 
-    const json = await res.json()
-    const tokenData = (json as { data: TokenResponse }).data
+    const json = await parseJsonResponse<{ data: TokenResponse }>(res, "stubLogin")
+    const tokenData = json.data
     const { access_token } = tokenData
 
     setAccessToken(access_token)
