@@ -22,7 +22,7 @@ Tasche のデプロイにおいて、IAM ロール ARN や SecretsManager の AR
 
 | パス | 内容 | 利用先 |
 |---|---|---|
-| `/tasche/<env>/iam/lambda-execution-role-arn` | Backend Lambda の実行ロール ARN。SecretsManager 取得・CloudWatch Logs・X-Ray の権限を含む。 | backend SAM (`packages/backend/infra/template.yaml`) |
+| `/tasche/<env>/iam/lambda-execution-role-arn` | Backend Lambda の実行ロール ARN。SecretsManager 取得・CloudWatch Logs・ADOT/Application Signals・Lambda active tracing の権限を含む。 | backend SAM (`packages/backend/infra/template.yaml`) |
 | `/tasche/<env>/iam/github-deploy-role-arn` | GitHub Actions が OIDC で AssumeRole する ARN。CloudFormation/SAM 操作・ECR push・S3 sync の権限を含む。 | GitHub Actions workflow (実体は GitHub Variables 経由でも可) |
 
 ### SecretsManager (外部リポジトリで作成・管理)
@@ -83,6 +83,12 @@ Resources:
 ### アプリケーションから（実行時取得）
 
 Backend Lambda は AWS Parameters and Secrets Lambda Extension を **コンテナイメージに焼き込んで** 有効化し、`http://localhost:2773/secretsmanager/get?secretId=<ARN>` 経由で値を取得する。Layer の取り込みは `packages/backend/scripts/fetch-lambda-extensions.sh` と `Dockerfile` を参照。詳細は `tasche/core/config.py` の実装を参照。
+
+### ADOT / Application Signals
+
+Backend Lambda は AWS 環境でのみ ADOT / OpenTelemetry を有効化する。コンテナイメージ Lambda では通常の Lambda Layer アタッチではなく、`packages/backend/scripts/fetch-lambda-extensions.sh` で AWS Distro for OpenTelemetry Python Lambda layer を取得し、`packages/backend/Dockerfile` で `/opt` 配下に焼き込む。
+
+外部リポジトリで管理する Lambda 実行ロールには、少なくとも AWS 管理ポリシー `CloudWatchLambdaApplicationSignalsExecutionRolePolicy` 相当の権限を付与する。SAM template 側で `Tracing: Active` を有効化するため、Lambda service traces に必要な X-Ray 書き込み権限も必要になる。X-Ray SDK / X-Ray daemon は利用しない。
 
 ### GitHub Actions から
 

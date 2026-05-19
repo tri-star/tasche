@@ -37,7 +37,7 @@ jobs:
       AWS_REGION: ap-southeast-1
       ENV_NAME: dev
       STACK_NAME: tasche-backend-dev
-      DOCKER_DEFAULT_PLATFORM: linux/arm64
+      DOCKER_DEFAULT_PLATFORM: linux/amd64
 
     steps:
       - name: Checkout

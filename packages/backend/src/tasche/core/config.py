@@ -75,6 +75,7 @@ class Settings(BaseSettings):
     # 実行環境
     app_env: str = "local"  # local / development / staging / production
     log_level: str = "info"
+    enable_telemetry: bool = False
 
     # Secrets バックエンド
     # env: 環境変数から直接読み込む (ローカル/CI)

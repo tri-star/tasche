@@ -46,6 +46,7 @@ Resources:
       Architectures: [x86_64]
       MemorySize: 1024
       Timeout: 30
+      Tracing: Active
       # 実行ロールは外部リポジトリで管理 (docs/deploy/ssm-naming.md 参照)
       # SecretsManager 取得権限は外部リポ側のロール定義で付与する想定
       Role: !Sub "{{resolve:ssm:/tasche/${Env}/iam/lambda-execution-role-arn}}"
@@ -54,6 +55,17 @@ Resources:
           APP_ENV: !Ref AppEnv
           LOG_LEVEL: !Ref LogLevel
           SECRETS_BACKEND: extension
+          # AWS 環境のみ ADOT / OpenTelemetry を有効化する
+          ENABLE_TELEMETRY: "true"
+          AWS_LAMBDA_EXEC_WRAPPER: /opt/otel-instrument
+          OTEL_SERVICE_NAME: tasche-backend
+          OTEL_RESOURCE_ATTRIBUTES: !Sub "service.name=tasche-backend,deployment.environment=${Env},aws.log.group.names=/aws/lambda/${Env}-tasche-backend"
+          OTEL_AWS_APPLICATION_SIGNALS_ENABLED: "true"
+          OTEL_PYTHON_DISABLED_INSTRUMENTATIONS: none
+          OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED: "true"
+          OTEL_PYTHON_LOG_CORRELATION: "true"
+          OTEL_LOGS_EXPORTER: console
+          OTEL_PYTHON_FASTAPI_EXCLUDED_URLS: "^/health$,^/$"
           # SecretsManager の ARN は SSM Parameter Store 経由で受け取る
           # 単一 Secret に JSON 形式で複数キーを格納する設計 (費用削減)
           APP_SECRET_ARN: !Sub "{{resolve:ssm:/tasche/${Env}/secrets/app-secret-arn}}"
