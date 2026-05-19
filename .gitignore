@@ -3,3 +3,5 @@ __pycache__
 
 node_modules
 /tmp/*
+!/tmp/plan/
+packages/backend/build/

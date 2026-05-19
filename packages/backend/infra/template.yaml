@@ -1,0 +1,132 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: |
+  Tasche Backend - Lambda (Container Image + Lambda Web Adapter).
+  ECR リポジトリは `sam deploy --resolve-image-repos` で SAM CLI に自動作成させる。
+  詳細は docs/work-logs/20260508-deploy-pipeline/plan.md を参照。
+
+Parameters:
+  Env:
+    Type: String
+    AllowedValues: [dev, prod]
+    Description: 環境名 (dev / prod). SSM パラメータの解決パスに使用
+  CloudFrontDistributionId:
+    Type: String
+    Description: CloudFront ディストリビューション ID (OAC + AWS_IAM 認証の許可対象)
+  AppEnv:
+    Type: String
+    Default: development
+    Description: アプリケーション側の APP_ENV 値 (local / development / staging / production)
+  LogLevel:
+    Type: String
+    Default: info
+    AllowedValues: [debug, info, warning, error]
+  CorsAllowOrigins:
+    Type: String
+    Default: ""
+    Description: CORS 許可オリジン (カンマ区切り). 空の場合は同一オリジン運用前提
+  GoogleOAuthRedirectUris:
+    Type: String
+    Default: ""
+    Description: Google OAuth 許可リダイレクトURI (カンマ区切り). 空の場合はアプリのデフォルト (localhost) が使われるため AWS 環境では必ず CloudFront 配下の callback URL を指定する
+
+Resources:
+  # ----------------------------------------------------------------------------
+  # Backend Lambda (FastAPI on Lambda Web Adapter)
+  # ----------------------------------------------------------------------------
+  BackendFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      DockerContext: ..
+      Dockerfile: Dockerfile
+      DockerTag: backend-latest
+    Properties:
+      FunctionName: !Sub "${Env}-tasche-backend"
+      PackageType: Image
+      Architectures: [x86_64]
+      MemorySize: 1024
+      Timeout: 30
+      Tracing: Active
+      # 実行ロールは外部リポジトリで管理 (docs/deploy/ssm-naming.md 参照)
+      # SecretsManager 取得権限は外部リポ側のロール定義で付与する想定
+      Role: !Sub "{{resolve:ssm:/tasche/${Env}/iam/lambda-execution-role-arn}}"
+      Environment:
+        Variables:
+          APP_ENV: !Ref AppEnv
+          LOG_LEVEL: !Ref LogLevel
+          SECRETS_BACKEND: extension
+          # AWS 環境のみ ADOT / OpenTelemetry を有効化する
+          ENABLE_TELEMETRY: "true"
+          AWS_LAMBDA_EXEC_WRAPPER: /opt/otel-instrument
+          OTEL_SERVICE_NAME: tasche-backend
+          OTEL_RESOURCE_ATTRIBUTES: !Sub "service.name=tasche-backend,deployment.environment=${Env},aws.log.group.names=/aws/lambda/${Env}-tasche-backend"
+          OTEL_AWS_APPLICATION_SIGNALS_ENABLED: "true"
+          OTEL_PYTHON_DISABLED_INSTRUMENTATIONS: none
+          OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED: "true"
+          OTEL_PYTHON_LOG_CORRELATION: "true"
+          OTEL_LOGS_EXPORTER: console
+          OTEL_PYTHON_FASTAPI_EXCLUDED_URLS: "^/health$,^/$"
+          # SecretsManager の ARN は SSM Parameter Store 経由で受け取る
+          # 単一 Secret に JSON 形式で複数キーを格納する設計 (費用削減)
+          APP_SECRET_ARN: !Sub "{{resolve:ssm:/tasche/${Env}/secrets/app-secret-arn}}"
+          # Lambda Web Adapter のチューニング
+          AWS_LWA_PORT: "8080"
+          AWS_LWA_READINESS_CHECK_PATH: /health
+          # Parameters and Secrets Lambda Extension のチューニング
+          # (Layer はコンテナイメージに焼き込み済み, Dockerfile 参照)
+          PARAMETERS_SECRETS_EXTENSION_HTTP_PORT: "2773"
+          PARAMETERS_SECRETS_EXTENSION_LOG_LEVEL: info
+          PARAMETERS_SECRETS_EXTENSION_CACHE_SIZE: "100"
+          SECRETS_MANAGER_TTL: "300"
+          # アプリ側の追加設定
+          CORS_ALLOW_ORIGINS: !Ref CorsAllowOrigins
+          # OAuth コールバック URL の許可リスト (カンマ区切り, 厳密一致検証)
+          GOOGLE_OAUTH_REDIRECT_URIS: !Ref GoogleOAuthRedirectUris
+          # Cookie はクロスサイト想定 (CloudFront 同一オリジン経由でも secure 必須)
+          COOKIE_SECURE: "true"
+          COOKIE_SAMESITE: lax
+      FunctionUrlConfig:
+        # [DEBUG] OAC SigV4 署名が原因か切り分けるため一時的に NONE に変更
+        # TODO: 原因確認後 AWS_IAM に戻す
+        AuthType: NONE
+        InvokeMode: BUFFERED
+
+  # CloudFront OAC から Lambda Function URL を呼び出す権限
+  # SourceArn で特定ディストリビューションのみに制限 (Confused Deputy 対策)
+  BackendFunctionUrlCloudFrontPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref BackendFunction
+      # [DEBUG] AuthType と合わせて NONE に変更
+      FunctionUrlAuthType: NONE
+      Action: lambda:InvokeFunctionUrl
+      Principal: cloudfront.amazonaws.com
+      SourceArn: !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistributionId}"
+
+  # Lambda Function URL のホスト名を SSM に格納 (Frontend スタックが参照)
+  # https://xxx.lambda-url.region.on.aws/ → xxx.lambda-url.region.on.aws
+  BackendFunctionUrlSsmParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/tasche/${Env}/sam/backend-function-url"
+      Type: String
+      Value: !Sub
+        - "${Host}"
+        - Host: !Select [2, !Split ["/", !GetAtt BackendFunctionUrl.FunctionUrl]]
+
+Outputs:
+  BackendFunctionName:
+    Description: Backend Lambda 関数名
+    Value: !Ref BackendFunction
+    Export:
+      Name: !Sub "${Env}-tasche-backend-function-name"
+  BackendFunctionArn:
+    Description: Backend Lambda 関数 ARN
+    Value: !GetAtt BackendFunction.Arn
+  BackendFunctionUrl:
+    Description: |
+      Backend Lambda Function URL (CloudFront のオリジンとして利用).
+      CloudFront からのアクセスは Origin Access Control 経由に絞ること。
+    Value: !GetAtt BackendFunctionUrl.FunctionUrl
+    Export:
+      Name: !Sub "${Env}-tasche-backend-function-url"

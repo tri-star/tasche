@@ -111,6 +111,7 @@ async def handle_google_callback(
     Raises:
         InvalidAuthorizationCodeError: Google /token が 4xx / ID Token 検証失敗 / email_verified=false
     """
+    logger.debug("handle_google_callback: start redirect_uri=%r", redirect_uri)
     # Google にトークン交換リクエスト
     try:
         token_response = await exchange_code_for_token(
@@ -119,7 +120,11 @@ async def handle_google_callback(
             redirect_uri=redirect_uri,
         )
     except httpx.HTTPStatusError as e:
-        logger.warning("Google token exchange HTTP error: status=%d", e.response.status_code)
+        logger.warning(
+            "Google token exchange HTTP error: status=%d body=%r",
+            e.response.status_code,
+            e.response.text[:200],
+        )
         raise InvalidAuthorizationCodeError("Failed to exchange authorization code") from e
     except httpx.RequestError as e:
         logger.error("Google token exchange network error: %s", type(e).__name__)
@@ -128,6 +133,7 @@ async def handle_google_callback(
         logger.error("Google token exchange unexpected error: %s", type(e).__name__)
         raise InvalidAuthorizationCodeError("Failed to exchange authorization code") from e
 
+    logger.debug("handle_google_callback: token exchange succeeded")
     # ID Token を検証
     id_token = token_response.get("id_token")
     if not id_token:
@@ -135,6 +141,7 @@ async def handle_google_callback(
 
     try:
         claims = await verify_google_id_token(id_token)
+        logger.debug("handle_google_callback: ID token verified sub=%r", claims.get("sub"))
     except JoseError as e:
         logger.warning("Google ID token verification failed: %s", e)
         raise InvalidAuthorizationCodeError("Invalid Google ID token") from e

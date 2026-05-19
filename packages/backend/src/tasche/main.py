@@ -20,10 +20,45 @@ from tasche.core.exceptions import (
     WeekNotFoundException,
 )
 
+
+def _install_otel_log_record_defaults() -> None:
+    """OTel未初期化時でもテレメトリ用ログ形式が壊れないようにする."""
+    previous_factory = logging.getLogRecordFactory()
+
+    def record_factory(*args, **kwargs):
+        record = previous_factory(*args, **kwargs)
+        for field in ("otelTraceID", "otelSpanID", "otelServiceName"):
+            if not hasattr(record, field):
+                setattr(record, field, "-")
+        return record
+
+    logging.setLogRecordFactory(record_factory)
+
+
+if settings.enable_telemetry:
+    _install_otel_log_record_defaults()
+    log_format = (
+        "%(asctime)s - %(name)s - %(levelname)s - "
+        "trace_id=%(otelTraceID)s span_id=%(otelSpanID)s - %(message)s"
+    )
+else:
+    log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
 logging.basicConfig(
     level=getattr(logging, settings.log_level.upper(), logging.INFO),
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    format=log_format,
+    force=settings.enable_telemetry,
 )
+
+# Lambda + Parameters and Secrets Lambda Extension 構成における起動シーケンス:
+#   1. uvicorn が import を完了し、ASGI startup を即時完了する
+#      (Settings() は env 変数のみで初期化、Secret 取得は遅延)
+#   2. /health が応答可能になり、Lambda Web Adapter の readiness check が通過
+#   3. Lambda が invoke を開始
+#   4. 最初の /api/* リクエストで require_secrets_resolved dependency が
+#      Secret を取得 (この時点では Extension の登録が完了している)
+# lifespan で Secret 取得をすると ASGI startup が完了せず /health が
+# 応答できないため、dependency 方式に分離している。
 
 app = FastAPI(
     title="Tasche API",
