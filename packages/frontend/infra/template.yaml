@@ -14,7 +14,7 @@ Parameters:
     Default: /tasche/dev/sam/backend-function-url
     Description: |
       Backend Lambda Function URL のホスト名を格納した SSM パラメータのパス.
-      Backend スタックのデプロイ時に /tasche/${Env}/sam/backend-function-url へ自動格納される.
+      Backend スタックのデプロイ時に /tasche/<Env>/sam/backend-function-url へ自動格納される.
   Domain:
     Type: String
     Default: ""
@@ -66,14 +66,41 @@ Resources:
 
   # Lambda Function URL 用 OAC (CloudFront → Function URL の sigv4 署名)
   # Lambda Function URL に対する CloudFront OAC は 2024 年に GA
+  # アプリの Bearer Authorization ヘッダーがある場合はそれを origin へ通し、
+  # Authorization が無いリクエストのみ CloudFront が SigV4 署名する。
   LambdaOriginAccessControl:
     Type: AWS::CloudFront::OriginAccessControl
     Properties:
       OriginAccessControlConfig:
         Name: !Sub "${Env}-tasche-frontend-lambda-oac"
         OriginAccessControlOriginType: lambda
-        SigningBehavior: always
+        SigningBehavior: no-override
         SigningProtocol: sigv4
+
+  # OAC no-override で viewer の Authorization を origin に通すため、
+  # Authorization ヘッダーを CachePolicy 側にも含める。
+  # CloudFront は TTL が完全に 0 の CachePolicy ではヘッダー指定を拒否するため、
+  # DefaultTTL/MinTTL は 0 のまま MaxTTL だけ 1 秒に抑える。
+  ApiNoCacheWithAuthorizationPolicy:
+    Type: AWS::CloudFront::CachePolicy
+    Properties:
+      CachePolicyConfig:
+        Name: !Sub "${Env}-tasche-api-no-cache-with-authorization"
+        Comment: !Sub "${Env} Tasche API: no cache, forward Authorization for OAC no-override"
+        DefaultTTL: 0
+        MaxTTL: 1
+        MinTTL: 0
+        ParametersInCacheKeyAndForwardedToOrigin:
+          EnableAcceptEncodingBrotli: false
+          EnableAcceptEncodingGzip: false
+          HeadersConfig:
+            HeaderBehavior: whitelist
+            Headers:
+              - Authorization
+          CookiesConfig:
+            CookieBehavior: none
+          QueryStringsConfig:
+            QueryStringBehavior: none
 
   # ----------------------------------------------------------------------------
   # CloudFront Distribution
@@ -124,8 +151,8 @@ Resources:
             AllowedMethods: [GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE]
             CachedMethods: [GET, HEAD]
             Compress: true
-            # CachingDisabled
-            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+            # DefaultTTL 0 + MaxTTL 1 + Authorization を cache/origin key に含めるカスタムポリシー
+            CachePolicyId: !Ref ApiNoCacheWithAuthorizationPolicy
             # AllViewerExceptHostHeader (Authorization/Cookie を含む全ヘッダ転送, Host は除外)
             OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac
         # SPA フォールバック: 静的アセットの 404 を index.html に置換

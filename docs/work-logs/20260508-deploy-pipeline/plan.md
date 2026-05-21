@@ -124,7 +124,7 @@ flowchart LR
   - `AWS::S3::Bucket` (静的ファイル用、OAC 経由のみアクセス可)
   - `AWS::CloudFront::Distribution`
     - Default Behavior: S3 origin (静的)
-    - `/api/*` Behavior: Backend Function URL (CachePolicy = CachingDisabled, OriginRequestPolicy = AllViewerExceptHostHeader)
+    - `/api/*` Behavior: Backend Function URL (CachePolicy = DefaultTTL 0 / MaxTTL 1 + Authorization forwarding, OriginRequestPolicy = AllViewerExceptHostHeader)
     - Aliases: `{{resolve:ssm:/tasche/${Env}/frontend/domain}}`
     - ViewerCertificate: `{{resolve:ssm:/tasche/${Env}/frontend/acm-certificate-arn}}`
   - `AWS::Route53::RecordSet` は外部リポ側に任せ、本リポでは出力のみ。
