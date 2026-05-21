@@ -61,11 +61,11 @@ Resources:
           OTEL_SERVICE_NAME: tasche-backend
           OTEL_RESOURCE_ATTRIBUTES: !Sub "service.name=tasche-backend,deployment.environment=${Env},aws.log.group.names=/aws/lambda/${Env}-tasche-backend"
           OTEL_AWS_APPLICATION_SIGNALS_ENABLED: "true"
-          OTEL_PYTHON_DISABLED_INSTRUMENTATIONS: none
+          OTEL_PYTHON_DISABLED_INSTRUMENTATIONS: fastapi,starlette,asgi
           OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED: "true"
           OTEL_PYTHON_LOG_CORRELATION: "true"
           OTEL_LOGS_EXPORTER: console
-          OTEL_PYTHON_FASTAPI_EXCLUDED_URLS: "^/health$,^/$"
+          OTEL_PYTHON_FASTAPI_EXCLUDED_URLS: "^https?://[^/]+/health$|^/health$|^https?://[^/]+/$|^/$"
           # SecretsManager の ARN は SSM Parameter Store 経由で受け取る
           # 単一 Secret に JSON 形式で複数キーを格納する設計 (費用削減)
           APP_SECRET_ARN: !Sub "{{resolve:ssm:/tasche/${Env}/secrets/app-secret-arn}}"
