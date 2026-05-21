@@ -111,8 +111,8 @@ Tasche MVP（Minimum Viable Product）は、習慣化支援の核となる機能
 | 項目           | 技術/ツール              |
 | -------------- | ------------------------ |
 | フレームワーク | Python (FastAPI)         |
-| Lambdaアダプタ | Mangum                   |
-| ホスティング   | API Gateway + Lambda     |
+| Lambdaアダプタ | Lambda Web Adapter       |
+| ホスティング   | Lambda Function URL + Lambda |
 
 ### データベース
 

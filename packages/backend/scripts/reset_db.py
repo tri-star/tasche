@@ -4,7 +4,7 @@ import asyncio
 
 from tasche.core.config import settings
 from tasche.db.base import Base
-from tasche.db.session import engine
+from tasche.db.session import get_engine
 
 # モデルをインポート（テーブル削除用）
 from tasche.models import user  # noqa: F401
@@ -25,6 +25,7 @@ async def reset_database() -> None:
         print("Aborted.")
         return
 
+    engine = get_engine()
     print("\n[1/2] Dropping all tables...")
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)

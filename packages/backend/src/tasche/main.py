@@ -20,10 +20,45 @@ from tasche.core.exceptions import (
     WeekNotFoundException,
 )
 
+
+def _install_otel_log_record_defaults() -> None:
+    """OTel未初期化時でもテレメトリ用ログ形式が壊れないようにする."""
+    previous_factory = logging.getLogRecordFactory()
+
+    def record_factory(*args, **kwargs):
+        record = previous_factory(*args, **kwargs)
+        for field in ("otelTraceID", "otelSpanID", "otelServiceName"):
+            if not hasattr(record, field):
+                setattr(record, field, "-")
+        return record
+
+    logging.setLogRecordFactory(record_factory)
+
+
+if settings.enable_telemetry:
+    _install_otel_log_record_defaults()
+    log_format = (
+        "%(asctime)s - %(name)s - %(levelname)s - "
+        "trace_id=%(otelTraceID)s span_id=%(otelSpanID)s - %(message)s"
+    )
+else:
+    log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
 logging.basicConfig(
     level=getattr(logging, settings.log_level.upper(), logging.INFO),
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    format=log_format,
+    force=settings.enable_telemetry,
 )
+
+# Lambda + Parameters and Secrets Lambda Extension 構成における起動シーケンス:
+#   1. uvicorn が import を完了し、ASGI startup を即時完了する
+#      (Settings() は env 変数のみで初期化、Secret 取得は遅延)
+#   2. /health が応答可能になり、Lambda Web Adapter の readiness check が通過
+#   3. Lambda が invoke を開始
+#   4. 最初の /api/* リクエストで require_secrets_resolved dependency が
+#      Secret を取得 (この時点では Extension の登録が完了している)
+# lifespan で Secret 取得をすると ASGI startup が完了せず /health が
+# 応答できないため、dependency 方式に分離している。
 
 app = FastAPI(
     title="Tasche API",
@@ -31,6 +66,100 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
 )
+
+
+def _safe_request_url(request: Request) -> str:
+    """クエリ文字列を除いたURLを返す."""
+    return str(request.url.replace(query=None))
+
+
+def _route_path(request: Request) -> str:
+    """FastAPI が解決したルートパターンを取得する."""
+    route = request.scope.get("route")
+    path = getattr(route, "path", None)
+    return path or request.url.path
+
+
+def _set_http_span_attributes(request: Request) -> None:
+    """CloudWatch のトレース一覧でAPIを識別しやすい属性を補完する."""
+    from opentelemetry import trace
+
+    span = trace.get_current_span()
+    _set_http_span_attributes_from_request(span, request)
+
+
+def _set_http_span_attributes_from_request(span, request: Request) -> None:
+    """Request からHTTP span属性を補完する."""
+    if not span.is_recording():
+        return
+
+    method = request.method
+    route_path = _route_path(request)
+    url_without_query = _safe_request_url(request)
+    operation = f"{method} {route_path}"
+
+    span.update_name(operation)
+    span.set_attribute("aws.local.operation", operation)
+    span.set_attribute("http.method", method)
+    span.set_attribute("http.route", route_path)
+    span.set_attribute("http.target", request.url.path)
+    span.set_attribute("http.url", url_without_query)
+    span.set_attribute("http.request.method", method)
+    span.set_attribute("url.full", url_without_query)
+    span.set_attribute("url.path", request.url.path)
+    span.set_attribute("tasche.http.operation", operation)
+    span.set_attribute("tasche.http.url", url_without_query)
+
+
+def _set_http_span_attributes_from_scope(span, scope) -> None:
+    """FastAPI instrumentation hook からHTTP span属性を補完する."""
+    if not span.is_recording():
+        return
+
+    method = scope.get("method")
+    if not method:
+        return
+
+    path = scope.get("path") or "/"
+    route = scope.get("route")
+    route_path = getattr(route, "path", None) or path
+    operation = f"{method} {route_path}"
+
+    span.update_name(operation)
+    span.set_attribute("aws.local.operation", operation)
+    span.set_attribute("http.method", method)
+    span.set_attribute("http.route", route_path)
+    span.set_attribute("http.target", path)
+    span.set_attribute("http.request.method", method)
+    span.set_attribute("url.path", path)
+    span.set_attribute("tasche.http.operation", operation)
+
+
+def _otel_server_request_hook(span, scope) -> None:
+    _set_http_span_attributes_from_scope(span, scope)
+
+
+def _otel_client_response_hook(span, scope, message) -> None:
+    if message.get("type") == "http.response.start":
+        _set_http_span_attributes_from_scope(span, scope)
+
+
+if settings.enable_telemetry:
+
+    @app.middleware("http")
+    async def enrich_http_trace_attributes(request: Request, call_next):
+        response = await call_next(request)
+        _set_http_span_attributes(request)
+        return response
+
+    from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+
+    FastAPIInstrumentor.instrument_app(
+        app,
+        excluded_urls=r"^https?://[^/]+/health$|^/health$|^https?://[^/]+/$|^/$",
+        server_request_hook=_otel_server_request_hook,
+        client_response_hook=_otel_client_response_hook,
+    )
 
 # CORS設定
 app.add_middleware(

@@ -50,6 +50,14 @@ CloudFront の Behavior を分ける:
 - Cookie ベース認証なら Cookie を origin へ forward（必要最小限）
 - `Host`/`X-Forwarded-*` 系の取り扱い
 
+Lambda Function URL を CloudFront OAC 経由で呼ぶ場合、OAC の SigningBehavior は
+`no-override` とし、`Authorization` ヘッダを CachePolicy に含める。これにより
+アプリの Bearer token が存在するリクエストでは viewer の `Authorization` を保持し、
+未認証リクエストのみ CloudFront が SigV4 署名を付与する。
+CloudFront は完全に caching disabled な CachePolicy ではヘッダ指定を拒否するため、
+API 用 CachePolicy は `DefaultTTL=0`, `MinTTL=0`, `MaxTTL=1` として実質的に
+キャッシュしない運用にする。
+
 注意:
 
 - Forward する値が多いほどキャッシュキーが複雑化し、性能/コストに影響する

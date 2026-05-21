@@ -1,0 +1,91 @@
+name: deploy-backend-dev
+
+# Backend (Lambda コンテナイメージ) を dev 環境にデプロイする。
+#
+# トリガー: release/backend-dev/<version> タグの push、または workflow_dispatch (ロールバック用).
+# 流れ:
+#   1) OIDC で AssumeRole
+#   2) sam build でコンテナイメージをビルド
+#   3) sam deploy で ECR 自動作成 + Lambda 更新
+on:
+  push:
+    tags:
+      - "release/backend-dev/**"
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "デプロイするコミット/タグ (空なら main)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: deploy-dev-backend
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: dev
+    defaults:
+      run:
+        working-directory: packages/backend/infra
+    env:
+      AWS_REGION: ap-southeast-1
+      ENV_NAME: dev
+      STACK_NAME: tasche-backend-dev
+      DOCKER_DEFAULT_PLATFORM: linux/amd64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+
+      # - name: Debug GitHub ID Token
+      #   run: |
+      #     TOKEN="${{ github.token }}"
+      #     PAYLOAD=$(echo "$TOKEN" | cut -d'.' -f2 | base64 -d)
+      #     echo "=== Token Payload ==="
+      #     echo "$PAYLOAD" | jq .
+      #     echo ""
+      #     echo "=== Sub value ==="
+      #     echo "$PAYLOAD" | jq -r '.sub'
+      #     echo ""
+      #     echo "=== Full token (first 50 chars) ==="
+      #     echo "${TOKEN:0:50}..."
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502 # v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Set up SAM CLI
+        uses: aws-actions/setup-sam@2360ef6d90015369947b45b496193ab9976a9b04 # v2
+        with:
+          use-installer: true
+
+      - name: Fetch Lambda Extension layer (Parameters and Secrets)
+        working-directory: packages/backend
+        run: bash scripts/fetch-lambda-extensions.sh
+
+      - name: Build backend image
+        run: sam build --config-env dev
+
+      - name: Deploy backend stack
+        run: |
+          sam deploy \
+            --config-env dev \
+            --no-confirm-changeset \
+            --no-fail-on-empty-changeset
+
+      - name: Show outputs
+        run: |
+          aws cloudformation describe-stacks \
+            --stack-name "$STACK_NAME" \
+            --query "Stacks[0].Outputs" \
+            --output table

@@ -7,6 +7,8 @@
     "openapi:update": "orval --config orval.config.ts",
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:dev": "tsc -b && vite build --mode dev",
+    "build:prod": "tsc -b && vite build --mode prod",
     "lint": "biome check . && tsc -b --noEmit",
     "format": "biome check --write .",
     "test": "vitest run --passWithNoTests",
