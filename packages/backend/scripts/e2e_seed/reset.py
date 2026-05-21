@@ -6,7 +6,7 @@ from sqlalchemy import text
 from sqlalchemy.engine import make_url
 
 from tasche.core.config import settings
-from tasche.db.session import engine
+from tasche.db.session import get_engine
 
 E2E_DATABASE_NAME = "tasche_test"
 
@@ -30,6 +30,7 @@ async def reset_e2e_database() -> None:
     print(f"Database URL: {settings.database_url}")
     print("-" * 60)
 
+    engine = get_engine()
     try:
         async with engine.begin() as conn:
             result = await conn.execute(

@@ -5,7 +5,7 @@ import asyncio
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from tasche.core.config import settings
-from tasche.db.session import async_session_maker, engine
+from tasche.db.session import get_engine, get_session_maker
 from tasche.models.task import Task
 from tasche.models.user import User
 
@@ -82,7 +82,8 @@ async def main() -> None:
     print(f"Database URL: {settings.database_url}")
     print("-" * 60)
 
-    async with async_session_maker() as session:
+    session_maker = get_session_maker()
+    async with session_maker() as session:
         print("\n[1/2] Seeding users...")
         await seed_users(session)
 
@@ -94,6 +95,7 @@ async def main() -> None:
     print("=" * 60)
 
     # エンジンをクローズ
+    engine = get_engine()
     await engine.dispose()
 
 

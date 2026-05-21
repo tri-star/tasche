@@ -9,7 +9,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parents[2]))
 
 from tasche.core.config import settings
-from tasche.db.session import async_session_maker, engine
+from tasche.db.session import get_engine, get_session_maker
 
 from scripts.e2e_seed.goals import seed_goals
 from scripts.e2e_seed.records import seed_records
@@ -26,7 +26,8 @@ async def main() -> None:
     print(f"Database URL: {settings.database_url}")
     print("-" * 60)
 
-    async with async_session_maker() as session:
+    session_maker = get_session_maker()
+    async with session_maker() as session:
         user = await seed_user(session)
         week = await seed_week(session, user)
         await seed_tasks(session, user)
@@ -34,6 +35,7 @@ async def main() -> None:
         await seed_records(session, week)
         await session.commit()
 
+    engine = get_engine()
     await engine.dispose()
 
     print("\n" + "=" * 60)
