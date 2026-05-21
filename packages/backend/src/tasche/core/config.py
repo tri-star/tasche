@@ -46,7 +46,7 @@ def _normalize_database_url(v: str) -> str:
 
     for prefix in ("postgresql://", "postgres://"):
         if v.startswith(prefix):
-            v = "postgresql+asyncpg://" + v[len(prefix):]
+            v = "postgresql+asyncpg://" + v[len(prefix) :]
             break
 
     parsed = urlparse(v)
@@ -269,9 +269,7 @@ def _call_extension(secret_arn: str) -> dict:
                 time.sleep(_EXTENSION_RETRY_INTERVAL_SECONDS)
                 continue
             print(f"[config] Extension URL error (final): {exc.reason}", flush=True)  # noqa: T201
-            raise RuntimeError(
-                f"Failed to fetch secret from Extension: {exc.reason}"
-            ) from exc
+            raise RuntimeError(f"Failed to fetch secret from Extension: {exc.reason}") from exc
 
     # ループを抜けた = リトライ上限到達
     raise RuntimeError(
