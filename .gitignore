@@ -3,5 +3,5 @@ __pycache__
 
 node_modules
 /tmp/*
-!/tmp/plan/
+/docs/work-logs/20260508-deploy-pipeline/
 packages/backend/build/

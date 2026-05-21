@@ -3,7 +3,7 @@ Transform: AWS::Serverless-2016-10-31
 Description: |
   Tasche Backend - Lambda (Container Image + Lambda Web Adapter).
   ECR リポジトリは `sam deploy --resolve-image-repos` で SAM CLI に自動作成させる。
-  詳細は docs/work-logs/20260508-deploy-pipeline/plan.md を参照。
+  詳細は docs/deploy/manual-deploy.md を参照。
 
 Parameters:
   Env:

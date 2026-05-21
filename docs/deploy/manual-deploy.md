@@ -4,10 +4,15 @@
 
 関連ドキュメント:
 
-- パイプライン全体像: `docs/work-logs/20260508-deploy-pipeline/plan.md`
 - 命名規約: `docs/deploy/ssm-naming.md`
-- 外部リポ依頼事項: `tmp/plan/external-repo-requirements.md`
 - ADR: `docs/adr/ADR-005-backend-lambda-packaging.md`, `docs/adr/ADR-006-deploy-trigger-strategy.md`
+
+## 現状実装メモ (2026-05-22)
+
+- `samconfig.toml` の dev stack 名は backend が `dev-tasche-backend`、frontend が `dev-tasche-frontend`。
+- backend Function URL は現在 `AuthType: NONE` で一時運用中。CloudFront 側は Lambda OAC `SigningBehavior: no-override` を使っており、viewer の `Authorization` を origin にそのまま渡す。
+- frontend は backend stack が自動作成する SSM パラメータ `/tasche/<env>/sam/backend-function-url` を参照する。
+- backend stack は `CloudFrontDistributionId` を必須 parameter として持つため、完全な新規環境では frontend Distribution ID を確定させてから backend を再デプロイする前提がある。
 
 ## 前提
 
@@ -16,7 +21,7 @@
 - 必要に応じて pnpm 9, Node.js 22 (frontend のみ)
 - AWS 認証情報がローカルから利用可能であること
   - 推奨: `aws configure sso` または GitHub Actions と同等の OIDC ロールを `aws sts assume-role` で取得
-  - 必要権限: `tmp/plan/external-repo-requirements.md` の "1-1 GitHub Actions デプロイ用ロール" と同等
+  - 必要権限: `docs/deploy/ssm-naming.md` に記載の GitHub Actions デプロイ用ロールと同等
 - 環境変数 (本ドキュメント全体で使用):
 
   ```bash
@@ -78,12 +83,14 @@ sam deploy \
 初回デプロイ時は、`packages/backend/infra/samconfig.toml` の `resolve_image_repos = true` に従って、
 SAM CLI が backend 用 ECR リポジトリを自動作成した上でイメージを push する。
 
+`packages/backend/infra/template.yaml` では `CloudFrontDistributionId` が必須で、dev 用 `samconfig.toml` には既存 Distribution ID が入っている。新規環境で ID が未確定なら、frontend stack 作成後に `parameter_overrides` を更新して backend を再デプロイする。
+
 ### 5. 動作確認
 
 ```bash
 # Function URL を取得
 FUNCTION_URL=$(aws cloudformation describe-stacks \
-  --stack-name "tasche-backend-${ENV_NAME}" \
+  --stack-name "${ENV_NAME}-tasche-backend" \
   --region "$AWS_REGION" \
   --query "Stacks[0].Outputs[?OutputKey=='BackendFunctionUrl'].OutputValue" \
   --output text)
@@ -91,6 +98,8 @@ FUNCTION_URL=$(aws cloudformation describe-stacks \
 curl -i "${FUNCTION_URL}health"
 # 200 OK が返ればデプロイ成功
 ```
+
+現在の dev 実装では Function URL が `AuthType: NONE` のため直接 `curl` で確認できる。最終的な疎通確認は CloudFront 経由の `https://<frontend-domain>/api/health` を優先する。
 
 ### 6. ロールバック手順
 
@@ -156,6 +165,7 @@ sam deploy \
 ```
 
 `BackendFunctionUrl` は `samconfig.toml` に SSM パスが定義済みのため、`--parameter-overrides` での指定は不要。
+`/api/*` behavior は Lambda OAC `no-override` で backend Function URL に転送されるため、viewer の `Authorization` ヘッダを落とさない前提で動作する。
 
 ### 5. アセットを S3 に同期
 
@@ -200,7 +210,15 @@ aws cloudfront create-invalidation \
 DOMAIN=$(aws ssm get-parameter \
   --name "/tasche/${ENV_NAME}/frontend/domain" \
   --region "$AWS_REGION" \
-  --query "Parameter.Value" --output text)
+  --query "Parameter.Value" --output text 2>/dev/null || true)
+
+if [ -z "$DOMAIN" ]; then
+  DOMAIN=$(aws cloudformation describe-stacks \
+    --stack-name "${ENV_NAME}-tasche-frontend" \
+    --region "$AWS_REGION" \
+    --query "Stacks[0].Outputs[?OutputKey=='DistributionDomainName'].OutputValue" \
+    --output text)
+fi
 
 curl -I "https://$DOMAIN/"            # 200 OK + index.html
 curl -I "https://$DOMAIN/api/health"  # 200 OK (CloudFront 経由で backend に届く)

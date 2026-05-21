@@ -3,7 +3,7 @@ Description: |
   Tasche Frontend - S3 (静的ホスティング) + CloudFront + 独自ドメイン (オプション).
   /api/* は Backend Lambda Function URL にルーティングして同一オリジン運用とする。
   Domain が空の場合は CloudFront デフォルトドメインで動作する。
-  詳細は docs/work-logs/20260508-deploy-pipeline/plan.md を参照。
+  詳細は docs/deploy/manual-deploy.md を参照。
 
 Parameters:
   Env:

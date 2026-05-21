@@ -10,7 +10,7 @@
 #   - 本番では `uv pip install --system .` で dev 依存を含めない
 #
 # 参考:
-#   - docs/work-logs/20260508-deploy-pipeline/plan.md
+#   - docs/adr/ADR-005-backend-lambda-packaging.md
 #   - https://aws.amazon.com/jp/blogs/compute/working-with-lambda-layers-and-extensions-in-container-images/
 
 FROM --platform=linux/amd64 ghcr.io/astral-sh/uv:latest AS uv
