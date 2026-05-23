@@ -303,6 +303,34 @@
               "title": "Include Archived"
             },
             "description": "アーカイブ済みタスクを含める"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 10000,
+              "minimum": 1,
+              "description": "ページ番号（1-indexed）",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "ページ番号（1-indexed）"
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "1ページあたり件数（最大100）",
+              "default": 20,
+              "title": "Per Page"
+            },
+            "description": "1ページあたり件数（最大100）"
           }
         ],
         "responses": {
@@ -312,6 +340,51 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/APIResponse_TaskListResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "タスク"
+        ],
+        "summary": "Bulk Archive Tasks",
+        "description": "複数タスクをまとめてアーカイブする.",
+        "operationId": "bulk_archive_tasks_api_tasks_delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskBulkArchiveRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse_TaskBulkArchiveResponse_"
                 }
               }
             }
@@ -968,6 +1041,18 @@
           "data"
         ],
         "title": "APIResponse[RecordsResponse]"
+      },
+      "APIResponse_TaskBulkArchiveResponse_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/TaskBulkArchiveResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "APIResponse[TaskBulkArchiveResponse]"
       },
       "APIResponse_TaskListResponse_": {
         "properties": {
@@ -1765,6 +1850,53 @@
         "title": "StubLoginRequest",
         "description": "スタブログインリクエスト."
       },
+      "TaskBulkArchiveRequest": {
+        "properties": {
+          "ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Ids",
+            "description": "アーカイブ対象のタスクID一覧"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ids"
+        ],
+        "title": "TaskBulkArchiveRequest",
+        "description": "バルクアーカイブのリクエスト."
+      },
+      "TaskBulkArchiveResponse": {
+        "properties": {
+          "archived_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Archived Ids",
+            "description": "アーカイブできたタスクID"
+          },
+          "not_found_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Not Found Ids",
+            "description": "存在しない/他ユーザーの/既にアーカイブ済みのタスクID"
+          }
+        },
+        "type": "object",
+        "required": [
+          "archived_ids",
+          "not_found_ids"
+        ],
+        "title": "TaskBulkArchiveResponse",
+        "description": "バルクアーカイブのレスポンス."
+      },
       "TaskCreate": {
         "properties": {
           "name": {
@@ -1772,7 +1904,7 @@
             "maxLength": 100,
             "minLength": 1,
             "title": "Name",
-            "description": "タスク名"
+            "description": "タスク名（前後空白は除去され、1〜100文字）"
           }
         },
         "type": "object",
@@ -1784,21 +1916,39 @@
       },
       "TaskListResponse": {
         "properties": {
-          "tasks": {
+          "items": {
             "items": {
               "$ref": "#/components/schemas/TaskResponse"
             },
             "type": "array",
-            "title": "Tasks",
-            "description": "タスク一覧"
+            "title": "Items",
+            "description": "タスク一覧（現在ページ）"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "全件数"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page",
+            "description": "現在ページ（1-indexed）"
+          },
+          "per_page": {
+            "type": "integer",
+            "title": "Per Page",
+            "description": "1ページあたり件数"
           }
         },
         "type": "object",
         "required": [
-          "tasks"
+          "items",
+          "total",
+          "page",
+          "per_page"
         ],
         "title": "TaskListResponse",
-        "description": "タスク一覧レスポンス."
+        "description": "タスク一覧レスポンス（ページング対応）."
       },
       "TaskResponse": {
         "properties": {
@@ -1816,6 +1966,16 @@
             "type": "boolean",
             "title": "Is Archived",
             "description": "アーカイブフラグ"
+          },
+          "consumed_units_last_week": {
+            "type": "number",
+            "title": "Consumed Units Last Week",
+            "description": "先週（ユーザーTZのISO週相当）の消化ユニット数合計"
+          },
+          "consumed_units_total": {
+            "type": "number",
+            "title": "Consumed Units Total",
+            "description": "全期間の消化ユニット数合計"
           },
           "created_at": {
             "type": "string",
@@ -1835,6 +1995,8 @@
           "id",
           "name",
           "is_archived",
+          "consumed_units_last_week",
+          "consumed_units_total",
           "created_at",
           "updated_at"
         ],
@@ -1848,7 +2010,7 @@
             "maxLength": 100,
             "minLength": 1,
             "title": "Name",
-            "description": "タスク名"
+            "description": "タスク名（前後空白は除去され、1〜100文字）"
           }
         },
         "type": "object",

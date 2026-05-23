@@ -75,7 +75,7 @@ export function GoalWizard() {
           getCurrentGoalsApiWeeksCurrentGoalsGet(),
         ])
 
-        const fetchedTasks = tasksResponse.status === 200 ? tasksResponse.data.data.tasks : []
+        const fetchedTasks = tasksResponse.status === 200 ? tasksResponse.data.data.items : []
         const filteredTasks = fetchedTasks.filter((task) => !task.is_archived)
 
         if (goalsResponse.status === 200) {
@@ -87,6 +87,8 @@ export function GoalWizard() {
                 id: goal.task_id,
                 name: goal.task_name,
                 is_archived: false,
+                consumed_units_last_week: 0,
+                consumed_units_total: 0,
                 created_at: "",
                 updated_at: "",
               })

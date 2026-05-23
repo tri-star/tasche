@@ -1,6 +1,6 @@
 ---
 name: テスト環境と注意点
-description: react-router v7 + MSW + vitest でのテスト実装時の落とし穴と解決策
+description: react-router v7 + MSW + vitest でのテスト実装時の落とし穴と解決策（Radix UI Select の jsdom 問題含む）
 type: feedback
 ---
 
@@ -52,3 +52,25 @@ vi.mock("@/auth/useAuth", () => ({
 
 **Why**: vi.mock のファクトリ関数はホイストされるため、外部変数への参照が正しく動作する形にする必要がある。
 **How to apply**: useAuth など複数テストで動作を変えたいモックには、外部変数パターンを使う。
+
+### Radix UI コンポーネントの jsdom 問題
+
+Radix UI Select/Dropdown 等のコンポーネントは jsdom 環境で以下の DOM API が未実装のためエラーが出る:
+- `hasPointerCapture` / `releasePointerCapture` / `setPointerCapture`
+- `scrollIntoView`
+
+**解決策**: `src/test/setup.ts` にグローバル stub を追加する（node 環境ではガードが必要）。
+
+```ts
+if (typeof window !== "undefined") {
+  window.HTMLElement.prototype.scrollIntoView = () => {}
+  Object.assign(window.HTMLElement.prototype, {
+    hasPointerCapture: () => false,
+    releasePointerCapture: () => {},
+    setPointerCapture: () => {},
+  })
+}
+```
+
+**Why**: pkce.test.ts は `// @vitest-environment node` を使うため `window` が存在しない。
+**How to apply**: node 環境で使うテストがある場合は必ず `typeof window !== "undefined"` でガードする。

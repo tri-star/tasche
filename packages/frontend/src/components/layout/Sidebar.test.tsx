@@ -33,6 +33,13 @@ describe("Sidebar", () => {
     expect(screen.getByRole("link", { name: "ダッシュボード" })).not.toHaveClass("bg-accent")
   })
 
+  it("/tasks ではタスク管理だけを active 表示する", () => {
+    renderSidebar("/tasks")
+
+    expect(screen.getByRole("link", { name: "タスク管理" })).toHaveClass("bg-accent")
+    expect(screen.getByRole("link", { name: "ダッシュボード" })).not.toHaveClass("bg-accent")
+  })
+
   it("目標設定をクリックすると SPA 遷移で /goals に移動する", async () => {
     const user = userEvent.setup()
     renderSidebar("/")
@@ -40,6 +47,15 @@ describe("Sidebar", () => {
     await user.click(screen.getByRole("link", { name: "目標設定" }))
 
     expect(screen.getByTestId("location-pathname")).toHaveTextContent("/goals")
+  })
+
+  it("タスク管理をクリックすると SPA 遷移で /tasks に移動する", async () => {
+    const user = userEvent.setup()
+    renderSidebar("/")
+
+    await user.click(screen.getByRole("link", { name: "タスク管理" }))
+
+    expect(screen.getByTestId("location-pathname")).toHaveTextContent("/tasks")
   })
 
   it("下部ナビゲーションも SPA 遷移する", async () => {

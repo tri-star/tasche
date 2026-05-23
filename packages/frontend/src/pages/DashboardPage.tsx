@@ -44,7 +44,7 @@ export function DashboardPage() {
           setDashboard(dashboardRes.data.data)
         }
         if (tasksRes.status === 200) {
-          setTasks(tasksRes.data.data.tasks.map((t) => ({ id: t.id, name: t.name })))
+          setTasks(tasksRes.data.data.items.map((t) => ({ id: t.id, name: t.name })))
         }
       } catch (err) {
         setError("データの取得に失敗しました")

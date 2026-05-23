@@ -15,6 +15,7 @@ import type {
   RecordCreate,
   RecordUpdate,
   StubLoginRequest,
+  TaskBulkArchiveRequest,
   TaskCreate,
   TaskUpdate,
   WeekUpdate
@@ -44,6 +45,7 @@ import type {
   APIResponseLogoutResponse,
   APIResponseRecordResponse,
   APIResponseRecordsResponse,
+  APIResponseTaskBulkArchiveResponse,
   APIResponseTaskListResponse,
   APIResponseTaskResponse,
   APIResponseTokenResponse,
@@ -411,6 +413,51 @@ export const getTasksApiTasksGet = async (params?: GetTasksApiTasksGetParams, op
     method: 'GET'
     
     
+  }
+);}
+
+
+
+/**
+ * 複数タスクをまとめてアーカイブする.
+ * @summary Bulk Archive Tasks
+ */
+export type bulkArchiveTasksApiTasksDeleteResponse200 = {
+  data: APIResponseTaskBulkArchiveResponse
+  status: 200
+}
+
+export type bulkArchiveTasksApiTasksDeleteResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+    
+export type bulkArchiveTasksApiTasksDeleteResponseSuccess = (bulkArchiveTasksApiTasksDeleteResponse200) & {
+  headers: Headers;
+};
+export type bulkArchiveTasksApiTasksDeleteResponseError = (bulkArchiveTasksApiTasksDeleteResponse422) & {
+  headers: Headers;
+};
+
+export type bulkArchiveTasksApiTasksDeleteResponse = (bulkArchiveTasksApiTasksDeleteResponseSuccess | bulkArchiveTasksApiTasksDeleteResponseError)
+
+export const getBulkArchiveTasksApiTasksDeleteUrl = () => {
+
+
+  
+
+  return `/api/tasks`
+}
+
+export const bulkArchiveTasksApiTasksDelete = async (taskBulkArchiveRequest: TaskBulkArchiveRequest, options?: RequestInit): Promise<bulkArchiveTasksApiTasksDeleteResponse> => {
+  
+  return authFetch<bulkArchiveTasksApiTasksDeleteResponse>(getBulkArchiveTasksApiTasksDeleteUrl(),
+  {      
+    ...options,
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      taskBulkArchiveRequest,)
   }
 );}
 
@@ -995,13 +1042,15 @@ export const getStubLoginEndpointApiAuthStubLoginPostResponseMock = (overrideRes
 
 export const getGetCurrentUserInfoApiUsersMeGetResponseMock = (overrideResponse: Partial< APIResponseUserResponse > = {}): APIResponseUserResponse => ({data: {id: faker.string.alpha({length: {min: 10, max: 20}}), email: faker.internet.email(), name: faker.string.alpha({length: {min: 10, max: 20}}), picture: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}),null,]), timezone: faker.string.alpha({length: {min: 10, max: 20}}), created_at: `${faker.date.past().toISOString().split('.')[0]}Z`, updated_at: `${faker.date.past().toISOString().split('.')[0]}Z`}, ...overrideResponse})
 
-export const getGetTasksApiTasksGetResponseMock = (overrideResponse: Partial< APIResponseTaskListResponse > = {}): APIResponseTaskListResponse => ({data: {tasks: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({id: faker.string.alpha({length: {min: 10, max: 20}}), name: faker.string.alpha({length: {min: 10, max: 20}}), is_archived: faker.datatype.boolean(), created_at: `${faker.date.past().toISOString().split('.')[0]}Z`, updated_at: `${faker.date.past().toISOString().split('.')[0]}Z`}))}, ...overrideResponse})
+export const getGetTasksApiTasksGetResponseMock = (overrideResponse: Partial< APIResponseTaskListResponse > = {}): APIResponseTaskListResponse => ({data: {items: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({id: faker.string.alpha({length: {min: 10, max: 20}}), name: faker.string.alpha({length: {min: 10, max: 20}}), is_archived: faker.datatype.boolean(), consumed_units_last_week: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), consumed_units_total: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), created_at: `${faker.date.past().toISOString().split('.')[0]}Z`, updated_at: `${faker.date.past().toISOString().split('.')[0]}Z`})), total: faker.number.int({min: undefined, max: undefined}), page: faker.number.int({min: undefined, max: undefined}), per_page: faker.number.int({min: undefined, max: undefined})}, ...overrideResponse})
 
-export const getCreateTaskApiTasksPostResponseMock = (overrideResponse: Partial< APIResponseTaskResponse > = {}): APIResponseTaskResponse => ({data: {id: faker.string.alpha({length: {min: 10, max: 20}}), name: faker.string.alpha({length: {min: 10, max: 20}}), is_archived: faker.datatype.boolean(), created_at: `${faker.date.past().toISOString().split('.')[0]}Z`, updated_at: `${faker.date.past().toISOString().split('.')[0]}Z`}, ...overrideResponse})
+export const getBulkArchiveTasksApiTasksDeleteResponseMock = (overrideResponse: Partial< APIResponseTaskBulkArchiveResponse > = {}): APIResponseTaskBulkArchiveResponse => ({data: {archived_ids: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => (faker.string.alpha({length: {min: 10, max: 20}}))), not_found_ids: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => (faker.string.alpha({length: {min: 10, max: 20}})))}, ...overrideResponse})
 
-export const getUpdateTaskApiTasksTaskIdPutResponseMock = (overrideResponse: Partial< APIResponseTaskResponse > = {}): APIResponseTaskResponse => ({data: {id: faker.string.alpha({length: {min: 10, max: 20}}), name: faker.string.alpha({length: {min: 10, max: 20}}), is_archived: faker.datatype.boolean(), created_at: `${faker.date.past().toISOString().split('.')[0]}Z`, updated_at: `${faker.date.past().toISOString().split('.')[0]}Z`}, ...overrideResponse})
+export const getCreateTaskApiTasksPostResponseMock = (overrideResponse: Partial< APIResponseTaskResponse > = {}): APIResponseTaskResponse => ({data: {id: faker.string.alpha({length: {min: 10, max: 20}}), name: faker.string.alpha({length: {min: 10, max: 20}}), is_archived: faker.datatype.boolean(), consumed_units_last_week: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), consumed_units_total: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), created_at: `${faker.date.past().toISOString().split('.')[0]}Z`, updated_at: `${faker.date.past().toISOString().split('.')[0]}Z`}, ...overrideResponse})
 
-export const getDeleteTaskApiTasksTaskIdDeleteResponseMock = (overrideResponse: Partial< APIResponseTaskResponse > = {}): APIResponseTaskResponse => ({data: {id: faker.string.alpha({length: {min: 10, max: 20}}), name: faker.string.alpha({length: {min: 10, max: 20}}), is_archived: faker.datatype.boolean(), created_at: `${faker.date.past().toISOString().split('.')[0]}Z`, updated_at: `${faker.date.past().toISOString().split('.')[0]}Z`}, ...overrideResponse})
+export const getUpdateTaskApiTasksTaskIdPutResponseMock = (overrideResponse: Partial< APIResponseTaskResponse > = {}): APIResponseTaskResponse => ({data: {id: faker.string.alpha({length: {min: 10, max: 20}}), name: faker.string.alpha({length: {min: 10, max: 20}}), is_archived: faker.datatype.boolean(), consumed_units_last_week: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), consumed_units_total: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), created_at: `${faker.date.past().toISOString().split('.')[0]}Z`, updated_at: `${faker.date.past().toISOString().split('.')[0]}Z`}, ...overrideResponse})
+
+export const getDeleteTaskApiTasksTaskIdDeleteResponseMock = (overrideResponse: Partial< APIResponseTaskResponse > = {}): APIResponseTaskResponse => ({data: {id: faker.string.alpha({length: {min: 10, max: 20}}), name: faker.string.alpha({length: {min: 10, max: 20}}), is_archived: faker.datatype.boolean(), consumed_units_last_week: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), consumed_units_total: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), created_at: `${faker.date.past().toISOString().split('.')[0]}Z`, updated_at: `${faker.date.past().toISOString().split('.')[0]}Z`}, ...overrideResponse})
 
 export const getGetCurrentWeekApiWeeksCurrentGetResponseMock = (overrideResponse: Partial< APIResponseWeekResponse > = {}): APIResponseWeekResponse => ({data: {id: faker.string.alpha({length: {min: 10, max: 20}}), user_id: faker.string.alpha({length: {min: 10, max: 20}}), start_date: faker.date.past().toISOString().split('T')[0], end_date: faker.date.past().toISOString().split('T')[0], unit_duration_minutes: faker.number.int({min: undefined, max: undefined}), week_start_day: faker.helpers.arrayElement(['monday','sunday'] as const), week_start_hour: faker.number.int({min: 0, max: 23}), created_at: `${faker.date.past().toISOString().split('.')[0]}Z`, updated_at: `${faker.date.past().toISOString().split('.')[0]}Z`}, ...overrideResponse})
 
@@ -1100,6 +1149,18 @@ export const getGetTasksApiTasksGetMockHandler = (overrideResponse?: APIResponse
     return new HttpResponse(JSON.stringify(overrideResponse !== undefined
     ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
     : getGetTasksApiTasksGetResponseMock()),
+      { status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      })
+  }, options)
+}
+
+export const getBulkArchiveTasksApiTasksDeleteMockHandler = (overrideResponse?: APIResponseTaskBulkArchiveResponse | ((info: Parameters<Parameters<typeof http.delete>[1]>[0]) => Promise<APIResponseTaskBulkArchiveResponse> | APIResponseTaskBulkArchiveResponse), options?: RequestHandlerOptions) => {
+  return http.delete('*/api/tasks', async (info) => {await delay(0);
+  
+    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getBulkArchiveTasksApiTasksDeleteResponseMock()),
       { status: 200,
         headers: { 'Content-Type': 'application/json' }
       })
@@ -1265,6 +1326,7 @@ export const getTascheAPIMock = () => [
   getStubLoginEndpointApiAuthStubLoginPostMockHandler(),
   getGetCurrentUserInfoApiUsersMeGetMockHandler(),
   getGetTasksApiTasksGetMockHandler(),
+  getBulkArchiveTasksApiTasksDeleteMockHandler(),
   getCreateTaskApiTasksPostMockHandler(),
   getUpdateTaskApiTasksTaskIdPutMockHandler(),
   getDeleteTaskApiTasksTaskIdDeleteMockHandler(),

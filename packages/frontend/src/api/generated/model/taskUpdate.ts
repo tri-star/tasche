@@ -10,7 +10,7 @@
  */
 export interface TaskUpdate {
   /**
-   * タスク名
+   * タスク名（前後空白は除去され、1〜100文字）
    * @minLength 1
    * @maxLength 100
    */

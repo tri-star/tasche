@@ -7,9 +7,15 @@
 import type { TaskResponse } from './taskResponse';
 
 /**
- * タスク一覧レスポンス.
+ * タスク一覧レスポンス（ページング対応）.
  */
 export interface TaskListResponse {
-  /** タスク一覧 */
-  tasks: TaskResponse[];
+  /** タスク一覧（現在ページ） */
+  items: TaskResponse[];
+  /** 全件数 */
+  total: number;
+  /** 現在ページ（1-indexed） */
+  page: number;
+  /** 1ページあたり件数 */
+  per_page: number;
 }

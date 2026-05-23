@@ -11,11 +11,13 @@ import type {
 
 const mockTasks: APIResponseTaskListResponse = {
   data: {
-    tasks: [
+    items: [
       {
         id: "tsk_01HXYZ1234567890ABCDEF",
         name: "英語学習",
         is_archived: false,
+        consumed_units_last_week: 0,
+        consumed_units_total: 0,
         created_at: "2026-01-01T00:00:00Z",
         updated_at: "2026-01-05T00:00:00Z",
       },
@@ -23,6 +25,8 @@ const mockTasks: APIResponseTaskListResponse = {
         id: "tsk_02HXYZ1234567890ABCDEF",
         name: "個人開発",
         is_archived: false,
+        consumed_units_last_week: 0,
+        consumed_units_total: 0,
         created_at: "2026-01-02T00:00:00Z",
         updated_at: "2026-01-06T00:00:00Z",
       },
@@ -30,6 +34,8 @@ const mockTasks: APIResponseTaskListResponse = {
         id: "tsk_03HXYZ1234567890ABCDEF",
         name: "読書",
         is_archived: false,
+        consumed_units_last_week: 0,
+        consumed_units_total: 0,
         created_at: "2026-01-03T00:00:00Z",
         updated_at: "2026-01-07T00:00:00Z",
       },
@@ -37,6 +43,8 @@ const mockTasks: APIResponseTaskListResponse = {
         id: "tsk_04HXYZ1234567890ABCDEF",
         name: "筋トレ",
         is_archived: false,
+        consumed_units_last_week: 0,
+        consumed_units_total: 0,
         created_at: "2026-01-04T00:00:00Z",
         updated_at: "2026-01-08T00:00:00Z",
       },
@@ -44,10 +52,15 @@ const mockTasks: APIResponseTaskListResponse = {
         id: "tsk_05HXYZ1234567890ABCDEF",
         name: "ブログ執筆",
         is_archived: false,
+        consumed_units_last_week: 0,
+        consumed_units_total: 0,
         created_at: "2026-01-05T00:00:00Z",
         updated_at: "2026-01-09T00:00:00Z",
       },
     ],
+    total: 5,
+    page: 1,
+    per_page: 20,
   },
 }
 

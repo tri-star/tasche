@@ -15,6 +15,10 @@ export interface TaskResponse {
   name: string;
   /** アーカイブフラグ */
   is_archived: boolean;
+  /** 先週（ユーザーTZのISO週相当）の消化ユニット数合計 */
+  consumed_units_last_week: number;
+  /** 全期間の消化ユニット数合計 */
+  consumed_units_total: number;
   /** 作成日時（ISO 8601） */
   created_at: string;
   /** 更新日時（ISO 8601） */
