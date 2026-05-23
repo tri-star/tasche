@@ -1,12 +1,15 @@
 """タスクサービス."""
 
+import logging
 from datetime import date, datetime, timedelta
 
-from sqlalchemy import and_, case, func, select
+from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from ulid import ULID
 
 from tasche.core.exceptions import TaskNotFoundException, ValidationError
+
+logger = logging.getLogger(__name__)
 from tasche.models.record import Record
 from tasche.models.task import Task
 from tasche.models.user import User
@@ -72,32 +75,6 @@ async def _get_active_task_for_user(db: AsyncSession, user: User, task_id: str) 
     return task
 
 
-async def get_tasks_by_user(
-    db: AsyncSession,
-    user: User,
-    include_archived: bool = False,
-) -> list[Task]:
-    """ユーザーのタスク一覧を取得.
-
-    Args:
-        db: DBセッション
-        user: ユーザー
-        include_archived: アーカイブ済みタスクを含めるか
-
-    Returns:
-        タスクのリスト（作成日時昇順）
-    """
-    query = select(Task).where(Task.user_id == user.id)
-
-    if not include_archived:
-        query = query.where(Task.is_archived.is_(False))
-
-    query = query.order_by(Task.created_at)
-
-    result = await db.execute(query)
-    return list(result.scalars().all())
-
-
 async def get_tasks_with_stats(
     db: AsyncSession,
     user: User,
@@ -112,6 +89,8 @@ async def get_tasks_with_stats(
     Returns:
         ([(task, consumed_units_last_week, consumed_units_total), ...], total_count)
     """
+    page, per_page = _normalize_pagination(page, per_page)
+
     last_week_start = _calculate_last_week_start_date(user, now=now)
 
     # 先週Weekのidをサブクエリで取得（無ければNULL）
@@ -126,9 +105,9 @@ async def get_tasks_with_stats(
         .scalar_subquery()
     )
 
-    # 集計値: actual_unitsをCASEで分岐し、task_idごとにSUM
+    # 集計値: FILTER句でnull比較の曖昧さを排除し、task_idごとにSUM
     last_week_sum = func.coalesce(
-        func.sum(case((Record.week_id == last_week_subq, Record.actual_units), else_=0)),
+        func.sum(Record.actual_units).filter(Record.week_id == last_week_subq),
         0,
     ).label("consumed_units_last_week")
     total_sum = func.coalesce(func.sum(Record.actual_units), 0).label("consumed_units_total")
@@ -197,6 +176,8 @@ async def archive_tasks(
     Returns:
         (archived_ids, not_found_ids)
     """
+    logger.info("Archiving tasks: ids=%s, user_id=%s", ids, user.id)
+
     if not ids:
         return [], []
 

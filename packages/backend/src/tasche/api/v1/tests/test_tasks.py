@@ -632,21 +632,18 @@ async def test_get_tasks_pagination_default_values(
 
 
 @pytest.mark.asyncio
-async def test_get_tasks_pagination_invalid_values_fallback(
+async def test_get_tasks_pagination_invalid_values_returns_422(
     client: AsyncClient,
     test_user: User,
     auth_headers,
 ):
-    """異常値が安全な値にフォールバックする."""
+    """異常値（page=0, per_page=999）は Query 制約で 422 を返す."""
     response = await client.get(
         "/api/tasks?page=0&per_page=999",
         headers=auth_headers(test_user),
     )
 
-    assert response.status_code == 200
-    data = response.json()["data"]
-    assert data["page"] == 1
-    assert data["per_page"] == 20
+    assert response.status_code == 422
 
 
 @pytest.mark.asyncio
@@ -954,15 +951,15 @@ class TestCreateTask:
         assert db_task.is_archived is False
 
     @pytest.mark.asyncio
-    @pytest.mark.parametrize("name", ["", "   ", "x" * 101])
-    async def test_create_task_rejects_invalid_name(
+    @pytest.mark.parametrize("name", ["   ", ])
+    async def test_create_task_rejects_blank_name(
         self,
         client: AsyncClient,
         test_user: User,
         auth_headers,
         name: str,
     ):
-        """不正なタスク名は 400 になる."""
+        """空白のみのタスク名はサービス層で 400 になる."""
         response = await client.post(
             "/api/tasks",
             json={"name": name},
@@ -971,6 +968,24 @@ class TestCreateTask:
 
         assert response.status_code == 400
         assert response.json()["error"]["code"] == "VALIDATION_ERROR"
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("name", ["", "x" * 101])
+    async def test_create_task_rejects_invalid_name_schema_level(
+        self,
+        client: AsyncClient,
+        test_user: User,
+        auth_headers,
+        name: str,
+    ):
+        """空文字・101文字超えはスキーマレベルで 422 になる."""
+        response = await client.post(
+            "/api/tasks",
+            json={"name": name},
+            headers=auth_headers(test_user),
+        )
+
+        assert response.status_code == 422
 
     @pytest.mark.asyncio
     async def test_create_task_unauthorized(self, client: AsyncClient):
@@ -1087,8 +1102,8 @@ class TestUpdateTask:
         assert response.json()["error"]["code"] == "TASK_NOT_FOUND"
 
     @pytest.mark.asyncio
-    @pytest.mark.parametrize("name", ["", "   ", "x" * 101])
-    async def test_update_task_rejects_invalid_name(
+    @pytest.mark.parametrize("name", ["   ", ])
+    async def test_update_task_rejects_blank_name(
         self,
         client: AsyncClient,
         db_session: AsyncSession,
@@ -1096,7 +1111,7 @@ class TestUpdateTask:
         auth_headers,
         name: str,
     ):
-        """不正なタスク名は 400 になる."""
+        """空白のみのタスク名はサービス層で 400 になる."""
         task = await _create_task(
             db_session,
             test_user,
@@ -1112,6 +1127,32 @@ class TestUpdateTask:
 
         assert response.status_code == 400
         assert response.json()["error"]["code"] == "VALIDATION_ERROR"
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("name", ["", "x" * 101])
+    async def test_update_task_rejects_invalid_name_schema_level(
+        self,
+        client: AsyncClient,
+        db_session: AsyncSession,
+        test_user: User,
+        auth_headers,
+        name: str,
+    ):
+        """空文字・101文字超えはスキーマレベルで 422 になる."""
+        task = await _create_task(
+            db_session,
+            test_user,
+            task_id="tsk_11BLANK2234567890ABCDEF",
+            name="更新前",
+        )
+
+        response = await client.put(
+            f"/api/tasks/{task.id}",
+            json={"name": name},
+            headers=auth_headers(test_user),
+        )
+
+        assert response.status_code == 422
 
 
 class TestDeleteTask:

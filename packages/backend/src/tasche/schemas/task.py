@@ -8,13 +8,13 @@ from pydantic import BaseModel, Field
 class TaskCreate(BaseModel):
     """タスク作成リクエスト."""
 
-    name: str = Field(..., description="タスク名（前後空白は除去され、1〜100文字）")
+    name: str = Field(..., min_length=1, max_length=100, description="タスク名（前後空白は除去され、1〜100文字）")
 
 
 class TaskUpdate(BaseModel):
     """タスク更新リクエスト."""
 
-    name: str = Field(..., description="タスク名（前後空白は除去され、1〜100文字）")
+    name: str = Field(..., min_length=1, max_length=100, description="タスク名（前後空白は除去され、1〜100文字）")
 
 
 class TaskResponse(BaseModel):
@@ -42,7 +42,7 @@ class TaskListResponse(BaseModel):
     per_page: int = Field(..., description="1ページあたり件数")
 
 
-class TaskBulkDeleteRequest(BaseModel):
+class TaskBulkArchiveRequest(BaseModel):
     """バルクアーカイブのリクエスト."""
 
     ids: list[str] = Field(
@@ -50,7 +50,7 @@ class TaskBulkDeleteRequest(BaseModel):
     )
 
 
-class TaskBulkDeleteResponse(BaseModel):
+class TaskBulkArchiveResponse(BaseModel):
     """バルクアーカイブのレスポンス."""
 
     archived_ids: list[str] = Field(..., description="アーカイブできたタスクID")

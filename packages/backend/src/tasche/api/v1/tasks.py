@@ -7,8 +7,8 @@ from tasche.api.transaction import transaction
 from tasche.models.task import Task
 from tasche.schemas.common import APIResponse
 from tasche.schemas.task import (
-    TaskBulkDeleteRequest,
-    TaskBulkDeleteResponse,
+    TaskBulkArchiveRequest,
+    TaskBulkArchiveResponse,
     TaskCreate,
     TaskListResponse,
     TaskResponse,
@@ -24,30 +24,20 @@ async def get_tasks(
     db: DbSession,
     current_user: CurrentUser,
     include_archived: bool = Query(False, description="アーカイブ済みタスクを含める"),
-    page: int = Query(1, description="ページ番号（1-indexed）"),
-    per_page: int = Query(20, description="1ページあたり件数（最大100）"),
+    page: int = Query(1, ge=1, le=10000, description="ページ番号（1-indexed）"),
+    per_page: int = Query(20, ge=1, le=100, description="1ページあたり件数（最大100）"),
 ) -> APIResponse[TaskListResponse]:
     """タスク一覧を取得する."""
-    safe_page, safe_per_page = task_service._normalize_pagination(page, per_page)
-
     rows, total = await task_service.get_tasks_with_stats(
         db,
         current_user,
         include_archived=include_archived,
-        page=safe_page,
-        per_page=safe_per_page,
+        page=page,
+        per_page=per_page,
     )
 
     items = [
-        TaskResponse(
-            id=task.id,
-            name=task.name,
-            is_archived=task.is_archived,
-            consumed_units_last_week=last_week,
-            consumed_units_total=total_units,
-            created_at=task.created_at,
-            updated_at=task.updated_at,
-        )
+        _task_to_response(task, consumed_units_last_week=last_week, consumed_units_total=total_units)
         for task, last_week, total_units in rows
     ]
 
@@ -55,25 +45,25 @@ async def get_tasks(
         data=TaskListResponse(
             items=items,
             total=total,
-            page=safe_page,
-            per_page=safe_per_page,
+            page=page,
+            per_page=per_page,
         )
     )
 
 
-@router.delete("", response_model=APIResponse[TaskBulkDeleteResponse])
-async def bulk_delete_tasks(
-    request: TaskBulkDeleteRequest,
+@router.delete("", response_model=APIResponse[TaskBulkArchiveResponse])
+async def bulk_archive_tasks(
+    request: TaskBulkArchiveRequest,
     db: DbSession,
     current_user: CurrentUser,
-) -> APIResponse[TaskBulkDeleteResponse]:
+) -> APIResponse[TaskBulkArchiveResponse]:
     """複数タスクをまとめてアーカイブする."""
     async with transaction(db):
         archived_ids, not_found_ids = await task_service.archive_tasks(
             db, current_user, request.ids
         )
     return APIResponse(
-        data=TaskBulkDeleteResponse(
+        data=TaskBulkArchiveResponse(
             archived_ids=archived_ids,
             not_found_ids=not_found_ids,
         )

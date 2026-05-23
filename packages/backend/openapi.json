@@ -310,6 +310,8 @@
             "required": false,
             "schema": {
               "type": "integer",
+              "maximum": 10000,
+              "minimum": 1,
               "description": "ページ番号（1-indexed）",
               "default": 1,
               "title": "Page"
@@ -322,6 +324,8 @@
             "required": false,
             "schema": {
               "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
               "description": "1ページあたり件数（最大100）",
               "default": 20,
               "title": "Per Page"
@@ -356,9 +360,9 @@
         "tags": [
           "タスク"
         ],
-        "summary": "Bulk Delete Tasks",
+        "summary": "Bulk Archive Tasks",
         "description": "複数タスクをまとめてアーカイブする.",
-        "operationId": "bulk_delete_tasks_api_tasks_delete",
+        "operationId": "bulk_archive_tasks_api_tasks_delete",
         "security": [
           {
             "HTTPBearer": []
@@ -369,7 +373,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/TaskBulkDeleteRequest"
+                "$ref": "#/components/schemas/TaskBulkArchiveRequest"
               }
             }
           }
@@ -380,7 +384,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse_TaskBulkDeleteResponse_"
+                  "$ref": "#/components/schemas/APIResponse_TaskBulkArchiveResponse_"
                 }
               }
             }
@@ -1038,17 +1042,17 @@
         ],
         "title": "APIResponse[RecordsResponse]"
       },
-      "APIResponse_TaskBulkDeleteResponse_": {
+      "APIResponse_TaskBulkArchiveResponse_": {
         "properties": {
           "data": {
-            "$ref": "#/components/schemas/TaskBulkDeleteResponse"
+            "$ref": "#/components/schemas/TaskBulkArchiveResponse"
           }
         },
         "type": "object",
         "required": [
           "data"
         ],
-        "title": "APIResponse[TaskBulkDeleteResponse]"
+        "title": "APIResponse[TaskBulkArchiveResponse]"
       },
       "APIResponse_TaskListResponse_": {
         "properties": {
@@ -1846,7 +1850,7 @@
         "title": "StubLoginRequest",
         "description": "スタブログインリクエスト."
       },
-      "TaskBulkDeleteRequest": {
+      "TaskBulkArchiveRequest": {
         "properties": {
           "ids": {
             "items": {
@@ -1863,10 +1867,10 @@
         "required": [
           "ids"
         ],
-        "title": "TaskBulkDeleteRequest",
+        "title": "TaskBulkArchiveRequest",
         "description": "バルクアーカイブのリクエスト."
       },
-      "TaskBulkDeleteResponse": {
+      "TaskBulkArchiveResponse": {
         "properties": {
           "archived_ids": {
             "items": {
@@ -1890,13 +1894,15 @@
           "archived_ids",
           "not_found_ids"
         ],
-        "title": "TaskBulkDeleteResponse",
+        "title": "TaskBulkArchiveResponse",
         "description": "バルクアーカイブのレスポンス."
       },
       "TaskCreate": {
         "properties": {
           "name": {
             "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
             "title": "Name",
             "description": "タスク名（前後空白は除去され、1〜100文字）"
           }
@@ -2001,6 +2007,8 @@
         "properties": {
           "name": {
             "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
             "title": "Name",
             "description": "タスク名（前後空白は除去され、1〜100文字）"
           }

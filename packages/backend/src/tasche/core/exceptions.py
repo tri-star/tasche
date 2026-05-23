@@ -22,7 +22,7 @@ class TaskNotFoundException(TascheException):
     def __init__(self, task_id: str):
         """初期化."""
         self.task_id = task_id
-        super().__init__(f"Task not found: {task_id}")
+        super().__init__("Task not found")
 
 
 class WeekNotFoundException(TascheException):

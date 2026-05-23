@@ -88,9 +88,10 @@ Set-Cookie: refresh_token=<token>; HttpOnly; Secure; SameSite=Lax; Path=/api/aut
 | 認証 | POST | /api/auth/logout | 要 | ログアウト |
 | 認証 | POST | /api/auth/stub-login | 不要 | スタブ用ログイン（`AUTH_STUB_ENABLED=true` かつ非本番環境のみ有効） |
 | ユーザー | GET | /api/users/me | 要 | 現在のユーザー情報取得 |
-| タスク | GET | /api/tasks | 要 | タスク一覧取得 |
+| タスク | GET | /api/tasks | 要 | タスク一覧取得（ページング対応） |
 | タスク | POST | /api/tasks | 要 | タスク作成 |
 | タスク | PUT | /api/tasks/{task_id} | 要 | タスク更新 |
+| タスク | DELETE | /api/tasks | 要 | タスクバルクアーカイブ |
 | タスク | DELETE | /api/tasks/{task_id} | 要 | タスク削除（アーカイブ） |
 | 週 | GET | /api/weeks/current | 要 | 現在の週情報取得 |
 | 週 | PUT | /api/weeks/current | 要 | 現在の週設定更新 |
@@ -343,7 +344,7 @@ Authorization: Bearer <access_token>
 
 ### GET /api/tasks
 
-ユーザーのアクティブなタスク一覧を取得します。
+ユーザーのアクティブなタスク一覧を取得します。ページング対応。
 
 #### リクエストヘッダー
 
@@ -356,17 +357,21 @@ Authorization: Bearer <access_token>
 | パラメータ | 型 | 必須 | 説明 |
 |------------|------|------|------|
 | include_archived | boolean | No | アーカイブ済みタスクを含める（デフォルト: false） |
+| page | integer | No | ページ番号（1-indexed、最小1・最大10000、デフォルト: 1） |
+| per_page | integer | No | 1ページあたり件数（最小1・最大100、デフォルト: 20） |
 
 #### レスポンス（200 OK）
 
 ```json
 {
   "data": {
-    "tasks": [
+    "items": [
       {
         "id": "tsk_01HXYZ1234567890ABCDEF",
         "name": "英語学習",
         "is_archived": false,
+        "consumed_units_last_week": 5.0,
+        "consumed_units_total": 12.5,
         "created_at": "2024-01-10T09:00:00Z",
         "updated_at": "2024-01-10T09:00:00Z"
       },
@@ -374,17 +379,15 @@ Authorization: Bearer <access_token>
         "id": "tsk_02HXYZ1234567890ABCDEF",
         "name": "個人開発",
         "is_archived": false,
+        "consumed_units_last_week": 0.0,
+        "consumed_units_total": 3.0,
         "created_at": "2024-01-10T09:05:00Z",
         "updated_at": "2024-01-10T09:05:00Z"
-      },
-      {
-        "id": "tsk_03HXYZ1234567890ABCDEF",
-        "name": "読書",
-        "is_archived": false,
-        "created_at": "2024-01-10T09:10:00Z",
-        "updated_at": "2024-01-10T09:10:00Z"
       }
-    ]
+    ],
+    "total": 2,
+    "page": 1,
+    "per_page": 20
   }
 }
 ```
@@ -418,6 +421,8 @@ Content-Type: application/json
     "id": "tsk_04HXYZ1234567890ABCDEF",
     "name": "筋トレ",
     "is_archived": false,
+    "consumed_units_last_week": 0.0,
+    "consumed_units_total": 0.0,
     "created_at": "2024-01-15T14:00:00Z",
     "updated_at": "2024-01-15T14:00:00Z"
   }
@@ -470,6 +475,8 @@ Content-Type: application/json
     "id": "tsk_01HXYZ1234567890ABCDEF",
     "name": "TOEIC学習",
     "is_archived": false,
+    "consumed_units_last_week": 5.0,
+    "consumed_units_total": 12.5,
     "created_at": "2024-01-10T09:00:00Z",
     "updated_at": "2024-01-15T15:00:00Z"
   }
@@ -486,6 +493,50 @@ Content-Type: application/json
   }
 }
 ```
+
+---
+
+### DELETE /api/tasks
+
+複数タスクをまとめてアーカイブ（論理削除）します。
+
+#### リクエストヘッダー
+
+```
+Authorization: Bearer <access_token>
+Content-Type: application/json
+```
+
+#### リクエスト
+
+```json
+{
+  "ids": [
+    "tsk_01HXYZ1234567890ABCDEF",
+    "tsk_02HXYZ1234567890ABCDEF"
+  ]
+}
+```
+
+**注**:
+- `ids` は 1 件以上 100 件以下
+- 重複IDは内部でデデュープされる
+
+#### レスポンス（200 OK）
+
+```json
+{
+  "data": {
+    "archived_ids": ["tsk_01HXYZ1234567890ABCDEF"],
+    "not_found_ids": ["tsk_02HXYZ1234567890ABCDEF"]
+  }
+}
+```
+
+| フィールド | 説明 |
+|------------|------|
+| archived_ids | アーカイブできたタスクIDの一覧 |
+| not_found_ids | 存在しない・他ユーザー所有・既にアーカイブ済みのタスクIDの一覧 |
 
 ---
 
@@ -513,6 +564,8 @@ Authorization: Bearer <access_token>
     "id": "tsk_01HXYZ1234567890ABCDEF",
     "name": "TOEIC学習",
     "is_archived": true,
+    "consumed_units_last_week": 5.0,
+    "consumed_units_total": 12.5,
     "created_at": "2024-01-10T09:00:00Z",
     "updated_at": "2024-01-15T16:00:00Z"
   }
@@ -1115,6 +1168,8 @@ Authorization: Bearer <access_token>
 | id | string | タスクID（ULID形式、prefix: tsk_） |
 | name | string | タスク名（1-100文字） |
 | is_archived | boolean | アーカイブフラグ |
+| consumed_units_last_week | number | 先週（ユーザーTZのISO週相当）の消化ユニット数合計 |
+| consumed_units_total | number | 全期間の消化ユニット数合計 |
 | created_at | string | 作成日時（ISO 8601） |
 | updated_at | string | 更新日時（ISO 8601） |
 
@@ -1188,3 +1243,4 @@ monday | tuesday | wednesday | thursday | friday | saturday | sunday
 |------------|------|------|
 | 1.0.0 | 2024-01-15 | 初版作成 |
 | 1.1.0 | 2026-04-23 | 認証を Auth0 から Google OAuth 2.0 直接連携（BFF型 + PKCE）に変更。`/api/auth/google/authorize`, `/api/auth/google/callback`, `/api/auth/stub-login` を追加。Cookie の SameSite を Strict→Lax に変更、Secure は環境依存に。 |
+| 1.2.0 | 2026-05-23 | タスク API を拡張。`GET /api/tasks` にページング対応（`page`/`per_page` クエリパラメータ追加）、レスポンス形式を `items/total/page/per_page` に変更、`consumed_units_last_week`/`consumed_units_total` フィールド追加。`DELETE /api/tasks`（バルクアーカイブ）を追加。Task 型に `consumed_units_last_week`/`consumed_units_total` フィールドを追記。 |
