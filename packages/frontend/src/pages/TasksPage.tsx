@@ -1,23 +1,30 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { ClipboardList, Loader2, Plus, RefreshCw } from "lucide-react"
 import { useState } from "react"
 import {
+  bulkArchiveTasksApiTasksDelete,
   createTaskApiTasksPost,
   deleteTaskApiTasksTaskIdDelete,
   getTasksApiTasksGet,
   updateTaskApiTasksTaskIdPut,
 } from "@/api/generated/client"
-import type { TaskResponse } from "@/api/generated/model"
+import type { TaskListResponse, TaskResponse } from "@/api/generated/model"
 import { DashboardLayout } from "@/components/layout/DashboardLayout"
+import type { TaskBulkAction } from "@/components/tasks/TaskBulkActionBar"
+import { TaskBulkActionBar } from "@/components/tasks/TaskBulkActionBar"
+import { TaskBulkDeleteDialog } from "@/components/tasks/TaskBulkDeleteDialog"
 import { TaskDeleteDialog } from "@/components/tasks/TaskDeleteDialog"
 import { TaskEmptyState } from "@/components/tasks/TaskEmptyState"
 import { TaskFormDialog } from "@/components/tasks/TaskFormDialog"
+import { TaskListPagination } from "@/components/tasks/TaskListPagination"
 import { TaskTable } from "@/components/tasks/TaskTable"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import { useTaskSelection } from "@/hooks/useTaskSelection"
 
 type TaskDialogState = { mode: "create"; task: null } | { mode: "edit"; task: TaskResponse } | null
-const tasksQueryKey = ["tasks", { includeArchived: false }] as const
+
+const PER_PAGE = 20
 
 function logTaskPageError(message: string, error: unknown) {
   if (!import.meta.env.DEV || import.meta.env.MODE === "test") {
@@ -27,14 +34,18 @@ function logTaskPageError(message: string, error: unknown) {
   console.error(message, error)
 }
 
-async function fetchTasks() {
+async function fetchTasks(page: number, perPage: number): Promise<TaskListResponse> {
   try {
-    const response = await getTasksApiTasksGet({ include_archived: false })
+    const response = await getTasksApiTasksGet({
+      include_archived: false,
+      page,
+      per_page: perPage,
+    })
     if (response.status !== 200) {
       throw new Error(`Unexpected status: ${response.status}`)
     }
 
-    return response.data.data.tasks.filter((task) => !task.is_archived)
+    return response.data.data
   } catch (error) {
     logTaskPageError("タスク一覧の取得に失敗しました", error)
     throw error
@@ -43,15 +54,26 @@ async function fetchTasks() {
 
 export function TasksPage() {
   const queryClient = useQueryClient()
+  const [page, setPage] = useState(1)
   const [formDialog, setFormDialog] = useState<TaskDialogState>(null)
   const [deleteTarget, setDeleteTarget] = useState<TaskResponse | null>(null)
   const [formErrorMessage, setFormErrorMessage] = useState<string | null>(null)
   const [deleteErrorMessage, setDeleteErrorMessage] = useState<string | null>(null)
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false)
+  const [bulkDeleteErrorMessage, setBulkDeleteErrorMessage] = useState<string | null>(null)
+
+  const tasksQueryKey = ["tasks", { includeArchived: false, page, perPage: PER_PAGE }] as const
 
   const tasksQuery = useQuery({
     queryKey: tasksQueryKey,
-    queryFn: fetchTasks,
+    queryFn: () => fetchTasks(page, PER_PAGE),
+    placeholderData: keepPreviousData,
   })
+
+  const tasks = tasksQuery.data?.items ?? []
+  const total = tasksQuery.data?.total ?? 0
+
+  const selectionApi = useTaskSelection({ pageItems: tasks })
 
   const createTaskMutation = useMutation({
     mutationFn: async (name: string) => {
@@ -61,13 +83,11 @@ export function TasksPage() {
       }
       return response.data.data
     },
-    onSuccess: (createdTask) => {
-      queryClient.setQueryData<TaskResponse[]>(tasksQueryKey, (previous = []) => [
-        ...previous,
-        createdTask,
-      ])
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["tasks"] })
       setFormDialog(null)
       setFormErrorMessage(null)
+      selectionApi.clear()
     },
     onError: (error) => {
       logTaskPageError("タスクの登録に失敗しました", error)
@@ -83,14 +103,11 @@ export function TasksPage() {
       }
       return response.data.data
     },
-    onSuccess: (updatedTask) => {
-      queryClient.setQueryData<TaskResponse[]>(tasksQueryKey, (previous = []) =>
-        previous
-          .map((task) => (task.id === updatedTask.id ? updatedTask : task))
-          .filter((task) => !task.is_archived),
-      )
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["tasks"] })
       setFormDialog(null)
       setFormErrorMessage(null)
+      selectionApi.clear()
     },
     onError: (error) => {
       logTaskPageError("タスクの更新に失敗しました", error)
@@ -106,12 +123,11 @@ export function TasksPage() {
       }
       return taskId
     },
-    onSuccess: (taskId) => {
-      queryClient.setQueryData<TaskResponse[]>(tasksQueryKey, (previous = []) =>
-        previous.filter((task) => task.id !== taskId),
-      )
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["tasks"] })
       setDeleteTarget(null)
       setDeleteErrorMessage(null)
+      selectionApi.clear()
     },
     onError: (error) => {
       logTaskPageError("タスクの削除に失敗しました", error)
@@ -119,9 +135,34 @@ export function TasksPage() {
     },
   })
 
+  const bulkDeleteTaskMutation = useMutation({
+    mutationFn: async (ids: string[]) => {
+      const response = await bulkArchiveTasksApiTasksDelete({ ids })
+      if (response.status !== 200) {
+        throw new Error(`Unexpected status: ${response.status}`)
+      }
+      return response.data.data
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["tasks"] })
+      setBulkDeleteDialogOpen(false)
+      setBulkDeleteErrorMessage(null)
+      selectionApi.clear()
+    },
+    onError: (error) => {
+      logTaskPageError("タスクのバルク削除に失敗しました", error)
+      setBulkDeleteErrorMessage(
+        "一部のタスクの削除に失敗しました。再読み込みして確認してください。",
+      )
+    },
+  })
+
   const isSubmitting =
-    createTaskMutation.isPending || updateTaskMutation.isPending || deleteTaskMutation.isPending
-  const tasks = tasksQuery.data ?? []
+    createTaskMutation.isPending ||
+    updateTaskMutation.isPending ||
+    deleteTaskMutation.isPending ||
+    bulkDeleteTaskMutation.isPending
+
   const errorMessage = tasksQuery.isError ? "タスク一覧の取得に失敗しました。" : null
 
   const openCreateDialog = () => {
@@ -140,7 +181,20 @@ export function TasksPage() {
   }
 
   const handleRefresh = () => {
+    selectionApi.clear()
     void tasksQuery.refetch()
+  }
+
+  const handlePageChange = (nextPage: number) => {
+    selectionApi.clear()
+    setPage(nextPage)
+  }
+
+  const handleBulkAction = (action: TaskBulkAction) => {
+    if (action === "delete") {
+      setBulkDeleteErrorMessage(null)
+      setBulkDeleteDialogOpen(true)
+    }
   }
 
   return (
@@ -204,12 +258,35 @@ export function TasksPage() {
             ) : null}
 
             {!tasksQuery.isPending && !errorMessage && tasks.length > 0 ? (
-              <TaskTable
-                tasks={tasks}
-                disabled={isSubmitting}
-                onEdit={openEditDialog}
-                onDelete={openDeleteDialog}
-              />
+              <div className="space-y-4">
+                <TaskBulkActionBar
+                  selectedCount={selectionApi.selectedCount}
+                  disabled={isSubmitting}
+                  onSelectAction={handleBulkAction}
+                />
+                <div
+                  className={tasksQuery.isFetching ? "pointer-events-none opacity-60" : undefined}
+                >
+                  <TaskTable
+                    tasks={tasks}
+                    disabled={isSubmitting}
+                    onEdit={openEditDialog}
+                    onDelete={openDeleteDialog}
+                    selectedIds={selectionApi.selectedIds}
+                    onToggleOne={selectionApi.toggleOne}
+                    onToggleAll={selectionApi.toggleAllOnPage}
+                    allSelectedOnPage={selectionApi.allSelectedOnPage}
+                    someSelectedOnPage={selectionApi.someSelectedOnPage}
+                  />
+                </div>
+                <TaskListPagination
+                  page={page}
+                  perPage={PER_PAGE}
+                  total={total}
+                  onPageChange={handlePageChange}
+                  disabled={isSubmitting || tasksQuery.isFetching}
+                />
+              </div>
             ) : null}
           </CardContent>
         </Card>
@@ -250,6 +327,21 @@ export function TasksPage() {
         onConfirm={() =>
           deleteTarget ? deleteTaskMutation.mutate(deleteTarget.id) : Promise.resolve()
         }
+      />
+
+      <TaskBulkDeleteDialog
+        open={bulkDeleteDialogOpen}
+        selectedCount={selectionApi.selectedCount}
+        isSubmitting={isSubmitting}
+        errorMessage={bulkDeleteErrorMessage}
+        onClose={() => {
+          if (isSubmitting) {
+            return
+          }
+          setBulkDeleteDialogOpen(false)
+          setBulkDeleteErrorMessage(null)
+        }}
+        onConfirm={() => bulkDeleteTaskMutation.mutate(Array.from(selectionApi.selectedIds))}
       />
     </DashboardLayout>
   )

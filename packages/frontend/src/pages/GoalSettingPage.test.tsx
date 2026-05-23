@@ -19,7 +19,7 @@ vi.mock("@/api/generated/client", () => ({
 describe("GoalSettingPage", () => {
   beforeEach(() => {
     mockGetTasks.mockResolvedValue({
-      data: { data: { tasks: [] } },
+      data: { data: { items: [], total: 0, page: 1, per_page: 20 } },
       status: 200,
       headers: new Headers(),
     })
@@ -117,15 +117,20 @@ describe("GoalSettingPage", () => {
     mockGetTasks.mockResolvedValue({
       data: {
         data: {
-          tasks: [
+          items: [
             {
               id: "task-1",
               name: "英語学習",
               is_archived: false,
+              consumed_units_last_week: 0,
+              consumed_units_total: 0,
               created_at: "2026-01-01T00:00:00Z",
               updated_at: "2026-01-01T00:00:00Z",
             },
           ],
+          total: 1,
+          page: 1,
+          per_page: 20,
         },
       },
       status: 200,
@@ -196,15 +201,20 @@ describe("GoalSettingPage", () => {
     mockGetTasks.mockResolvedValue({
       data: {
         data: {
-          tasks: [
+          items: [
             {
               id: "task-1",
               name: "英語学習",
               is_archived: false,
+              consumed_units_last_week: 0,
+              consumed_units_total: 0,
               created_at: "2026-01-01T00:00:00Z",
               updated_at: "2026-01-01T00:00:00Z",
             },
           ],
+          total: 1,
+          page: 1,
+          per_page: 20,
         },
       },
       status: 200,

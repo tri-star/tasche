@@ -65,7 +65,7 @@ describe("DashboardPage", () => {
     })
     mockCreateRecord.mockResolvedValue({ data: {}, status: 200, headers: new Headers() })
     mockGetTasks.mockResolvedValue({
-      data: { data: { tasks: [] } },
+      data: { data: { items: [], total: 0, page: 1, per_page: 20 } },
       status: 200,
       headers: new Headers(),
     })

@@ -10,4 +10,16 @@ export type GetTasksApiTasksGetParams = {
  * アーカイブ済みタスクを含める
  */
 include_archived?: boolean;
+/**
+ * ページ番号（1-indexed）
+ * @minimum 1
+ * @maximum 10000
+ */
+page?: number;
+/**
+ * 1ページあたり件数（最大100）
+ * @minimum 1
+ * @maximum 100
+ */
+per_page?: number;
 };
