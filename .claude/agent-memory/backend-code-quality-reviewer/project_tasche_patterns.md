@@ -73,11 +73,28 @@ type: project
 - `tests/services/` に置かれているテストも実 DB（SQLite in-memory）を使う統合テストである（docstring に「ユニットテスト」と書かれていても）
 - テストケース番号のコメント（`# ケース1`、`# ケース2` 等）を使う慣習があるが、欠番が生じる場合がある → レビュー時に指摘する
 - `conftest.py` の `db_session` フィクスチャは function スコープで毎テスト後に drop_all + engine dispose するクリーンな設計
+- テストは `src/tasche/api/v1/tests/` と `src/tasche/tests/` の2箇所に分散している（TCH-59時点）
 
 ## モデル設計（TCH-32 で確認）
 
 - `email_verified_at: Mapped[datetime | None]` が `User` モデルに追加された（`DateTime(timezone=True)` + `nullable=True`）
 - SQLite テスト環境では naive datetime が返るため、datetime の比較アサーションは `is not None` の存在確認にとどめる（PostgreSQL との差異）
+- Task モデルの ID は `tsk_` (4文字) + ULID (26文字) = 30文字。`String(30)` に格納
+
+## プライベート関数の公開使用（TCH-59 で確認）
+
+- `api/v1/tasks.py` の `get_tasks` エンドポイントが `task_service._normalize_pagination()` をアンダースコア付きのプライベート関数として直接呼んでいる
+- `_normalize_pagination` は services モジュール内部のユーティリティであり、API 層から直接呼ぶ設計は理想的でない
+- 修正方向: パブリック関数化するか、ページングパラメータのバリデーションを API 層の Query 制約に移す
+
+## 未使用関数（TCH-59 で確認）
+
+- `services/task.py` の `get_tasks_by_user()` が定義されているが、コードベース全体でどこからも呼ばれていない
+- `get_tasks_with_stats()` が後継として存在しており、前者は削除候補
+
+## テストファイルのシグネチャ不整合（TCH-59 で確認）
+
+- `test_tasks.py` の `_create_week()` ヘルパーが `start_date: datetime.date` と型注釈しているが、`datetime` モジュールの `date` 型を `datetime.date` と参照しており、`from datetime import date` がない場合は動作するが慣習と異なる
 
 **Why:** TCH-26 の Google OAuth 実装時に発見。今後のレビューでも同様のトランザクション管理・ログ欠落パターンを注意して見るべき。
-**How to apply:** services 層の新しい関数をレビューするときはコミット境界を必ず確認。セキュリティ関連の分岐には INFO/WARNING ログが入っているか確認する。セキュリティ拒否分岐には必ず WARNING ログ（user_id, email, 試行元情報）を追加するよう指摘する。
+**How to apply:** services 層の新しい関数をレビューするときはコミット境界を必ず確認。セキュリティ関連の分岐には INFO/WARNING ログが入っているか確認する。セキュリティ拒否分岐には必ず WARNING ログ（user_id, email, 試行元情報）を追加するよう指摘する。プライベート関数 (`_` 接頭辞) の API 層からの直接呼び出しパターンはレビュー時に毎回指摘する。
