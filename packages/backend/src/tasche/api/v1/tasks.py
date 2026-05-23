@@ -37,7 +37,9 @@ async def get_tasks(
     )
 
     items = [
-        _task_to_response(task, consumed_units_last_week=last_week, consumed_units_total=total_units)
+        _task_to_response(
+            task, consumed_units_last_week=last_week, consumed_units_total=total_units
+        )
         for task, last_week, total_units in rows
     ]
 

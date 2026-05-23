@@ -8,8 +8,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ulid import ULID
 
 from tasche.core.exceptions import TaskNotFoundException, ValidationError
-
-logger = logging.getLogger(__name__)
 from tasche.models.record import Record
 from tasche.models.task import Task
 from tasche.models.user import User
@@ -20,6 +18,8 @@ from tasche.services.record import (
     calculate_current_week_start_date,
     get_current_time_utc,
 )
+
+logger = logging.getLogger(__name__)
 
 TASK_NAME_MAX_LENGTH = 100
 DEFAULT_PER_PAGE = 20

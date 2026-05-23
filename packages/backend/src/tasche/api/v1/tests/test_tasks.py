@@ -951,7 +951,12 @@ class TestCreateTask:
         assert db_task.is_archived is False
 
     @pytest.mark.asyncio
-    @pytest.mark.parametrize("name", ["   ", ])
+    @pytest.mark.parametrize(
+        "name",
+        [
+            "   ",
+        ],
+    )
     async def test_create_task_rejects_blank_name(
         self,
         client: AsyncClient,
@@ -1102,7 +1107,12 @@ class TestUpdateTask:
         assert response.json()["error"]["code"] == "TASK_NOT_FOUND"
 
     @pytest.mark.asyncio
-    @pytest.mark.parametrize("name", ["   ", ])
+    @pytest.mark.parametrize(
+        "name",
+        [
+            "   ",
+        ],
+    )
     async def test_update_task_rejects_blank_name(
         self,
         client: AsyncClient,

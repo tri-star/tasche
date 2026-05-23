@@ -1,5 +1,9 @@
 import type { Locator, Page } from "@playwright/test"
 
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+}
+
 export class TasksPage {
   readonly page: Page
   readonly title: Locator
@@ -29,11 +33,11 @@ export class TasksPage {
   }
 
   taskRow(name: string) {
-    return this.page.getByRole("row", { name: new RegExp(name) })
+    return this.page.getByRole("row", { name: new RegExp(escapeRegExp(name)) })
   }
 
   async waitForTask(name: string) {
-    await this.page.getByText(name).waitFor({ state: "visible" })
+    await this.taskRow(name).waitFor({ state: "visible" })
   }
 
   async createTask(name: string) {

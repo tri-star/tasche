@@ -10,23 +10,25 @@ test.describe("TasksPage", () => {
 
     await expect(tasksPage.title).toBeVisible()
     await expect(tasksPage.addButton).toBeVisible()
-    await expect(authenticatedPage.getByText("英語学習")).toBeVisible()
+    await expect(tasksPage.taskRow("試験勉強")).toBeVisible()
     await expect(authenticatedPage.getByText("個人開発")).toBeVisible()
   })
 
   test("主要 CRUD 導線が動作する", async ({ authenticatedPage }) => {
     const tasksPage = new TasksPage(authenticatedPage)
+    const taskName = `E2EタスクCRUD-${Date.now()}`
+    const updatedTaskName = `${taskName}-更新`
 
     await tasksPage.goto()
     await tasksPage.waitForLoaded()
 
-    await tasksPage.createTask("朝の散歩")
-    await expect(authenticatedPage.getByText("朝の散歩")).toBeVisible()
+    await tasksPage.createTask(taskName)
+    await expect(tasksPage.taskRow(taskName)).toBeVisible()
 
-    await tasksPage.editTask("英語学習", "英語学習 改")
-    await expect(authenticatedPage.getByText("英語学習 改")).toBeVisible()
+    await tasksPage.editTask(taskName, updatedTaskName)
+    await expect(tasksPage.taskRow(updatedTaskName)).toBeVisible()
 
-    await tasksPage.deleteTask("筋トレ")
-    await expect(authenticatedPage.getByText("筋トレ")).toBeHidden()
+    await tasksPage.deleteTask(updatedTaskName)
+    await expect(tasksPage.taskRow(updatedTaskName)).toBeHidden()
   })
 })
