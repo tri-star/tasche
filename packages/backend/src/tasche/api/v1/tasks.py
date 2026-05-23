@@ -4,8 +4,11 @@ from fastapi import APIRouter, Query
 
 from tasche.api.deps import CurrentUser, DbSession
 from tasche.api.transaction import transaction
+from tasche.models.task import Task
 from tasche.schemas.common import APIResponse
 from tasche.schemas.task import (
+    TaskBulkDeleteRequest,
+    TaskBulkDeleteResponse,
     TaskCreate,
     TaskListResponse,
     TaskResponse,
@@ -21,17 +24,75 @@ async def get_tasks(
     db: DbSession,
     current_user: CurrentUser,
     include_archived: bool = Query(False, description="アーカイブ済みタスクを含める"),
+    page: int = Query(1, description="ページ番号（1-indexed）"),
+    per_page: int = Query(20, description="1ページあたり件数（最大100）"),
 ) -> APIResponse[TaskListResponse]:
     """タスク一覧を取得する."""
-    tasks = await task_service.get_tasks_by_user(
+    safe_page, safe_per_page = task_service._normalize_pagination(page, per_page)
+
+    rows, total = await task_service.get_tasks_with_stats(
         db,
         current_user,
         include_archived=include_archived,
+        page=safe_page,
+        per_page=safe_per_page,
     )
 
-    task_responses = [TaskResponse.model_validate(task) for task in tasks]
+    items = [
+        TaskResponse(
+            id=task.id,
+            name=task.name,
+            is_archived=task.is_archived,
+            consumed_units_last_week=last_week,
+            consumed_units_total=total_units,
+            created_at=task.created_at,
+            updated_at=task.updated_at,
+        )
+        for task, last_week, total_units in rows
+    ]
 
-    return APIResponse(data=TaskListResponse(tasks=task_responses))
+    return APIResponse(
+        data=TaskListResponse(
+            items=items,
+            total=total,
+            page=safe_page,
+            per_page=safe_per_page,
+        )
+    )
+
+
+@router.delete("", response_model=APIResponse[TaskBulkDeleteResponse])
+async def bulk_delete_tasks(
+    request: TaskBulkDeleteRequest,
+    db: DbSession,
+    current_user: CurrentUser,
+) -> APIResponse[TaskBulkDeleteResponse]:
+    """複数タスクをまとめてアーカイブする."""
+    async with transaction(db):
+        archived_ids, not_found_ids = await task_service.archive_tasks(
+            db, current_user, request.ids
+        )
+    return APIResponse(
+        data=TaskBulkDeleteResponse(
+            archived_ids=archived_ids,
+            not_found_ids=not_found_ids,
+        )
+    )
+
+
+def _task_to_response(
+    task: Task, *, consumed_units_last_week: float = 0.0, consumed_units_total: float = 0.0
+) -> TaskResponse:
+    """TaskモデルをTaskResponseに変換する."""
+    return TaskResponse(
+        id=task.id,
+        name=task.name,
+        is_archived=task.is_archived,
+        consumed_units_last_week=consumed_units_last_week,
+        consumed_units_total=consumed_units_total,
+        created_at=task.created_at,
+        updated_at=task.updated_at,
+    )
 
 
 @router.post("", response_model=APIResponse[TaskResponse], status_code=201)
@@ -41,7 +102,7 @@ async def create_task(
     """新規タスクを作成する."""
     async with transaction(db):
         task = await task_service.create_task(db, current_user, task_create.name)
-    return APIResponse(data=TaskResponse.model_validate(task))
+    return APIResponse(data=_task_to_response(task))
 
 
 @router.put("/{task_id}", response_model=APIResponse[TaskResponse])
@@ -56,7 +117,7 @@ async def update_task(
             task_id,
             task_update.name,
         )
-    return APIResponse(data=TaskResponse.model_validate(task))
+    return APIResponse(data=_task_to_response(task))
 
 
 @router.delete("/{task_id}", response_model=APIResponse[TaskResponse])
@@ -66,4 +127,4 @@ async def delete_task(
     """タスクを削除（アーカイブ）する."""
     async with transaction(db):
         task = await task_service.archive_task(db, current_user, task_id)
-    return APIResponse(data=TaskResponse.model_validate(task))
+    return APIResponse(data=_task_to_response(task))
