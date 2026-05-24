@@ -42,6 +42,28 @@ jobs:
         with:
           ref: ${{ inputs.ref || github.ref }}
 
+      - name: Debug GitHub OIDC claims
+        shell: bash
+        run: |
+          OIDC_TOKEN=$(curl -sSf \
+            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=sts.amazonaws.com" \
+            | jq -r '.value')
+
+          OIDC_PAYLOAD=$(python3 - "$OIDC_TOKEN" <<'PY'
+          import base64
+          import sys
+
+          payload = sys.argv[1].split(".")[1]
+          payload += "=" * (-len(payload) % 4)
+          print(base64.urlsafe_b64decode(payload).decode())
+          PY
+          )
+
+          echo "::group::GitHub OIDC claims used for AWS trust policy debugging"
+          echo "$OIDC_PAYLOAD" | jq '{sub, aud, repository, repository_owner, ref, ref_type, job_workflow_ref, environment, workflow, event_name}'
+          echo "::endgroup::"
+
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502 # v4
         with:
