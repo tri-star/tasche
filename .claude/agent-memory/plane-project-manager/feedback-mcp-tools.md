@@ -28,3 +28,10 @@ type: feedback
 **Why:** MCP サーバーの接続状態によって登録ツールが変わる可能性がある。settings.local.json に許可リストはあるが、実際のMCPサーバーからツール定義が提供されていない場合は利用不可。
 
 **How to apply:** タスク一覧取得が必要な場合、Claude Code セッション再起動またはMCP再接続を案内する。外部HTTP（api.plane.so）もサンドボックス制限により不可。
+
+## 追加確認（2026-05-24 / Codex セッション）
+
+- Codex 側では `list_mcp_resources` / `list_mcp_resource_templates` ともに空配列を返し、Plane MCP の実体が見えていない状態だった。
+- `.claude/settings.json` と `.claude/settings.local.json` には `mcp__plane__*` の許可設定が存在していても、実行セッションにツール定義が注入されないケースがある。
+
+**How to apply:** 権限設定ファイルだけでは利用可否を判断せず、実セッションで Plane MCP が列挙・呼び出し可能かを先に確認する。
