@@ -4,6 +4,7 @@
 
 関連ドキュメント:
 
+- GitHub Actions タグデプロイ手順: `docs/deploy/github-actions-tag-deploy.md`
 - 命名規約: `docs/deploy/ssm-naming.md`
 - ADR: `docs/adr/ADR-005-backend-lambda-packaging.md`, `docs/adr/ADR-006-deploy-trigger-strategy.md`
 
