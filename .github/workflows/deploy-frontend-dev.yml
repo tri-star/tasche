@@ -24,7 +24,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: deploy-dev-frontend
+  group: dev-deploy-frontend
   cancel-in-progress: false
 
 jobs:
