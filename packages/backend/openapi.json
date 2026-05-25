@@ -278,6 +278,78 @@
         ]
       }
     },
+    "/api/settings": {
+      "get": {
+        "tags": [
+          "設定"
+        ],
+        "summary": "Get current user settings",
+        "description": "現在ユーザーの設定（timezone / theme）を取得.",
+        "operationId": "get_current_settings",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse_SettingsResponse_"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "設定"
+        ],
+        "summary": "Update current user settings",
+        "description": "現在ユーザーの設定（timezone / theme）を部分更新.",
+        "operationId": "update_current_settings",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SettingsUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse_SettingsResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/api/tasks": {
       "get": {
         "tags": [
@@ -1041,6 +1113,18 @@
           "data"
         ],
         "title": "APIResponse[RecordsResponse]"
+      },
+      "APIResponse_SettingsResponse_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/SettingsResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "APIResponse[SettingsResponse]"
       },
       "APIResponse_TaskBulkArchiveResponse_": {
         "properties": {
@@ -1823,6 +1907,64 @@
         ],
         "title": "RecordsResponse",
         "description": "実績一覧レスポンス."
+      },
+      "SettingsResponse": {
+        "properties": {
+          "timezone": {
+            "type": "string",
+            "title": "Timezone"
+          },
+          "theme": {
+            "type": "string",
+            "enum": [
+              "light",
+              "dark"
+            ],
+            "title": "Theme"
+          }
+        },
+        "type": "object",
+        "required": [
+          "timezone",
+          "theme"
+        ],
+        "title": "SettingsResponse",
+        "description": "ユーザー設定のレスポンス."
+      },
+      "SettingsUpdateRequest": {
+        "properties": {
+          "timezone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timezone"
+          },
+          "theme": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "light",
+                  "dark"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Theme"
+          }
+        },
+        "type": "object",
+        "title": "SettingsUpdateRequest",
+        "description": "ユーザー設定の部分更新リクエスト."
       },
       "StubLoginRequest": {
         "properties": {
