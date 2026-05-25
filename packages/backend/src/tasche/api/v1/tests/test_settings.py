@@ -129,7 +129,7 @@ async def test_patch_settings_invalid_timezone(
     )
 
     assert response.status_code == 400
-    assert "Invalid timezone" in response.json()["detail"]
+    assert "Invalid timezone" in response.json()["error"]["message"]
 
 
 @pytest.mark.asyncio

@@ -4,18 +4,19 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from tasche.core.exceptions import ValidationError
 from tasche.models.user import User
 
 
 def _validate_timezone(tz: str) -> None:
     """IANA タイムゾーン名の妥当性を検証する.
 
-    不正な場合は ValueError を投げる（呼び出し側で 400 に変換）。
+    不正な場合は ValidationError を投げる。
     """
     try:
         ZoneInfo(tz)
-    except (ZoneInfoNotFoundError, ValueError) as e:
-        raise ValueError(f"Invalid timezone: {tz}") from e
+    except (ZoneInfoNotFoundError, ValueError, TypeError) as e:
+        raise ValidationError("Invalid timezone") from e
 
 
 async def update_user_settings(
@@ -28,7 +29,7 @@ async def update_user_settings(
     """ユーザー設定（timezone / theme）を部分更新する.
 
     - None のフィールドは更新しない（部分更新）
-    - timezone は IANA 名の妥当性検証を行い、不正なら ValueError
+    - timezone は IANA 名の妥当性検証を行い、不正なら ValidationError
     - commit は呼び出し側責任（既存サービス層と一貫）
     """
     if timezone is not None:

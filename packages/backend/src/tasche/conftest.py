@@ -70,6 +70,7 @@ async def test_user(db_session: AsyncSession):
         email="test@example.com",
         name="Test User",
         timezone="Asia/Tokyo",
+        theme="light",
     )
     db_session.add(user)
     await db_session.commit()

@@ -1,6 +1,6 @@
 """設定エンドポイント."""
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter
 
 from tasche.api.deps import CurrentUser, DbSession
 from tasche.api.transaction import transaction
@@ -36,18 +36,12 @@ async def update_current_settings(
     db: DbSession,
 ) -> APIResponse[SettingsResponse]:
     """現在ユーザーの設定（timezone / theme）を部分更新."""
-    try:
-        async with transaction(db):
-            updated = await setting_service.update_user_settings(
-                db,
-                current_user,
-                timezone=payload.timezone,
-                theme=payload.theme,
-            )
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        ) from e
+    async with transaction(db):
+        updated = await setting_service.update_user_settings(
+            db,
+            current_user,
+            timezone=payload.timezone,
+            theme=payload.theme,
+        )
 
     return APIResponse(data=SettingsResponse.model_validate(updated))
