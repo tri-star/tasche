@@ -108,6 +108,10 @@ class Settings(BaseSettings):
     auth_stub_enabled: bool = False
     auth_stub_jwt_secret: str = ""
 
+    # テスト認証（pytest のみ）
+    enable_test_auth: bool = False
+    test_jwt_secret: str = "test_jwt_secret_change_in_production_12345678"
+
     model_config = SettingsConfigDict(
         env_file=".env",
         case_sensitive=False,

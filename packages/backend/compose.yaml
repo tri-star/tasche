@@ -49,6 +49,8 @@ services:
       COOKIE_DOMAIN: ""
       AUTH_STUB_ENABLED: "true"
       AUTH_STUB_JWT_SECRET: ${AUTH_STUB_JWT_SECRET:-stub-secret-for-local}
+      ENABLE_TEST_AUTH: "true"
+      TEST_JWT_SECRET: ${JWT_SECRET:-change_me_in_production_0123456789abcdef}
       LOG_LEVEL: debug
     ports:
       - "${API_CONTAINER_PORT:-8000}:8000"
