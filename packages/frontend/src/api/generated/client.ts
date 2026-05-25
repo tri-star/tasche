@@ -14,6 +14,7 @@ import type {
   HTTPValidationError,
   RecordCreate,
   RecordUpdate,
+  SettingsUpdateRequest,
   StubLoginRequest,
   TaskBulkArchiveRequest,
   TaskCreate,
@@ -45,6 +46,7 @@ import type {
   APIResponseLogoutResponse,
   APIResponseRecordResponse,
   APIResponseRecordsResponse,
+  APIResponseSettingsResponse,
   APIResponseTaskBulkArchiveResponse,
   APIResponseTaskListResponse,
   APIResponseTaskResponse,
@@ -362,6 +364,88 @@ export const getCurrentUserInfoApiUsersMeGet = async ( options?: RequestInit): P
     method: 'GET'
     
     
+  }
+);}
+
+
+
+/**
+ * 現在ユーザーの設定（timezone / theme）を取得.
+ * @summary Get current user settings
+ */
+export type getCurrentSettingsResponse200 = {
+  data: APIResponseSettingsResponse
+  status: 200
+}
+    
+export type getCurrentSettingsResponseSuccess = (getCurrentSettingsResponse200) & {
+  headers: Headers;
+};
+;
+
+export type getCurrentSettingsResponse = (getCurrentSettingsResponseSuccess)
+
+export const getGetCurrentSettingsUrl = () => {
+
+
+  
+
+  return `/api/settings`
+}
+
+export const getCurrentSettings = async ( options?: RequestInit): Promise<getCurrentSettingsResponse> => {
+  
+  return authFetch<getCurrentSettingsResponse>(getGetCurrentSettingsUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * 現在ユーザーの設定（timezone / theme）を部分更新.
+ * @summary Update current user settings
+ */
+export type updateCurrentSettingsResponse200 = {
+  data: APIResponseSettingsResponse
+  status: 200
+}
+
+export type updateCurrentSettingsResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+    
+export type updateCurrentSettingsResponseSuccess = (updateCurrentSettingsResponse200) & {
+  headers: Headers;
+};
+export type updateCurrentSettingsResponseError = (updateCurrentSettingsResponse422) & {
+  headers: Headers;
+};
+
+export type updateCurrentSettingsResponse = (updateCurrentSettingsResponseSuccess | updateCurrentSettingsResponseError)
+
+export const getUpdateCurrentSettingsUrl = () => {
+
+
+  
+
+  return `/api/settings`
+}
+
+export const updateCurrentSettings = async (settingsUpdateRequest: SettingsUpdateRequest, options?: RequestInit): Promise<updateCurrentSettingsResponse> => {
+  
+  return authFetch<updateCurrentSettingsResponse>(getUpdateCurrentSettingsUrl(),
+  {      
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      settingsUpdateRequest,)
   }
 );}
 
@@ -1042,6 +1126,10 @@ export const getStubLoginEndpointApiAuthStubLoginPostResponseMock = (overrideRes
 
 export const getGetCurrentUserInfoApiUsersMeGetResponseMock = (overrideResponse: Partial< APIResponseUserResponse > = {}): APIResponseUserResponse => ({data: {id: faker.string.alpha({length: {min: 10, max: 20}}), email: faker.internet.email(), name: faker.string.alpha({length: {min: 10, max: 20}}), picture: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}),null,]), timezone: faker.string.alpha({length: {min: 10, max: 20}}), created_at: `${faker.date.past().toISOString().split('.')[0]}Z`, updated_at: `${faker.date.past().toISOString().split('.')[0]}Z`}, ...overrideResponse})
 
+export const getGetCurrentSettingsResponseMock = (overrideResponse: Partial< APIResponseSettingsResponse > = {}): APIResponseSettingsResponse => ({data: {timezone: faker.string.alpha({length: {min: 10, max: 20}}), theme: faker.helpers.arrayElement(['light','dark'] as const)}, ...overrideResponse})
+
+export const getUpdateCurrentSettingsResponseMock = (overrideResponse: Partial< APIResponseSettingsResponse > = {}): APIResponseSettingsResponse => ({data: {timezone: faker.string.alpha({length: {min: 10, max: 20}}), theme: faker.helpers.arrayElement(['light','dark'] as const)}, ...overrideResponse})
+
 export const getGetTasksApiTasksGetResponseMock = (overrideResponse: Partial< APIResponseTaskListResponse > = {}): APIResponseTaskListResponse => ({data: {items: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({id: faker.string.alpha({length: {min: 10, max: 20}}), name: faker.string.alpha({length: {min: 10, max: 20}}), is_archived: faker.datatype.boolean(), consumed_units_last_week: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), consumed_units_total: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), created_at: `${faker.date.past().toISOString().split('.')[0]}Z`, updated_at: `${faker.date.past().toISOString().split('.')[0]}Z`})), total: faker.number.int({min: undefined, max: undefined}), page: faker.number.int({min: undefined, max: undefined}), per_page: faker.number.int({min: undefined, max: undefined})}, ...overrideResponse})
 
 export const getBulkArchiveTasksApiTasksDeleteResponseMock = (overrideResponse: Partial< APIResponseTaskBulkArchiveResponse > = {}): APIResponseTaskBulkArchiveResponse => ({data: {archived_ids: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => (faker.string.alpha({length: {min: 10, max: 20}}))), not_found_ids: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => (faker.string.alpha({length: {min: 10, max: 20}})))}, ...overrideResponse})
@@ -1137,6 +1225,30 @@ export const getGetCurrentUserInfoApiUsersMeGetMockHandler = (overrideResponse?:
     return new HttpResponse(JSON.stringify(overrideResponse !== undefined
     ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
     : getGetCurrentUserInfoApiUsersMeGetResponseMock()),
+      { status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      })
+  }, options)
+}
+
+export const getGetCurrentSettingsMockHandler = (overrideResponse?: APIResponseSettingsResponse | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<APIResponseSettingsResponse> | APIResponseSettingsResponse), options?: RequestHandlerOptions) => {
+  return http.get('*/api/settings', async (info) => {await delay(0);
+  
+    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getGetCurrentSettingsResponseMock()),
+      { status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      })
+  }, options)
+}
+
+export const getUpdateCurrentSettingsMockHandler = (overrideResponse?: APIResponseSettingsResponse | ((info: Parameters<Parameters<typeof http.patch>[1]>[0]) => Promise<APIResponseSettingsResponse> | APIResponseSettingsResponse), options?: RequestHandlerOptions) => {
+  return http.patch('*/api/settings', async (info) => {await delay(0);
+  
+    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getUpdateCurrentSettingsResponseMock()),
       { status: 200,
         headers: { 'Content-Type': 'application/json' }
       })
@@ -1325,6 +1437,8 @@ export const getTascheAPIMock = () => [
   getLogoutApiAuthLogoutPostMockHandler(),
   getStubLoginEndpointApiAuthStubLoginPostMockHandler(),
   getGetCurrentUserInfoApiUsersMeGetMockHandler(),
+  getGetCurrentSettingsMockHandler(),
+  getUpdateCurrentSettingsMockHandler(),
   getGetTasksApiTasksGetMockHandler(),
   getBulkArchiveTasksApiTasksDeleteMockHandler(),
   getCreateTaskApiTasksPostMockHandler(),

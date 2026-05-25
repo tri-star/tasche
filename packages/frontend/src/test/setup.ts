@@ -15,6 +15,15 @@ if (typeof window !== "undefined") {
     releasePointerCapture: () => {},
     setPointerCapture: () => {},
   })
+
+  // cmdk（Command コンポーネント）が使用する ResizeObserver の stub
+  if (typeof window.ResizeObserver === "undefined") {
+    window.ResizeObserver = class ResizeObserver {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    }
+  }
 }
 
 beforeAll(() => {

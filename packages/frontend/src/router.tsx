@@ -5,6 +5,7 @@ import { AuthCallbackPage } from "@/pages/AuthCallbackPage"
 import { DashboardPage } from "@/pages/DashboardPage"
 import { GoalSettingPage } from "@/pages/GoalSettingPage"
 import { LoginPage } from "@/pages/LoginPage"
+import { SettingsPage } from "@/pages/SettingsPage"
 import { TasksPage } from "@/pages/TasksPage"
 
 export const router = createBrowserRouter([
@@ -17,6 +18,7 @@ export const router = createBrowserRouter([
       { path: "/tasks", element: <TasksPage /> },
       { path: "/goals", element: <GoalSettingPage /> },
       { path: "/account", element: <AccountPage /> },
+      { path: "/settings", element: <SettingsPage /> },
     ],
   },
 ])
