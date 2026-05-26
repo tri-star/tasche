@@ -52,8 +52,8 @@ export function TimezoneCombobox({ value, onChange, disabled, id }: TimezoneComb
                 <CommandItem
                   key={tz}
                   value={tz}
-                  onSelect={(selected) => {
-                    onChange(selected)
+                  onSelect={() => {
+                    onChange(tz)
                     setOpen(false)
                   }}
                 >

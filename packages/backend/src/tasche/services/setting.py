@@ -39,5 +39,4 @@ async def update_user_settings(
         user.theme = theme
 
     await db.flush()
-    await db.refresh(user)
     return user

@@ -6,15 +6,20 @@ type ThemeProviderProps = { children: React.ReactNode }
 
 /**
  * currentSettingsAtom.theme を購読し、<html> の dark クラスを副作用で同期する Provider。
- * 状態の唯一の真実は currentSettingsAtom（jotai）。
- * LocalStorage は使用しない（DB が真実のため）。
+ * DB が真実のソースだが、起動時フラッシュを防ぐため localStorage をキャッシュとして使用する。
  */
 export function ThemeProvider({ children }: ThemeProviderProps) {
   const settings = useAtomValue(currentSettingsAtom)
 
   useEffect(() => {
-    const isDark = settings?.theme === "dark"
+    const cachedTheme = localStorage.getItem("theme")
+    const theme = settings?.theme ?? cachedTheme ?? "light"
+    const isDark = theme === "dark"
     document.documentElement.classList.toggle("dark", isDark)
+
+    if (settings?.theme) {
+      localStorage.setItem("theme", settings.theme)
+    }
   }, [settings?.theme])
 
   return <>{children}</>
