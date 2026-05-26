@@ -31,7 +31,7 @@ export function ThemeSection() {
             aria-label="ダークモード切替"
           />
         </div>
-        {error && <p className="mt-2 text-sm text-red-600">テーマの保存に失敗しました</p>}
+        {error && <p className="mt-2 text-sm text-destructive">テーマの保存に失敗しました</p>}
       </CardContent>
     </Card>
   )

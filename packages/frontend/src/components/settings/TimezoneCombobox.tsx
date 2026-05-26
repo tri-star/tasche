@@ -10,7 +10,7 @@ import {
   CommandList,
 } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { listSupportedTimezones } from "@/lib/timezones"
+import { SUPPORTED_TIMEZONES } from "@/lib/timezones"
 import { cn } from "@/lib/utils"
 
 type TimezoneComboboxProps = {
@@ -25,7 +25,7 @@ type TimezoneComboboxProps = {
  */
 export function TimezoneCombobox({ value, onChange, disabled, id }: TimezoneComboboxProps) {
   const [open, setOpen] = useState(false)
-  const timezones = listSupportedTimezones()
+  const timezones = SUPPORTED_TIMEZONES
 
   return (
     <Popover open={open} onOpenChange={setOpen}>

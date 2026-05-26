@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest"
 import { TimezoneCombobox } from "./TimezoneCombobox"
 
 vi.mock("@/lib/timezones", () => ({
-  listSupportedTimezones: () => ["Asia/Tokyo", "UTC", "Europe/London"],
+  SUPPORTED_TIMEZONES: ["Asia/Tokyo", "UTC", "Europe/London"],
 }))
 
 describe("TimezoneCombobox", () => {

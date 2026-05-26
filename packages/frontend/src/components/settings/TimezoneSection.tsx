@@ -1,5 +1,5 @@
 import { useAtom } from "jotai"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useUpdateSettings } from "@/hooks/useUpdateSettings"
@@ -13,19 +13,30 @@ import { TimezoneCombobox } from "./TimezoneCombobox"
  */
 export function TimezoneSection() {
   const [settings, setSettings] = useAtom(currentSettingsAtom)
-  const initial = settings?.timezone ?? "Asia/Tokyo"
-  const [draft, setDraft] = useState(initial)
+  const [draft, setDraft] = useState(settings?.timezone ?? "Asia/Tokyo")
+  const [initialized, setInitialized] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const updateSettings = useUpdateSettings()
 
-  const isDirty = draft !== initial
+  // settings が async でロードされた際に draft を初期化する
+  useEffect(() => {
+    if (settings && !initialized) {
+      setDraft(settings.timezone)
+      setInitialized(true)
+    }
+  }, [settings, initialized])
+
+  // settings 未取得時はフォームを表示しない（null のまま保存するとDB値を上書きするリスクがある）
+  if (!settings) return null
+
+  const isDirty = draft !== settings.timezone
 
   async function handleSave() {
     setErrorMessage(null)
     try {
       const updated = await updateSettings.mutateAsync({ timezone: draft })
-      // 権威ある値で settings を再同期（全置換）
       setSettings({ timezone: updated.timezone, theme: updated.theme })
+      setDraft(updated.timezone)
     } catch {
       setErrorMessage("タイムゾーンの保存に失敗しました")
     }
@@ -47,7 +58,7 @@ export function TimezoneSection() {
             保存
           </Button>
         </div>
-        {errorMessage && <p className="text-sm text-red-600">{errorMessage}</p>}
+        {errorMessage && <p className="text-sm text-destructive">{errorMessage}</p>}
       </CardContent>
     </Card>
   )

@@ -3,6 +3,7 @@ import { useState } from "react"
 import { useUpdateSettings } from "@/hooks/useUpdateSettings"
 import { currentSettingsAtom } from "@/settings/atoms"
 import type { Theme } from "@/settings/types"
+import { DEFAULT_SETTINGS } from "@/settings/types"
 
 type UseThemeResult = {
   theme: Theme
@@ -32,7 +33,7 @@ export function useTheme(): UseThemeResult {
     // 楽観更新: 即座に UI に反映
     const optimistic = previous
       ? { ...previous, theme: next }
-      : { timezone: "Asia/Tokyo", theme: next }
+      : { ...DEFAULT_SETTINGS, theme: next }
     setSettings(optimistic)
     setError(null)
 
