@@ -18,6 +18,12 @@ class User(Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     picture: Mapped[str | None] = mapped_column(String(512), nullable=True)
     timezone: Mapped[str] = mapped_column(String(50), nullable=False, default="Asia/Tokyo")
+    theme: Mapped[str] = mapped_column(
+        String(10),
+        nullable=False,
+        default="light",
+        server_default="light",
+    )
     google_sub: Mapped[str | None] = mapped_column(
         String(255),
         unique=True,

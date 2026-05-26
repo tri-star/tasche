@@ -6,6 +6,7 @@ import App from "./App"
 import { accessTokenAtom, authStatusAtom, currentUserAtom } from "./auth/atoms"
 import { createAuthClient } from "./auth/authClient"
 import { setAuthClient } from "./auth/authClientSingleton"
+import { ThemeProvider } from "./theme/ThemeProvider"
 import "./index.css"
 
 // orval mutator 用の AuthClient シングルトンを登録
@@ -57,7 +58,9 @@ enableMocking().then(() => {
     <StrictMode>
       <JotaiProvider store={jotaiStore}>
         <QueryClientProvider client={queryClient}>
-          <App />
+          <ThemeProvider>
+            <App />
+          </ThemeProvider>
         </QueryClientProvider>
       </JotaiProvider>
     </StrictMode>,
