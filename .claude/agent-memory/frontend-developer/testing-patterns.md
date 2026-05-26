@@ -74,3 +74,24 @@ if (typeof window !== "undefined") {
 
 **Why**: pkce.test.ts は `// @vitest-environment node` を使うため `window` が存在しない。
 **How to apply**: node 環境で使うテストがある場合は必ず `typeof window !== "undefined"` でガードする。
+
+### cmdk（Command コンポーネント）の jsdom 問題
+
+`cmdk` ライブラリは jsdom 環境で `ResizeObserver is not defined` エラーが出る。
+
+**解決策**: `src/test/setup.ts` に ResizeObserver の stub を追加する。
+
+```ts
+if (typeof window !== "undefined") {
+  if (typeof window.ResizeObserver === "undefined") {
+    window.ResizeObserver = class ResizeObserver {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    }
+  }
+}
+```
+
+**Why**: cmdk が内部で ResizeObserver を使うが jsdom は未実装。
+**How to apply**: `command.tsx`（shadcn/ui Command）を使うテストを書く場合は setup.ts に追記する。

@@ -96,5 +96,28 @@ type: project
 
 - `test_tasks.py` の `_create_week()` ヘルパーが `start_date: datetime.date` と型注釈しているが、`datetime` モジュールの `date` 型を `datetime.date` と参照しており、`from datetime import date` がない場合は動作するが慣習と異なる
 
+## テストの DB 永続化検証パターン（TCH-15 で確認）
+
+- `test_settings.py` が `await db_session.refresh(test_user)` してからモデルを直接アサートしている
+- 「レスポンス JSON は正しいが DB は変わっていない」バグを検出できる優れたパターン
+- 既存の `test_tasks.py` にはないパターン。今後の更新系テストでも採用を推奨する
+
+## conftest.py の test_user フィクスチャに theme が未設定（TCH-15 で確認）
+
+- `conftest.py` の `test_user` フィクスチャが `theme` フィールドを明示せず、SQLAlchemy `default="light"` に暗黙依存している
+- `test_settings.py` のアサートが `theme == "light"` に依存しているため、モデルのデフォルト変更でテストが静かに壊れるリスクがある
+- 修正方向: `test_user` フィクスチャに `theme="light"` を明示する
+
+## CORS allow_methods に PATCH が欠落（TCH-15 のセキュリティレビューで確認）
+
+- `main.py` の `allow_methods` が `["GET", "POST", "PUT", "DELETE", "OPTIONS"]` で `PATCH` が含まれていない
+- PATCH エンドポイント（settings など）がブラウザから実際には動作しないバグでもある
+- 修正: `allow_methods` に `"PATCH"` を追加する
+
+## 引数順序の混在（TCH-15 で確認）
+
+- `api/v1/` 内のエンドポイントが `(payload, db, current_user)`, `(db, current_user, payload)`, `(payload, current_user, db)` の3パターン混在
+- FastAPI では動作に影響しないが認知負荷になる。プロジェクト規約として統一を推奨
+
 **Why:** TCH-26 の Google OAuth 実装時に発見。今後のレビューでも同様のトランザクション管理・ログ欠落パターンを注意して見るべき。
-**How to apply:** services 層の新しい関数をレビューするときはコミット境界を必ず確認。セキュリティ関連の分岐には INFO/WARNING ログが入っているか確認する。セキュリティ拒否分岐には必ず WARNING ログ（user_id, email, 試行元情報）を追加するよう指摘する。プライベート関数 (`_` 接頭辞) の API 層からの直接呼び出しパターンはレビュー時に毎回指摘する。
+**How to apply:** services 層の新しい関数をレビューするときはコミット境界を必ず確認。セキュリティ関連の分岐には INFO/WARNING ログが入っているか確認する。セキュリティ拒否分岐には必ず WARNING ログ（user_id, email, 試行元情報）を追加するよう指摘する。プライベート関数 (`_` 接頭辞) の API 層からの直接呼び出しパターンはレビュー時に毎回指摘する。新しい services 関数には必ず `logger = logging.getLogger(__name__)` と DEBUG ログ（更新成功時）があるか確認する。
