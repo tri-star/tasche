@@ -39,6 +39,7 @@ jobs:
         with:
           enable-cache: true
           working-directory: packages/backend
+          uv-version: "latest"
 
       - name: Create venv
         run: uv venv
@@ -102,6 +103,7 @@ jobs:
         with:
           enable-cache: true
           working-directory: packages/backend
+          uv-version: "latest"
 
       - name: Create venv
         run: uv venv
