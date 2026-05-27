@@ -1,4 +1,5 @@
 import { render, screen, waitFor } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import { createMemoryRouter, RouterProvider } from "react-router-dom"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { DashboardPage } from "./DashboardPage"
@@ -6,12 +7,21 @@ import { DashboardPage } from "./DashboardPage"
 const mockGetDashboard = vi.fn()
 const mockCreateRecord = vi.fn()
 const mockGetTasks = vi.fn()
+const mockNavigate = vi.fn()
 
 vi.mock("@/api/generated/client", () => ({
   getDashboardApiDashboardGet: () => mockGetDashboard(),
   createRecordApiWeeksCurrentRecordsPost: (...args: unknown[]) => mockCreateRecord(...args),
   getTasksApiTasksGet: (...args: unknown[]) => mockGetTasks(...args),
 }))
+
+vi.mock("react-router-dom", async () => {
+  const actual = await vi.importActual<typeof import("react-router-dom")>("react-router-dom")
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  }
+})
 
 const mockDashboardData = {
   current_date: "2026-04-24",
@@ -97,5 +107,58 @@ describe("DashboardPage", () => {
     expect(screen.getByText("ダッシュボード")).toBeInTheDocument()
     expect(screen.getByText("設定")).toBeInTheDocument()
     expect(screen.getByText("ヘルプ")).toBeInTheDocument()
+  })
+
+  it("当週の目標が未設定のとき、空状態が表示される", async () => {
+    mockGetDashboard.mockResolvedValue({
+      data: {
+        data: {
+          ...mockDashboardData,
+          has_goals_configured: false,
+          today_goals: [],
+          weekly_matrix: [],
+        },
+      },
+      status: 200,
+      headers: new Headers(),
+    })
+
+    renderWithRouter()
+
+    await waitFor(() => {
+      expect(screen.queryByText("読み込み中...")).not.toBeInTheDocument()
+    })
+
+    expect(screen.getByText("今週はまだ予定がありません")).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "目標を設定する" })).toBeInTheDocument()
+    expect(screen.queryByText("今日の目標")).not.toBeInTheDocument()
+    expect(screen.queryByText("実績を記録")).not.toBeInTheDocument()
+    expect(screen.queryByText("週間達成状況")).not.toBeInTheDocument()
+  })
+
+  it("空状態のボタンクリックで /goals に遷移する", async () => {
+    const user = userEvent.setup()
+    mockGetDashboard.mockResolvedValue({
+      data: {
+        data: {
+          ...mockDashboardData,
+          has_goals_configured: false,
+          today_goals: [],
+          weekly_matrix: [],
+        },
+      },
+      status: 200,
+      headers: new Headers(),
+    })
+
+    renderWithRouter()
+
+    await waitFor(() => {
+      expect(screen.queryByText("読み込み中...")).not.toBeInTheDocument()
+    })
+
+    await user.click(screen.getByRole("button", { name: "目標を設定する" }))
+
+    expect(mockNavigate).toHaveBeenCalledWith("/goals")
   })
 })

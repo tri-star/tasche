@@ -48,6 +48,7 @@ export function TaskItem({ name, isSelected, isNew, onToggle, onEdit, onDelete }
             checked={isSelected}
             onCheckedChange={onToggle}
             onClick={(event) => event.stopPropagation()}
+            aria-label={name}
           />
           <div className="flex">
             {isNew ? (

@@ -670,7 +670,7 @@ Content-Type: application/json
 
 今週の目標一覧を取得します。
 
-**注**: current week が存在しない場合（初回アクセス時）は、既定値（`unit_duration_minutes=30`、`daily_available_units=0.0`）で自動作成され、`goals: []` の空配列を返します。`WEEK_NOT_FOUND` エラーは返りません。
+**注**: current week が存在しない場合（初回アクセス時）は、既定値（`unit_duration_minutes=30`、`daily_available_units=0.0`）で自動作成され、`goals: []` の空配列を返します。`WEEK_NOT_FOUND` エラーは返りません。その場合 `has_current_goals=false` となり、過去に Goal を持つ Week があれば `previous_goals` にその内容を返します（なければ `null`）。
 
 #### リクエストヘッダー
 
@@ -684,7 +684,19 @@ Authorization: Bearer <access_token>
 {
   "data": {
     "week_id": "wk_01HXYZ1234567890ABCDEF",
+    "week_start_date": "2026-01-12",
     "unit_duration_minutes": 30,
+    "daily_available_units": {
+      "monday": 2.0,
+      "tuesday": 2.0,
+      "wednesday": 2.0,
+      "thursday": 2.0,
+      "friday": 2.0,
+      "saturday": 4.0,
+      "sunday": 4.0
+    },
+    "has_current_goals": true,
+    "previous_goals": null,
     "goals": [
       {
         "task_id": "tsk_01HXYZ1234567890ABCDEF",
@@ -716,6 +728,42 @@ Authorization: Bearer <access_token>
   }
 }
 ```
+
+当週に Goal が存在しない場合（`has_current_goals: false`）、過去週に設定があれば `previous_goals` を返します:
+
+```json
+{
+  "data": {
+    "week_id": "wk_01HXYZ1234567890ABCDEF",
+    "week_start_date": "2026-01-19",
+    "unit_duration_minutes": 30,
+    "daily_available_units": { "monday": 2.0, "tuesday": 2.0, "wednesday": 2.0, "thursday": 2.0, "friday": 2.0, "saturday": 4.0, "sunday": 4.0 },
+    "has_current_goals": false,
+    "goals": [],
+    "previous_goals": {
+      "week_id": "wk_00HXYZ1234567890ABCDEF",
+      "week_start_date": "2026-01-12",
+      "unit_duration_minutes": 30,
+      "daily_available_units": { "monday": 2.0, "tuesday": 2.0, "wednesday": 2.0, "thursday": 2.0, "friday": 2.0, "saturday": 4.0, "sunday": 4.0 },
+      "goals": [
+        {
+          "task_id": "tsk_01HXYZ1234567890ABCDEF",
+          "task_name": "英語学習",
+          "daily_targets": { "monday": 2.0, "tuesday": 1.0, "wednesday": 2.0, "thursday": 1.0, "friday": 2.0, "saturday": 0, "sunday": 0 }
+        }
+      ]
+    }
+  }
+}
+```
+
+**フィールド説明**:
+
+| フィールド | 型 | 説明 |
+|---|---|---|
+| `has_current_goals` | `bool` | 当週に Goal が1件以上存在するか |
+| `previous_goals` | `PreviousGoalsResponse \| null` | 当週 Goal が未設定かつ過去に Goal を持つ Week がある場合のみ返す。それ以外は `null` |
+| `previous_goals.goals` | `GoalResponse[]` | アーカイブ済みタスク（`is_archived=true`）由来の Goal は除外済み |
 
 ---
 

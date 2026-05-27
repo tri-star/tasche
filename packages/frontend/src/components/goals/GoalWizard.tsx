@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
+import { useNavigate } from "react-router-dom"
 import {
   deleteTaskApiTasksTaskIdDelete,
   getCurrentGoalsApiWeeksCurrentGoalsGet,
@@ -48,6 +49,7 @@ const normalizeDailyAvailableUnits = (
 }
 
 export function GoalWizard() {
+  const navigate = useNavigate()
   const [currentStep, setCurrentStep] = useState<WizardStep>(1)
   const [unitDurationMinutes, setUnitDurationMinutes] = useState<number | null>(null)
   const [dailyAvailableUnits, setDailyAvailableUnits] = useState<DailyAvailableUnits>(
@@ -61,6 +63,7 @@ export function GoalWizard() {
   const [loading, setLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
+  const [isUsingPreviousGoals, setIsUsingPreviousGoals] = useState(false)
 
   useEffect(() => {
     let isMounted = true
@@ -80,28 +83,58 @@ export function GoalWizard() {
 
         if (goalsResponse.status === 200) {
           const goalsData = goalsResponse.data.data
+          const hasCurrent = goalsData.has_current_goals
+
           const taskMap = new Map(filteredTasks.map((task) => [task.id, task]))
-          goalsData.goals.forEach((goal) => {
-            if (!taskMap.has(goal.task_id)) {
-              taskMap.set(goal.task_id, {
-                id: goal.task_id,
-                name: goal.task_name,
-                is_archived: false,
-                consumed_units_last_week: 0,
-                consumed_units_total: 0,
-                created_at: "",
-                updated_at: "",
-              })
-            }
-          })
+
+          if (hasCurrent) {
+            goalsData.goals.forEach((goal) => {
+              if (!taskMap.has(goal.task_id)) {
+                taskMap.set(goal.task_id, {
+                  id: goal.task_id,
+                  name: goal.task_name,
+                  is_archived: false,
+                  consumed_units_last_week: 0,
+                  consumed_units_total: 0,
+                  created_at: "",
+                  updated_at: "",
+                })
+              }
+            })
+          } else if (goalsData.previous_goals) {
+            goalsData.previous_goals.goals.forEach((goal) => {
+              if (!taskMap.has(goal.task_id)) {
+                taskMap.set(goal.task_id, {
+                  id: goal.task_id,
+                  name: goal.task_name,
+                  is_archived: false,
+                  consumed_units_last_week: 0,
+                  consumed_units_total: 0,
+                  created_at: "",
+                  updated_at: "",
+                })
+              }
+            })
+          }
 
           if (isMounted) {
             setTasks(Array.from(taskMap.values()))
+            // weekStartDate は常に当週を使う（保存先は当週のため）
             setWeekStartDate(goalsData.week_start_date)
-            setUnitDurationMinutes(goalsData.unit_duration_minutes)
-            setDailyAvailableUnits(normalizeDailyAvailableUnits(goalsData.daily_available_units))
-            setSelectedTaskIds(goalsData.goals.map((goal) => goal.task_id))
-            setWeeklyTargets(buildTargetsMap(goalsData.goals))
+
+            if (hasCurrent) {
+              setUnitDurationMinutes(goalsData.unit_duration_minutes)
+              setDailyAvailableUnits(normalizeDailyAvailableUnits(goalsData.daily_available_units))
+              setSelectedTaskIds(goalsData.goals.map((goal) => goal.task_id))
+              setWeeklyTargets(buildTargetsMap(goalsData.goals))
+            } else if (goalsData.previous_goals) {
+              const prev = goalsData.previous_goals
+              setUnitDurationMinutes(prev.unit_duration_minutes)
+              setDailyAvailableUnits(normalizeDailyAvailableUnits(prev.daily_available_units))
+              setSelectedTaskIds(prev.goals.map((goal) => goal.task_id))
+              setWeeklyTargets(buildTargetsMap(prev.goals))
+              setIsUsingPreviousGoals(true)
+            }
           }
         } else if (isMounted) {
           setTasks(filteredTasks)
@@ -250,7 +283,7 @@ export function GoalWizard() {
 
       const response = await updateCurrentGoalsApiWeeksCurrentGoalsPut(payload)
       if (response.status === 200) {
-        window.location.href = "/"
+        navigate("/")
         return
       }
       setErrorMessage("保存に失敗しました。")
@@ -282,14 +315,20 @@ export function GoalWizard() {
     <section className="space-y-8" aria-label="目標設定ウィザード">
       <StepIndicator currentStep={currentStep} steps={steps} />
 
-      <div className="rounded-[32px] border border-emerald-100 bg-white/90 p-6 shadow-md">
+      {isUsingPreviousGoals && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-800">
+          直近の目標設定をデフォルト値として読み込みました。内容を確認して保存してください。
+        </div>
+      )}
+
+      <div className="rounded-3xl border border-emerald-100 bg-white/90 p-6 shadow-md">
         {currentStep === 1 ? (
           <Step1UnitDuration
             value={unitDurationMinutes}
             onChange={setUnitDurationMinutes}
             onNext={() => setCurrentStep(2)}
             onCancel={() => {
-              window.location.href = "/"
+              navigate("/")
             }}
           />
         ) : null}

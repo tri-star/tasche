@@ -1,5 +1,6 @@
 """目標サービス."""
 
+import logging
 from collections.abc import Iterable
 
 from sqlalchemy import delete, select
@@ -20,9 +21,12 @@ from tasche.schemas.goal import (
     GoalsResponse,
     GoalsUpdate,
     GoalsUpdateResponse,
+    PreviousGoalsResponse,
 )
 from tasche.services.record import DAY_OF_WEEK_FIELD_NAMES, DAY_OF_WEEK_ORDER
 from tasche.services.week import ensure_current_week
+
+logger = logging.getLogger(__name__)
 
 ALLOWED_UNIT_DURATIONS = {10, 30, 60, 120}
 
@@ -90,6 +94,59 @@ def _build_goal_responses(rows: Iterable[tuple[Goal, Task]]) -> list[GoalRespons
     ]
 
 
+async def _fetch_previous_goals(
+    db: AsyncSession,
+    user: User,
+    *,
+    current_week: Week,
+) -> PreviousGoalsResponse | None:
+    """直近過去週の目標設定を取得する."""
+    # 当週より前でアクティブなGoalが1件以上存在するWeekを最新順で1件取得
+    # (Week:Goal = 1:N のため distinct() で Week 行の重複を除去)
+    stmt = (
+        select(Week)
+        .join(Goal, Goal.week_id == Week.id)
+        .join(Task, Task.id == Goal.task_id)
+        .where(
+            Week.user_id == user.id,
+            Week.start_date < current_week.start_date,
+            Task.user_id == user.id,
+            Task.is_archived.is_(False),
+        )
+        .order_by(Week.start_date.desc())
+        .limit(1)
+        .distinct()
+    )
+    previous_week = (await db.execute(stmt)).scalars().first()
+    if previous_week is None:
+        logger.debug("No previous week with active goals found for user %s", user.id)
+        return None
+
+    # 過去週のGoal/Taskを取得（アーカイブ済みタスクは除外）
+    result = await db.execute(
+        select(Goal, Task)
+        .join(Task, Task.id == Goal.task_id)
+        .where(
+            Goal.week_id == previous_week.id,
+            Task.user_id == user.id,
+            Task.is_archived.is_(False),
+        )
+        .order_by(Task.created_at, Goal.day_of_week)
+    )
+    previous_rows = list(result.all())
+    if not previous_rows:
+        logger.debug("Previous week %s has no active goals for user %s", previous_week.id, user.id)
+        return None
+
+    return PreviousGoalsResponse(
+        week_id=previous_week.id,
+        week_start_date=previous_week.start_date.isoformat(),
+        unit_duration_minutes=previous_week.unit_duration_minutes,
+        daily_available_units=_build_daily_available_units(previous_week),
+        goals=_build_goal_responses(previous_rows),
+    )
+
+
 async def list_current_goals(
     db: AsyncSession,
     user: User,
@@ -105,13 +162,21 @@ async def list_current_goals(
         )
         .order_by(Task.created_at, Goal.day_of_week)
     )
+    current_rows = list(result.all())
+    has_current_goals = bool(current_rows)
+
+    previous_goals = (
+        None if has_current_goals else await _fetch_previous_goals(db, user, current_week=week)
+    )
 
     return GoalsResponse(
         week_id=week.id,
         week_start_date=week.start_date.isoformat(),
         unit_duration_minutes=week.unit_duration_minutes,
         daily_available_units=_build_daily_available_units(week),
-        goals=_build_goal_responses(result.all()),
+        goals=_build_goal_responses(current_rows),
+        has_current_goals=has_current_goals,
+        previous_goals=previous_goals,
     )
 
 

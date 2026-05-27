@@ -37,6 +37,7 @@ src/components/
 ├── dashboard/           # ダッシュボード用
 │   ├── TodayGoalWidget.tsx
 │   ├── WeeklyMatrix.tsx
+│   ├── NoGoalsEmptyState.tsx  # 当週目標未設定時の空状態表示
 │   └── ...
 ├── goals/               # 目標設定用
 │   ├── GoalWizard.tsx
