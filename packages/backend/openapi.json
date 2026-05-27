@@ -1601,6 +1601,22 @@
             "type": "array",
             "title": "Goals",
             "description": "目標一覧"
+          },
+          "has_current_goals": {
+            "type": "boolean",
+            "title": "Has Current Goals",
+            "description": "当週に Goal が1件以上存在するか"
+          },
+          "previous_goals": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PreviousGoalsResponse"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "当週に Goal が存在せず、過去に Goal を持つ Week が存在する場合のみ返す（それ以外は null）"
           }
         },
         "type": "object",
@@ -1609,7 +1625,8 @@
           "week_start_date",
           "unit_duration_minutes",
           "daily_available_units",
-          "goals"
+          "goals",
+          "has_current_goals"
         ],
         "title": "GoalsResponse",
         "description": "目標一覧レスポンス."
@@ -1747,6 +1764,47 @@
         ],
         "title": "LogoutResponse",
         "description": "ログアウトレスポンス."
+      },
+      "PreviousGoalsResponse": {
+        "properties": {
+          "week_id": {
+            "type": "string",
+            "title": "Week Id",
+            "description": "直近過去週ID"
+          },
+          "week_start_date": {
+            "type": "string",
+            "title": "Week Start Date",
+            "description": "直近過去週の開始日 (ISO8601 date)"
+          },
+          "unit_duration_minutes": {
+            "type": "integer",
+            "title": "Unit Duration Minutes",
+            "description": "その週の1ユニット時間（分）"
+          },
+          "daily_available_units": {
+            "$ref": "#/components/schemas/DailyAvailableUnits",
+            "description": "その週の曜日ごと確保可能ユニット数"
+          },
+          "goals": {
+            "items": {
+              "$ref": "#/components/schemas/GoalResponse"
+            },
+            "type": "array",
+            "title": "Goals",
+            "description": "その週の目標一覧（アーカイブ済みタスク由来の Goal は除外済み）"
+          }
+        },
+        "type": "object",
+        "required": [
+          "week_id",
+          "week_start_date",
+          "unit_duration_minutes",
+          "daily_available_units",
+          "goals"
+        ],
+        "title": "PreviousGoalsResponse",
+        "description": "直近過去週の目標設定（フォームのデフォルト値用）."
       },
       "RecordCreate": {
         "properties": {

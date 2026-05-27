@@ -35,6 +35,20 @@ class GoalResponse(BaseModel):
     daily_targets: DailyTargets = Field(..., description="曜日ごとの目標ユニット数")
 
 
+class PreviousGoalsResponse(BaseModel):
+    """直近過去週の目標設定（フォームのデフォルト値用）."""
+
+    week_id: str = Field(..., description="直近過去週ID")
+    week_start_date: str = Field(..., description="直近過去週の開始日 (ISO8601 date)")
+    unit_duration_minutes: int = Field(..., description="その週の1ユニット時間（分）")
+    daily_available_units: DailyAvailableUnits = Field(
+        ..., description="その週の曜日ごと確保可能ユニット数"
+    )
+    goals: list[GoalResponse] = Field(
+        ..., description="その週の目標一覧（アーカイブ済みタスク由来の Goal は除外済み）"
+    )
+
+
 class GoalsResponse(BaseModel):
     """目標一覧レスポンス."""
 
@@ -45,6 +59,14 @@ class GoalsResponse(BaseModel):
         ..., description="曜日ごとの確保可能ユニット数"
     )
     goals: list[GoalResponse] = Field(..., description="目標一覧")
+    has_current_goals: bool = Field(..., description="当週に Goal が1件以上存在するか")
+    previous_goals: PreviousGoalsResponse | None = Field(
+        None,
+        description=(
+            "当週に Goal が存在せず、過去に Goal を持つ Week が存在する場合のみ返す"
+            "（それ以外は null）"
+        ),
+    )
 
 
 class GoalUpdateItem(BaseModel):

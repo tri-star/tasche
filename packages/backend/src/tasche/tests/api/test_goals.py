@@ -210,6 +210,9 @@ class TestGetCurrentGoals:
         assert data["goals"][0]["daily_targets"]["monday"] == 2.0
         assert data["goals"][0]["daily_targets"]["tuesday"] == 1.0
         assert data["goals"][0]["daily_targets"]["wednesday"] == 0.0
+        # 当週にGoalがあるため has_current_goals=True, previous_goals=None
+        assert data["has_current_goals"] is True
+        assert data["previous_goals"] is None
 
     async def test_returns_empty_goals_when_not_configured(
         self,
@@ -226,6 +229,8 @@ class TestGetCurrentGoals:
         assert data["week_start_date"] == "2026-04-20"
         assert data["daily_available_units"] == _daily_available_units(0.0)
         assert data["goals"] == []
+        assert data["has_current_goals"] is False
+        assert data["previous_goals"] is None
 
     async def test_get_creates_current_week_if_missing(
         self,
@@ -243,6 +248,8 @@ class TestGetCurrentGoals:
         assert data["unit_duration_minutes"] == 30
         assert data["daily_available_units"] == _daily_available_units(0.0)
         assert data["goals"] == []
+        assert data["has_current_goals"] is False
+        assert data["previous_goals"] is None
 
         # DB に週レコードが作成されていることを確認
         from tasche.models.week import Week
@@ -251,6 +258,237 @@ class TestGetCurrentGoals:
         week = result.scalar_one_or_none()
         assert week is not None
         assert week.unit_duration_minutes == 30
+
+    async def test_returns_previous_goals_when_current_not_configured(
+        self,
+        authenticated_client: AsyncClient,
+        db_session: AsyncSession,
+        current_week: Week,
+        previous_week: Week,
+        test_tasks: tuple[Task, Task, Task],
+        fixed_now: datetime,
+    ):
+        """当週未設定 + 過去週にGoalあり → previous_goals が返る."""
+        english, _, _ = test_tasks
+        await _add_goal(
+            db_session,
+            goal_id="gol_prev_mon",
+            week_id=previous_week.id,
+            task_id=english.id,
+            day_of_week="monday",
+            target_units=2.0,
+        )
+        await _add_goal(
+            db_session,
+            goal_id="gol_prev_tue",
+            week_id=previous_week.id,
+            task_id=english.id,
+            day_of_week="tuesday",
+            target_units=1.0,
+        )
+
+        response = await authenticated_client.get("/api/weeks/current/goals")
+
+        assert response.status_code == 200
+        data = response.json()["data"]
+        assert data["has_current_goals"] is False
+        assert data["goals"] == []
+        prev = data["previous_goals"]
+        assert prev is not None
+        assert prev["week_id"] == previous_week.id
+        assert prev["week_start_date"] == "2026-04-13"
+        assert len(prev["goals"]) == 1
+        assert prev["goals"][0]["task_name"] == "英語学習"
+        assert prev["goals"][0]["daily_targets"]["monday"] == 2.0
+        assert prev["goals"][0]["daily_targets"]["tuesday"] == 1.0
+
+    async def test_no_previous_goals_when_no_past_goals_exist(
+        self,
+        authenticated_client: AsyncClient,
+        current_week: Week,
+        fixed_now: datetime,
+    ):
+        """当週未設定 + 過去週にもGoalなし → previous_goals = null."""
+        response = await authenticated_client.get("/api/weeks/current/goals")
+
+        assert response.status_code == 200
+        data = response.json()["data"]
+        assert data["has_current_goals"] is False
+        assert data["previous_goals"] is None
+
+    async def test_no_previous_goals_when_past_goals_all_archived(
+        self,
+        authenticated_client: AsyncClient,
+        db_session: AsyncSession,
+        current_week: Week,
+        previous_week: Week,
+        test_tasks: tuple[Task, Task, Task],
+        fixed_now: datetime,
+    ):
+        """当週未設定 + 過去週のGoalがすべてアーカイブ済みタスク → previous_goals = null."""
+        _, _, archived = test_tasks
+        await _add_goal(
+            db_session,
+            goal_id="gol_prev_archived_mon",
+            week_id=previous_week.id,
+            task_id=archived.id,
+            day_of_week="monday",
+            target_units=3.0,
+        )
+
+        response = await authenticated_client.get("/api/weeks/current/goals")
+
+        assert response.status_code == 200
+        data = response.json()["data"]
+        assert data["has_current_goals"] is False
+        assert data["previous_goals"] is None
+
+    async def test_returns_most_recent_previous_week(
+        self,
+        authenticated_client: AsyncClient,
+        db_session: AsyncSession,
+        current_week: Week,
+        test_tasks: tuple[Task, Task, Task],
+        fixed_now: datetime,
+    ):
+        """複数の過去週がある場合、最も新しいWeekが選ばれる."""
+        english, dev, _ = test_tasks
+
+        # week_a: 2026-03-30 (古い)
+        week_a = Week(
+            id="wk_0ATEST1234567890ABCDEF",
+            user_id=test_tasks[0].user_id,
+            start_date=date(2026, 3, 30),
+            end_date=date(2026, 4, 5),
+            unit_duration_minutes=30,
+            week_start_day="monday",
+            week_start_hour=4,
+        )
+        # week_b: 2026-04-13 (新しい)
+        week_b = Week(
+            id="wk_0BTEST1234567890ABCDEF",
+            user_id=test_tasks[0].user_id,
+            start_date=date(2026, 4, 13),
+            end_date=date(2026, 4, 19),
+            unit_duration_minutes=60,
+            week_start_day="monday",
+            week_start_hour=4,
+        )
+        db_session.add_all([week_a, week_b])
+        await db_session.commit()
+
+        await _add_goal(
+            db_session,
+            goal_id="gol_week_a_mon",
+            week_id=week_a.id,
+            task_id=english.id,
+            day_of_week="monday",
+            target_units=1.0,
+        )
+        await _add_goal(
+            db_session,
+            goal_id="gol_week_b_mon",
+            week_id=week_b.id,
+            task_id=dev.id,
+            day_of_week="monday",
+            target_units=2.0,
+        )
+
+        response = await authenticated_client.get("/api/weeks/current/goals")
+
+        assert response.status_code == 200
+        data = response.json()["data"]
+        assert data["has_current_goals"] is False
+        prev = data["previous_goals"]
+        assert prev is not None
+        assert prev["week_id"] == week_b.id
+        assert prev["week_start_date"] == "2026-04-13"
+        assert prev["goals"][0]["task_name"] == "個人開発"
+
+    async def test_previous_goals_excludes_archived_task_goals(
+        self,
+        authenticated_client: AsyncClient,
+        db_session: AsyncSession,
+        current_week: Week,
+        previous_week: Week,
+        test_tasks: tuple[Task, Task, Task],
+        fixed_now: datetime,
+    ):
+        """過去週のGoalに一部アーカイブ済みタスクが混ざる場合、アクティブなGoalのみ返る."""
+        english, _, archived = test_tasks
+        await _add_goal(
+            db_session,
+            goal_id="gol_prev_active_mon",
+            week_id=previous_week.id,
+            task_id=english.id,
+            day_of_week="monday",
+            target_units=2.0,
+        )
+        await _add_goal(
+            db_session,
+            goal_id="gol_prev_archived_mon",
+            week_id=previous_week.id,
+            task_id=archived.id,
+            day_of_week="monday",
+            target_units=3.0,
+        )
+
+        response = await authenticated_client.get("/api/weeks/current/goals")
+
+        assert response.status_code == 200
+        data = response.json()["data"]
+        assert data["has_current_goals"] is False
+        prev = data["previous_goals"]
+        assert prev is not None
+        assert len(prev["goals"]) == 1
+        assert prev["goals"][0]["task_name"] == "英語学習"
+
+    async def test_other_user_previous_goals_not_returned(
+        self,
+        authenticated_client: AsyncClient,
+        db_session: AsyncSession,
+        current_week: Week,
+        fixed_now: datetime,
+    ):
+        """別ユーザーの過去Goalは引用されない."""
+        other_user = User(
+            id="usr_02OTHER1234567890ABCDE",
+            email="other@example.com",
+            name="Other User",
+            timezone="Asia/Tokyo",
+        )
+        other_task = Task(
+            id="tsk_99OTHER1234567890ABCDE",
+            user_id=other_user.id,
+            name="他ユーザーのタスク",
+            is_archived=False,
+        )
+        other_week = Week(
+            id="wk_99OTHER1234567890ABCDE",
+            user_id=other_user.id,
+            start_date=date(2026, 4, 13),
+            end_date=date(2026, 4, 19),
+            unit_duration_minutes=30,
+            week_start_day="monday",
+            week_start_hour=4,
+        )
+        db_session.add_all([other_user, other_task, other_week])
+        await db_session.commit()
+        await _add_goal(
+            db_session,
+            goal_id="gol_other_user_mon",
+            week_id=other_week.id,
+            task_id=other_task.id,
+            day_of_week="monday",
+            target_units=5.0,
+        )
+
+        response = await authenticated_client.get("/api/weeks/current/goals")
+
+        assert response.status_code == 200
+        data = response.json()["data"]
+        assert data["has_current_goals"] is False
+        assert data["previous_goals"] is None
 
 
 class TestUpdateCurrentGoals:
