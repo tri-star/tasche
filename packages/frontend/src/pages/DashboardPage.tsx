@@ -7,6 +7,7 @@ import {
 } from "@/api/generated/client"
 import type { DashboardResponse, DayOfWeek } from "@/api/generated/model"
 import { GoalSettingFab } from "@/components/dashboard/GoalSettingFab"
+import { NoGoalsEmptyState } from "@/components/dashboard/NoGoalsEmptyState"
 import { RecordWidget } from "@/components/dashboard/RecordWidget"
 import { TodayGoalsWidget } from "@/components/dashboard/TodayGoalsWidget"
 import { WeeklyMatrix } from "@/components/dashboard/WeeklyMatrix"
@@ -98,21 +99,25 @@ export function DashboardPage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        <div className="grid gap-6 md:grid-cols-2">
-          <TodayGoalsWidget
-            date={formatDate(dashboard.current_date, dashboard.current_day_of_week)}
-            goals={dashboard.today_goals}
-          />
-          <RecordWidget
-            currentDay={dashboard.current_day_of_week}
-            weekStartDate={dashboard.week.start_date}
-            tasks={tasks}
-            onRecord={handleRecord}
-          />
+      {dashboard.has_goals_configured ? (
+        <div className="space-y-6">
+          <div className="grid gap-6 md:grid-cols-2">
+            <TodayGoalsWidget
+              date={formatDate(dashboard.current_date, dashboard.current_day_of_week)}
+              goals={dashboard.today_goals}
+            />
+            <RecordWidget
+              currentDay={dashboard.current_day_of_week}
+              weekStartDate={dashboard.week.start_date}
+              tasks={tasks}
+              onRecord={handleRecord}
+            />
+          </div>
+          <WeeklyMatrix data={dashboard.weekly_matrix} currentDay={dashboard.current_day_of_week} />
         </div>
-        <WeeklyMatrix data={dashboard.weekly_matrix} currentDay={dashboard.current_day_of_week} />
-      </div>
+      ) : (
+        <NoGoalsEmptyState onClickGoalSetting={handleGoalSetting} />
+      )}
       <GoalSettingFab onClick={handleGoalSetting} />
     </DashboardLayout>
   )

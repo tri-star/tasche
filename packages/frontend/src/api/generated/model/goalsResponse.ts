@@ -6,6 +6,7 @@
  */
 import type { DailyAvailableUnits } from './dailyAvailableUnits';
 import type { GoalResponse } from './goalResponse';
+import type { GoalsResponsePreviousGoals } from './goalsResponsePreviousGoals';
 
 /**
  * 目標一覧レスポンス.
@@ -21,4 +22,8 @@ export interface GoalsResponse {
   daily_available_units: DailyAvailableUnits;
   /** 目標一覧 */
   goals: GoalResponse[];
+  /** 当週に Goal が1件以上存在するか */
+  has_current_goals: boolean;
+  /** 当週に Goal が存在せず、過去に Goal を持つ Week が存在する場合のみ返す（それ以外は null） */
+  previous_goals?: GoalsResponsePreviousGoals;
 }

@@ -79,6 +79,8 @@ const mockGoals: APIResponseGoalsResponse = {
       sunday: 0,
     },
     goals: [],
+    has_current_goals: false,
+    previous_goals: null,
   },
 }
 
