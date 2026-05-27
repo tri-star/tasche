@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
+import { useNavigate } from "react-router-dom"
 import {
   deleteTaskApiTasksTaskIdDelete,
   getCurrentGoalsApiWeeksCurrentGoalsGet,
@@ -48,6 +49,7 @@ const normalizeDailyAvailableUnits = (
 }
 
 export function GoalWizard() {
+  const navigate = useNavigate()
   const [currentStep, setCurrentStep] = useState<WizardStep>(1)
   const [unitDurationMinutes, setUnitDurationMinutes] = useState<number | null>(null)
   const [dailyAvailableUnits, setDailyAvailableUnits] = useState<DailyAvailableUnits>(
@@ -81,14 +83,26 @@ export function GoalWizard() {
 
         if (goalsResponse.status === 200) {
           const goalsData = goalsResponse.data.data
-          // OpenAPI再生成前の安全策として has_current_goals が無い場合は goals.length で判断
-          const hasCurrent = goalsData.has_current_goals ?? goalsData.goals.length > 0
-          // 当週設定済みなら当週から、未設定なら previous_goals から初期化
-          const source = hasCurrent ? goalsData : (goalsData.previous_goals ?? null)
+          const hasCurrent = goalsData.has_current_goals
 
           const taskMap = new Map(filteredTasks.map((task) => [task.id, task]))
-          if (source) {
-            source.goals.forEach((goal) => {
+
+          if (hasCurrent) {
+            goalsData.goals.forEach((goal) => {
+              if (!taskMap.has(goal.task_id)) {
+                taskMap.set(goal.task_id, {
+                  id: goal.task_id,
+                  name: goal.task_name,
+                  is_archived: false,
+                  consumed_units_last_week: 0,
+                  consumed_units_total: 0,
+                  created_at: "",
+                  updated_at: "",
+                })
+              }
+            })
+          } else if (goalsData.previous_goals) {
+            goalsData.previous_goals.goals.forEach((goal) => {
               if (!taskMap.has(goal.task_id)) {
                 taskMap.set(goal.task_id, {
                   id: goal.task_id,
@@ -108,14 +122,17 @@ export function GoalWizard() {
             // weekStartDate は常に当週を使う（保存先は当週のため）
             setWeekStartDate(goalsData.week_start_date)
 
-            if (source) {
-              setUnitDurationMinutes(source.unit_duration_minutes)
-              setDailyAvailableUnits(normalizeDailyAvailableUnits(source.daily_available_units))
-              setSelectedTaskIds(source.goals.map((goal) => goal.task_id))
-              setWeeklyTargets(buildTargetsMap(source.goals))
-            }
-
-            if (!hasCurrent && goalsData.previous_goals) {
+            if (hasCurrent) {
+              setUnitDurationMinutes(goalsData.unit_duration_minutes)
+              setDailyAvailableUnits(normalizeDailyAvailableUnits(goalsData.daily_available_units))
+              setSelectedTaskIds(goalsData.goals.map((goal) => goal.task_id))
+              setWeeklyTargets(buildTargetsMap(goalsData.goals))
+            } else if (goalsData.previous_goals) {
+              const prev = goalsData.previous_goals
+              setUnitDurationMinutes(prev.unit_duration_minutes)
+              setDailyAvailableUnits(normalizeDailyAvailableUnits(prev.daily_available_units))
+              setSelectedTaskIds(prev.goals.map((goal) => goal.task_id))
+              setWeeklyTargets(buildTargetsMap(prev.goals))
               setIsUsingPreviousGoals(true)
             }
           }
@@ -266,7 +283,7 @@ export function GoalWizard() {
 
       const response = await updateCurrentGoalsApiWeeksCurrentGoalsPut(payload)
       if (response.status === 200) {
-        window.location.href = "/"
+        navigate("/")
         return
       }
       setErrorMessage("保存に失敗しました。")
@@ -304,14 +321,14 @@ export function GoalWizard() {
         </div>
       )}
 
-      <div className="rounded-[32px] border border-emerald-100 bg-white/90 p-6 shadow-md">
+      <div className="rounded-3xl border border-emerald-100 bg-white/90 p-6 shadow-md">
         {currentStep === 1 ? (
           <Step1UnitDuration
             value={unitDurationMinutes}
             onChange={setUnitDurationMinutes}
             onNext={() => setCurrentStep(2)}
             onCancel={() => {
-              window.location.href = "/"
+              navigate("/")
             }}
           />
         ) : null}

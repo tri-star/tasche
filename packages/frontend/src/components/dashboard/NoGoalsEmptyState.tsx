@@ -23,7 +23,7 @@ export function NoGoalsEmptyState({ onClickGoalSetting }: NoGoalsEmptyStateProps
           目標を設定して、今週の習慣化を始めましょう。
         </p>
       </div>
-      <Button onClick={onClickGoalSetting} aria-label="目標を設定する" className="gap-2">
+      <Button onClick={onClickGoalSetting} className="gap-2">
         <Sparkles className="h-4 w-4" />
         目標を設定する
       </Button>

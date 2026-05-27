@@ -385,8 +385,7 @@ describe("GoalSettingPage", () => {
     await user.click(screen.getByRole("button", { name: /次へ/ }))
     // タスク名が表示され、チェックボックスがチェック済みであること
     expect(screen.getByText("英語学習")).toBeInTheDocument()
-    const checkboxes = screen.getAllByRole("checkbox")
-    expect(checkboxes[0]).toBeChecked()
+    expect(screen.getByRole("checkbox", { name: "英語学習" })).toBeChecked()
     // 選択済みタスクがあるため「次へ」が有効であること
     expect(screen.getByRole("button", { name: /次へ/ })).not.toBeDisabled()
 
