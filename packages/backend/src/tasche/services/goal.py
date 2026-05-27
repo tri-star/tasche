@@ -1,5 +1,6 @@
 """目標サービス."""
 
+import logging
 from collections.abc import Iterable
 
 from sqlalchemy import delete, select
@@ -24,6 +25,8 @@ from tasche.schemas.goal import (
 )
 from tasche.services.record import DAY_OF_WEEK_FIELD_NAMES, DAY_OF_WEEK_ORDER
 from tasche.services.week import ensure_current_week
+
+logger = logging.getLogger(__name__)
 
 ALLOWED_UNIT_DURATIONS = {10, 30, 60, 120}
 
@@ -98,7 +101,8 @@ async def _fetch_previous_goals(
     current_week: Week,
 ) -> PreviousGoalsResponse | None:
     """直近過去週の目標設定を取得する."""
-    # 当週より前でGoalが1件以上存在するWeekを最新順で1件取得
+    # 当週より前でアクティブなGoalが1件以上存在するWeekを最新順で1件取得
+    # (Week:Goal = 1:N のため distinct() で Week 行の重複を除去)
     stmt = (
         select(Week)
         .join(Goal, Goal.week_id == Week.id)
@@ -107,6 +111,7 @@ async def _fetch_previous_goals(
             Week.user_id == user.id,
             Week.start_date < current_week.start_date,
             Task.user_id == user.id,
+            Task.is_archived.is_(False),
         )
         .order_by(Week.start_date.desc())
         .limit(1)
@@ -114,6 +119,7 @@ async def _fetch_previous_goals(
     )
     previous_week = (await db.execute(stmt)).scalars().first()
     if previous_week is None:
+        logger.debug("No previous week with active goals found for user %s", user.id)
         return None
 
     # 過去週のGoal/Taskを取得（アーカイブ済みタスクは除外）
@@ -129,6 +135,7 @@ async def _fetch_previous_goals(
     )
     previous_rows = list(result.all())
     if not previous_rows:
+        logger.debug("Previous week %s has no active goals for user %s", previous_week.id, user.id)
         return None
 
     return PreviousGoalsResponse(
