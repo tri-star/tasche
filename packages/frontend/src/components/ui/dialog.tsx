@@ -1,9 +1,10 @@
 import { X } from "lucide-react"
 import {
   createContext,
+  type DialogHTMLAttributes,
   type HTMLAttributes,
-  type MouseEvent,
   type ReactNode,
+  useCallback,
   useContext,
   useEffect,
   useRef,
@@ -28,7 +29,10 @@ export function Dialog({ open, onOpenChange, children }: DialogProps) {
   return <DialogContext.Provider value={{ open, onOpenChange }}>{children}</DialogContext.Provider>
 }
 
-type DialogContentProps = HTMLAttributes<HTMLDivElement> & {
+type DialogContentProps = Omit<
+  DialogHTMLAttributes<HTMLDialogElement>,
+  "closedby" | "onCancel" | "onClose" | "open"
+> & {
   disabled?: boolean
   showCloseButton?: boolean
   closeLabel?: string
@@ -43,87 +47,143 @@ export function DialogContent({
   ...props
 }: DialogContentProps) {
   const context = useContext(DialogContext)
-  const contentRef = useRef<HTMLDivElement>(null)
+  const contentRef = useRef<HTMLDialogElement>(null)
   const previousFocusRef = useRef<HTMLElement | null>(null)
+  const openRef = useRef(false)
+  const disabledRef = useRef(disabled)
+  const onOpenChangeRef = useRef<((open: boolean) => void) | null>(null)
+  const suppressCloseSyncRef = useRef(false)
   const open = context?.open ?? false
+  openRef.current = open
+  disabledRef.current = disabled
+  onOpenChangeRef.current = context?.onOpenChange ?? null
+
+  const restorePreviousFocus = useCallback(() => {
+    const previousFocus = previousFocusRef.current
+    if (previousFocus && document.contains(previousFocus)) {
+      previousFocus.focus()
+    }
+  }, [])
 
   useEffect(() => {
+    const dialog = contentRef.current
+    if (!dialog) {
+      return
+    }
+
     if (!open) {
+      if (dialog.open) {
+        suppressCloseSyncRef.current = true
+        dialog.close()
+      }
       return
     }
 
     previousFocusRef.current =
       document.activeElement instanceof HTMLElement ? document.activeElement : null
+    const previousOverflow = document.body.style.overflow
     document.body.style.overflow = "hidden"
-    contentRef.current?.focus()
+    if (!dialog.open) {
+      dialog.showModal()
+    }
 
     return () => {
-      document.body.style.overflow = ""
-      previousFocusRef.current?.focus()
+      if (dialog.open) {
+        suppressCloseSyncRef.current = true
+        dialog.close()
+      }
+      document.body.style.overflow = previousOverflow
+      restorePreviousFocus()
     }
-  }, [open])
+  }, [open, restorePreviousFocus])
 
   useEffect(() => {
-    if (!open) {
+    const dialog = contentRef.current
+    if (!dialog) {
       return
     }
 
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && context && !disabled) {
-        context.onOpenChange(false)
+    const handleCancel = (event: Event) => {
+      if (disabledRef.current) {
+        event.preventDefault()
+        return
+      }
+      onOpenChangeRef.current?.(false)
+    }
+
+    const handleClose = () => {
+      const shouldSyncClose = !suppressCloseSyncRef.current
+      suppressCloseSyncRef.current = false
+
+      if (shouldSyncClose && openRef.current) {
+        onOpenChangeRef.current?.(false)
+      }
+
+      restorePreviousFocus()
+    }
+
+    dialog.addEventListener("cancel", handleCancel)
+    dialog.addEventListener("close", handleClose)
+    return () => {
+      dialog.removeEventListener("cancel", handleCancel)
+      dialog.removeEventListener("close", handleClose)
+    }
+  }, [restorePreviousFocus])
+
+  useEffect(() => {
+    const dialog = contentRef.current
+    if (!dialog) {
+      return
+    }
+
+    const handleBackdropClick = (event: MouseEvent) => {
+      const supportsClosedBy = "closedBy" in HTMLDialogElement.prototype
+      const rect = dialog.getBoundingClientRect()
+      const clickedBackdrop =
+        event.target === dialog &&
+        (event.clientX < rect.left ||
+          event.clientX > rect.right ||
+          event.clientY < rect.top ||
+          event.clientY > rect.bottom)
+
+      if (!supportsClosedBy && clickedBackdrop && !disabledRef.current) {
+        onOpenChangeRef.current?.(false)
       }
     }
 
-    window.addEventListener("keydown", handleKeyDown)
-    return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [context, disabled, open])
+    dialog.addEventListener("click", handleBackdropClick)
+    return () => dialog.removeEventListener("click", handleBackdropClick)
+  }, [])
 
-  if (!context || !open) {
+  if (!context) {
     return null
   }
 
-  const handleBackdropClick = (event: MouseEvent<HTMLButtonElement>) => {
-    if (event.target === event.currentTarget && !disabled) {
-      context.onOpenChange(false)
-    }
-  }
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6">
-      <button
-        type="button"
-        className="absolute inset-0 bg-black/40"
-        onClick={handleBackdropClick}
-        disabled={disabled}
-        aria-label={closeLabel}
-      />
-      <div
-        ref={contentRef}
-        role="dialog"
-        aria-modal="true"
-        tabIndex={-1}
-        className={cn(
-          "relative w-full max-w-lg rounded-3xl border bg-white p-6 shadow-2xl outline-none",
-          className,
-        )}
-        {...props}
-      >
-        {showCloseButton ? (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="absolute right-4 top-4"
-            onClick={() => context.onOpenChange(false)}
-            disabled={disabled}
-          >
-            <X className="h-4 w-4" />
-            <span className="sr-only">{closeLabel}</span>
-          </Button>
-        ) : null}
-        {children}
-      </div>
-    </div>
+    <dialog
+      ref={contentRef}
+      closedby={disabled ? "none" : "any"}
+      className={cn(
+        "tasche-dialog relative w-[calc(100%-2rem)] max-w-lg rounded-3xl border bg-white p-6 shadow-2xl outline-none",
+        className,
+      )}
+      {...props}
+    >
+      {showCloseButton ? (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="absolute right-4 top-4"
+          onClick={() => context.onOpenChange(false)}
+          disabled={disabled}
+        >
+          <X className="h-4 w-4" />
+          <span className="sr-only">{closeLabel}</span>
+        </Button>
+      ) : null}
+      {children}
+    </dialog>
   )
 }
 

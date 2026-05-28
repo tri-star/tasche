@@ -1,4 +1,4 @@
-import type { HTMLAttributes, ReactNode } from "react"
+import type { DialogHTMLAttributes, HTMLAttributes, ReactNode } from "react"
 import {
   Dialog,
   DialogContent,
@@ -15,7 +15,10 @@ type AlertDialogProps = {
   children: ReactNode
 }
 
-type AlertDialogContentProps = HTMLAttributes<HTMLDivElement> & {
+type AlertDialogContentProps = Omit<
+  DialogHTMLAttributes<HTMLDialogElement>,
+  "closedby" | "onCancel" | "onClose" | "open"
+> & {
   disabled?: boolean
 }
 

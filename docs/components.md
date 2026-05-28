@@ -76,10 +76,14 @@ src/components/
 
 | コンポーネント | 用途 | インストールコマンド |
 |---------------|------|---------------------|
-| Dialog | 汎用モーダル | `npx shadcn@latest add dialog` |
-| AlertDialog | 削除確認 | `npx shadcn@latest add alert-dialog` |
+| Dialog | 汎用モーダル | カスタム（native `<dialog>` ベース） |
+| AlertDialog | 削除確認 | カスタム（Dialog のラッパー） |
 | Toast | 通知表示 | `npx shadcn@latest add toast` |
 | Tooltip | ヘルプ表示 | `npx shadcn@latest add tooltip` |
+
+Dialog は `packages/frontend/src/components/ui/dialog.tsx` で native `<dialog>` と `showModal()` を使って実装する。
+`closedby="any"` で light dismiss に対応し、送信中など閉じられない状態では `closedby="none"` に切り替える。
+AlertDialog はこの Dialog をラップして削除確認向けの見た目を付与する。
 
 ### レイアウト・表示系
 
@@ -291,7 +295,7 @@ npx shadcn@latest add button input label checkbox radio-group switch
 npx shadcn@latest add select command popover dropdown-menu tabs toggle-group
 
 # フィードバック系
-npx shadcn@latest add dialog alert-dialog toast tooltip
+npx shadcn@latest add toast tooltip
 
 # レイアウト系
 npx shadcn@latest add card table separator scroll-area
@@ -315,8 +319,8 @@ npx shadcn@latest add form
 | Switch | shadcn/ui |
 | Card | shadcn/ui |
 | Table | shadcn/ui |
-| Dialog | shadcn/ui |
-| AlertDialog | shadcn/ui |
+| Dialog | カスタム |
+| AlertDialog | カスタム |
 | Tabs / ToggleGroup | shadcn/ui |
 | DropdownMenu | shadcn/ui |
 | Toast | shadcn/ui |
