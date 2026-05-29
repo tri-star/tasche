@@ -49,14 +49,9 @@ export function DialogContent({
   const context = useContext(DialogContext)
   const contentRef = useRef<HTMLDialogElement>(null)
   const previousFocusRef = useRef<HTMLElement | null>(null)
-  const openRef = useRef(false)
-  const disabledRef = useRef(disabled)
-  const onOpenChangeRef = useRef<((open: boolean) => void) | null>(null)
   const suppressCloseSyncRef = useRef(false)
   const open = context?.open ?? false
-  openRef.current = open
-  disabledRef.current = disabled
-  onOpenChangeRef.current = context?.onOpenChange ?? null
+  const onOpenChange = context?.onOpenChange
 
   const restorePreviousFocus = useCallback(() => {
     const previousFocus = previousFocusRef.current
@@ -72,10 +67,6 @@ export function DialogContent({
     }
 
     if (!open) {
-      if (dialog.open) {
-        suppressCloseSyncRef.current = true
-        dialog.close()
-      }
       return
     }
 
@@ -104,19 +95,18 @@ export function DialogContent({
     }
 
     const handleCancel = (event: Event) => {
-      if (disabledRef.current) {
-        event.preventDefault()
-        return
+      event.preventDefault()
+      if (!disabled) {
+        onOpenChange?.(false)
       }
-      onOpenChangeRef.current?.(false)
     }
 
     const handleClose = () => {
       const shouldSyncClose = !suppressCloseSyncRef.current
       suppressCloseSyncRef.current = false
 
-      if (shouldSyncClose && openRef.current) {
-        onOpenChangeRef.current?.(false)
+      if (shouldSyncClose && open) {
+        onOpenChange?.(false)
       }
 
       restorePreviousFocus()
@@ -128,7 +118,7 @@ export function DialogContent({
       dialog.removeEventListener("cancel", handleCancel)
       dialog.removeEventListener("close", handleClose)
     }
-  }, [restorePreviousFocus])
+  }, [disabled, onOpenChange, open, restorePreviousFocus])
 
   useEffect(() => {
     const dialog = contentRef.current
@@ -146,14 +136,14 @@ export function DialogContent({
           event.clientY < rect.top ||
           event.clientY > rect.bottom)
 
-      if (!supportsClosedBy && clickedBackdrop && !disabledRef.current) {
-        onOpenChangeRef.current?.(false)
+      if (!supportsClosedBy && clickedBackdrop && !disabled) {
+        onOpenChange?.(false)
       }
     }
 
     dialog.addEventListener("click", handleBackdropClick)
     return () => dialog.removeEventListener("click", handleBackdropClick)
-  }, [])
+  }, [disabled, onOpenChange])
 
   if (!context) {
     return null

@@ -12,15 +12,25 @@ import {
   DialogTitle,
 } from "./dialog"
 
-function ControlledDialog({ disabled = false }: { disabled?: boolean }) {
+function ControlledDialog({
+  disabled = false,
+  onOpenChangeSpy,
+}: {
+  disabled?: boolean
+  onOpenChangeSpy?: (open: boolean) => void
+}) {
   const [open, setOpen] = useState(false)
+  const handleOpenChange = (nextOpen: boolean) => {
+    onOpenChangeSpy?.(nextOpen)
+    setOpen(nextOpen)
+  }
 
   return (
     <>
       <Button type="button" onClick={() => setOpen(true)}>
         開く
       </Button>
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent
           aria-labelledby="test-dialog-title"
           aria-describedby="test-dialog-description"
@@ -96,17 +106,22 @@ describe("Dialog", () => {
   })
 
   it("cancel event で閉じる", async () => {
+    const onOpenChange = vi.fn()
     const user = userEvent.setup()
-    render(<ControlledDialog />)
+    render(<ControlledDialog onOpenChangeSpy={onOpenChange} />)
 
     await user.click(screen.getByRole("button", { name: "開く" }))
     const dialog = screen.getByRole("dialog", { name: "確認ダイアログ" })
+    const event = new Event("cancel", { cancelable: true })
 
-    fireEvent(dialog, new Event("cancel", { cancelable: true }))
+    fireEvent(dialog, event)
 
+    expect(event.defaultPrevented).toBe(true)
     await waitFor(() => {
       expect(screen.queryByRole("dialog", { name: "確認ダイアログ" })).not.toBeInTheDocument()
     })
+    expect(onOpenChange).toHaveBeenCalledTimes(1)
+    expect(onOpenChange).toHaveBeenCalledWith(false)
   })
 
   it("disabled=true の cancel event は閉じない", async () => {
