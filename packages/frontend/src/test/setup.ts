@@ -24,6 +24,21 @@ if (typeof window !== "undefined") {
       disconnect() {}
     }
   }
+
+  if (typeof window.HTMLDialogElement !== "undefined") {
+    if (typeof window.HTMLDialogElement.prototype.showModal !== "function") {
+      window.HTMLDialogElement.prototype.showModal = function showModal() {
+        this.setAttribute("open", "")
+      }
+    }
+
+    if (typeof window.HTMLDialogElement.prototype.close !== "function") {
+      window.HTMLDialogElement.prototype.close = function close() {
+        this.removeAttribute("open")
+        this.dispatchEvent(new Event("close"))
+      }
+    }
+  }
 }
 
 beforeAll(() => {

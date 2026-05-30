@@ -41,21 +41,6 @@ export function TaskFormDialog({
     setName(task?.name ?? "")
   }, [open, task])
 
-  useEffect(() => {
-    if (!open) {
-      return
-    }
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && !isSubmitting) {
-        onClose()
-      }
-    }
-
-    window.addEventListener("keydown", handleKeyDown)
-    return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [isSubmitting, onClose, open])
-
   if (!open) {
     return null
   }

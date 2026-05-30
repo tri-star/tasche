@@ -86,6 +86,7 @@ jobs:
   frontend-e2e:
     name: frontend-e2e
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     env:
       COMPOSE_PROJECT_NAME: test-backend
       DB_CONTAINER_PORT: 5432
@@ -113,8 +114,13 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Install Playwright Browsers
-        run: pnpm --filter @tasche/frontend exec playwright install chromium --with-deps
+      - name: Restore Playwright browsers from Docker image
+        run: |
+          mkdir -p $HOME/.cache/ms-playwright
+          docker run --rm \
+            -v $HOME/.cache/ms-playwright:/dest \
+            mcr.microsoft.com/playwright:v1.57.0-noble \
+            bash -c "cp -rp /ms-playwright/. /dest/ && chown -R $(id -u):$(id -g) /dest"
 
       - name: Start backend containers
         run: docker compose -f compose.yaml up -d db api-e2e
