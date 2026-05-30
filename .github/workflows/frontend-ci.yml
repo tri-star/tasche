@@ -87,9 +87,6 @@ jobs:
     name: frontend-e2e
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    container:
-      image: mcr.microsoft.com/playwright:v1.57.0-noble
-      options: --ipc=host --user root --network host -v /var/run/docker.sock:/var/run/docker.sock
     env:
       COMPOSE_PROJECT_NAME: test-backend
       DB_CONTAINER_PORT: 5432
@@ -114,11 +111,16 @@ jobs:
           cache: pnpm
           cache-dependency-path: pnpm-lock.yaml
 
-      - name: Install Docker CLI
-        run: apt-get update -qq && apt-get install -y -qq docker.io
-
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Restore Playwright browsers from Docker image
+        run: |
+          mkdir -p $HOME/.cache/ms-playwright
+          docker run --rm \
+            -v $HOME/.cache/ms-playwright:/dest \
+            mcr.microsoft.com/playwright:v1.57.0-noble \
+            bash -c "cp -rp /ms-playwright/. /dest/ && chown -R $(id -u):$(id -g) /dest"
 
       - name: Start backend containers
         run: docker compose -f compose.yaml up -d db api-e2e
