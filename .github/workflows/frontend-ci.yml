@@ -87,6 +87,9 @@ jobs:
     name: frontend-e2e
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    container:
+      image: mcr.microsoft.com/playwright:v1.57.0-noble
+      options: --ipc=host --user root --network host -v /var/run/docker.sock:/var/run/docker.sock
     env:
       COMPOSE_PROJECT_NAME: test-backend
       DB_CONTAINER_PORT: 5432
@@ -111,12 +114,11 @@ jobs:
           cache: pnpm
           cache-dependency-path: pnpm-lock.yaml
 
+      - name: Install Docker CLI
+        run: apt-get update -qq && apt-get install -y -qq docker.io
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-
-      - name: Install Playwright Browsers
-        timeout-minutes: 10
-        run: pnpm --filter @tasche/frontend exec playwright install chromium --with-deps --only-shell
 
       - name: Start backend containers
         run: docker compose -f compose.yaml up -d db api-e2e
