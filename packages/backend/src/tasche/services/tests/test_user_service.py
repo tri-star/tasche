@@ -125,7 +125,6 @@ class TestGetOrCreateUserByGoogleSub:
 
         assert user.id == existing_user.id
         # 再ログインで email_verified_at が上書きされず、初回検証日時が保持される
-        # SQLite はタイムゾーン情報を保持しないため naive datetime で比較
         assert user.email_verified_at is not None
         assert user.email_verified_at.replace(tzinfo=None) == old_verified_at.replace(tzinfo=None)
 

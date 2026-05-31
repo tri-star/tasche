@@ -20,8 +20,13 @@ if config.config_file_name is not None:
 
 target_metadata = Base.metadata
 
-# 環境変数から DATABASE_URL を設定
-config.set_main_option("sqlalchemy.url", settings.database_url)
+# sqlalchemy.url が呼び出し元（conftest 等）によって既にセットされている場合はそれを優先し、
+# セットされていない場合のみ settings.database_url をフォールバックとして設定する。
+# これにより、テスト実行時に conftest.py が set_main_option で TEST_DATABASE_URL を渡せば
+# settings（本番DB設定）を書き換えることなくテスト DB に対してマイグレーションを適用できる。
+_explicit_url = config.get_main_option("sqlalchemy.url", default=None)
+if not _explicit_url:
+    config.set_main_option("sqlalchemy.url", settings.database_url)
 
 
 def run_migrations_offline() -> None:

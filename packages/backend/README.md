@@ -95,16 +95,27 @@ docker-compose exec api python scripts/generate_openapi.py
 
 ### テスト（pytest）
 
+テストには PostgreSQL の `tasche_test` データベースが必要です。
+
 ```bash
-# 全テスト実行
-docker-compose exec api pytest
+# DB だけ起動（テスト実行時に必要）
+docker compose -f packages/backend/compose.yaml up -d db
+
+# コンテナ内でテスト実行（推奨）
+docker compose -f packages/backend/compose.yaml exec api uv run pytest -q
+
+# ホストから直接実行する場合（TEST_DATABASE_URL を tasche_test に向ける）
+cd packages/backend
+TEST_DATABASE_URL=postgresql+asyncpg://tasche:tasche_dev_password@localhost:<DB_PORT>/tasche_test uv run pytest -q
 
 # 失敗したテストから詳細表示
-docker-compose exec api pytest -x
+docker compose -f packages/backend/compose.yaml exec api uv run pytest -x
 
 # 特定のテストだけ実行（例）
-docker-compose exec api pytest -k users
+docker compose -f packages/backend/compose.yaml exec api uv run pytest -k users
 ```
+
+> **注意**: `TEST_DATABASE_URL` のDB名が `tasche_test` でない場合、テストは起動前に失敗します。開発DB `tasche` に対するマイグレーション・TRUNCATE は一切行われません。
 
 ### Lint / Format（ruff）
 
@@ -140,17 +151,29 @@ docker-compose down -v
 
 ## ディレクトリ構造
 
+テストはコロケーション配置（各モジュールと同階層の `tests/` ディレクトリ）を採用しています。
+
 ```
 packages/backend/
-├── src/tasche/         # メインパッケージ
-│   ├── api/           # API レイヤー
-│   ├── core/          # コア設定
-│   ├── db/            # データベース
-│   ├── models/        # SQLAlchemy モデル
-│   ├── schemas/       # Pydantic スキーマ
-│   ├── services/      # ビジネスロジック
-│   └── tests/         # テスト（pytest）
-├── migrations/        # Alembic マイグレーション
+├── src/tasche/
+│   ├── conftest.py          # pytest 共通 fixture（全テストで共有）
+│   ├── api/
+│   │   └── v1/
+│   │       ├── tests/       # API テスト（コロケーション）
+│   │       │   ├── test_auth.py
+│   │       │   ├── test_users.py
+│   │       │   ├── test_tasks.py
+│   │       │   ├── test_settings.py
+│   │       │   ├── test_records.py
+│   │       │   ├── test_dashboard.py
+│   │       │   └── test_goals.py
+│   │       └── ...          # エンドポイント実装
+│   ├── core/
+│   │   └── tests/           # core ユニットテスト
+│   ├── services/
+│   │   └── tests/           # services テスト
+│   └── tests/               # main.py 等のテスト（test_main_telemetry.py）
+├── migrations/              # Alembic マイグレーション
 └── pyproject.toml
 ```
 

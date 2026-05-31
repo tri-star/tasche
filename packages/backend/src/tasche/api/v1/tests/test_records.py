@@ -330,13 +330,15 @@ class TestUpsertRecord:
             name="Other User",
             timezone="Asia/Tokyo",
         )
+        db_session.add(other_user)
+        await db_session.commit()
         other_task = Task(
             id="tsk_99TEST1234567890ABCDEF",
             user_id=other_user.id,
             name="他ユーザーのタスク",
             is_archived=False,
         )
-        db_session.add_all([other_user, other_task])
+        db_session.add(other_task)
         await db_session.commit()
 
         response = await authenticated_client.put(
