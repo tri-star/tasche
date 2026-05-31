@@ -87,7 +87,10 @@ jobs:
       DATABASE_URL: postgresql+asyncpg://tasche:tasche_dev_password@localhost:5432/tasche_test
       TEST_DATABASE_URL: postgresql+asyncpg://tasche:tasche_dev_password@localhost:5432/tasche_test
       ENABLE_TEST_AUTH: "true"
-      TEST_JWT_SECRET: ${{ secrets.TEST_JWT_SECRET }}
+      # TestTokenService は jwt_secret で署名するため、CI でも jwt_secret == test_jwt_secret を揃える
+      # compose.yaml の api サービスでは TEST_JWT_SECRET: ${JWT_SECRET} で同様に統一している
+      JWT_SECRET: "change_me_in_production_0123456789abcdef"
+      TEST_JWT_SECRET: "change_me_in_production_0123456789abcdef"
 
     steps:
       - name: Checkout

@@ -457,6 +457,8 @@ class TestGetCurrentGoals:
             name="Other User",
             timezone="Asia/Tokyo",
         )
+        db_session.add(other_user)
+        await db_session.commit()
         other_task = Task(
             id="tsk_99OTHER1234567890ABCDE",
             user_id=other_user.id,
@@ -472,7 +474,7 @@ class TestGetCurrentGoals:
             week_start_day="monday",
             week_start_hour=4,
         )
-        db_session.add_all([other_user, other_task, other_week])
+        db_session.add_all([other_task, other_week])
         await db_session.commit()
         await _add_goal(
             db_session,
@@ -690,13 +692,15 @@ class TestUpdateCurrentGoals:
             name="Other User",
             timezone="Asia/Tokyo",
         )
+        db_session.add(other_user)
+        await db_session.commit()
         other_task = Task(
             id="tsk_99OTHER1234567890ABCDE",
             user_id=other_user.id,
             name="他ユーザーのタスク",
             is_archived=False,
         )
-        db_session.add_all([other_user, other_task])
+        db_session.add(other_task)
         await db_session.commit()
 
         response = await authenticated_client.put(

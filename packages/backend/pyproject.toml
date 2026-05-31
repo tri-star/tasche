@@ -28,7 +28,6 @@ dev = [
     "pytest>=8.3.0",
     "pytest-asyncio>=0.24.0",
     "httpx>=0.28.0",
-    "aiosqlite>=0.20.0",
     "respx>=0.21.0",
     "cryptography>=43.0.0",
 ]
@@ -46,13 +45,17 @@ dev-dependencies = [
     "pytest>=8.3.0",
     "pytest-asyncio>=0.24.0",
     "httpx>=0.28.0",
-    "aiosqlite>=0.20.0",
     "respx>=0.21.0",
     "cryptography>=43.0.0",
 ]
 
 [tool.pytest.ini_options]
-testpaths = ["src/tasche/tests"]
+testpaths = [
+    "src/tasche/api/v1/tests",
+    "src/tasche/core/tests",
+    "src/tasche/services/tests",
+    "src/tasche/tests",
+]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]

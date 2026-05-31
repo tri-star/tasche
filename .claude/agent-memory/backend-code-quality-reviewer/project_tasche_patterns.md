@@ -92,9 +92,10 @@ type: project
 - `services/task.py` の `get_tasks_by_user()` が定義されているが、コードベース全体でどこからも呼ばれていない
 - `get_tasks_with_stats()` が後継として存在しており、前者は削除候補
 
-## テストファイルのシグネチャ不整合（TCH-59 で確認）
+## テストファイルのシグネチャ不整合（TCH-59 で確認、TCH-61 でも継続）
 
 - `test_tasks.py` の `_create_week()` ヘルパーが `start_date: datetime.date` と型注釈しているが、`datetime` モジュールの `date` 型を `datetime.date` と参照しており、`from datetime import date` がない場合は動作するが慣習と異なる
+- TCH-61 でもこのパターンが残存（未修正）
 
 ## テストの DB 永続化検証パターン（TCH-15 で確認）
 
@@ -130,6 +131,18 @@ type: project
 - `test_goals.py` の `_add_goal` ヘルパが `await db_session.commit()` を毎回呼ぶ設計
 - `conftest.py` の `db_session` が `expire_on_commit=False` のため実害はないが、テスト内トランザクションが複数に分断される
 - 他テストファイルのパターンと一致しているか確認が必要。`flush()` に統一した方がシンプルという提案は可能
+
+## conftest.py パターン（TCH-61 で再構築確認）
+
+- テスト配置はコロケーション方式（`api/v1/tests/`, `core/tests/`, `services/tests/`, `tests/`）に移行済み
+- `conftest.py` は `src/tasche/conftest.py` 1箇所に統合。旧 `tests/conftest.py` は削除済み
+- DB ガード: モジュールロード時に `TEST_DATABASE_URL` の DB 名を `tasche_test` に制限する RuntimeError
+- Alembic: `scope="session"` の `_apply_migrations` fixture で `settings.database_url` を一時的に差し替えて upgrade head を実行
+- TRUNCATE: `_truncate_all_tables()` が各テスト前に実行（function スコープ）。テーブル名を pg_tables から動的取得して `TRUNCATE ... RESTART IDENTITY CASCADE` を実行（SQL インジェクションリスクは低いがシステムカタログ依存）
+- `make_google_id_token()` は conftest の **通常関数**（fixture ではない）として定義。`test_auth.py` が `from tasche.conftest import make_google_id_token` で直接 import している
+- `test_goals.py`, `test_records.py`, `test_dashboard.py` が conftest の `test_user` fixture を上書きするローカル `test_user` fixture を定義しており、ユーザーID `usr_01TEST1234567890ABCDEF` が各ファイルでハードコード重複
+- `test_tasks.py` が conftest の `token_service` / `auth_headers` を上書きするローカル fixture を定義（TestTokenService 非依存の `_LocalTokenService` を使用）
+- `asyncio_mode = "auto"` 設定済みのため `@pytest.mark.asyncio` デコレータは不要だが、`test_users.py` と `test_security.py` に冗長な `@pytest.mark.asyncio` が残存
 
 **Why:** TCH-26 の Google OAuth 実装時に発見。今後のレビューでも同様のトランザクション管理・ログ欠落パターンを注意して見るべき。
 **How to apply:** services 層の新しい関数をレビューするときはコミット境界を必ず確認。セキュリティ関連の分岐には INFO/WARNING ログが入っているか確認する。セキュリティ拒否分岐には必ず WARNING ログ（user_id, email, 試行元情報）を追加するよう指摘する。プライベート関数 (`_` 接頭辞) の API 層からの直接呼び出しパターンはレビュー時に毎回指摘する。新しい services 関数には必ず `logger = logging.getLogger(__name__)` と DEBUG ログ（更新成功時）があるか確認する。goal.py はロガーが欠落している既知の状態（TCH-9 時点未修正）なので、goal.py を触る実装では毎回ロガー追加を促す。
