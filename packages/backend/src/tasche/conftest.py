@@ -2,6 +2,7 @@
 
 import base64
 import os
+from pathlib import Path
 from typing import AsyncGenerator
 from unittest.mock import patch
 from urllib.parse import urlparse
@@ -33,7 +34,7 @@ TEST_DATABASE_URL = os.getenv(
 )
 
 # DB 名が tasche_test でなければ収集前に即座に失敗させる
-_db_name = urlparse(TEST_DATABASE_URL).path.lstrip("/")
+_db_name = urlparse(TEST_DATABASE_URL).path.strip("/")
 if _db_name != "tasche_test":
     raise RuntimeError(
         f"TEST_DATABASE_URL のDB名が 'tasche_test' ではありません: '{_db_name}'\n"
@@ -56,7 +57,8 @@ def _apply_migrations():
     テスト DB にのみマイグレーションを適用する。
     migrations/env.py 側で set_main_option 経由の URL を優先するよう実装済み。
     """
-    alembic_cfg = Config("alembic.ini")
+    _backend_dir = Path(__file__).resolve().parent.parent.parent
+    alembic_cfg = Config(str(_backend_dir / "alembic.ini"))
     alembic_cfg.set_main_option("sqlalchemy.url", TEST_DATABASE_URL)
     command.upgrade(alembic_cfg, "head")
 
