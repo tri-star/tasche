@@ -13,19 +13,6 @@ import "./index.css"
 // Jotai のストアを直接参照するために getDefaultStore を使用
 const jotaiStore = getDefaultStore()
 
-const authClient = createAuthClient({
-  baseUrl: "",
-  getAccessToken: () => jotaiStore.get(accessTokenAtom),
-  setAccessToken: (token) => jotaiStore.set(accessTokenAtom, token),
-  onUnauthorized: () => {
-    jotaiStore.set(accessTokenAtom, null)
-    jotaiStore.set(currentUserAtom, null)
-    jotaiStore.set(authStatusAtom, "anonymous")
-  },
-})
-
-setAuthClient(authClient)
-
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -34,6 +21,20 @@ const queryClient = new QueryClient({
     },
   },
 })
+
+const authClient = createAuthClient({
+  baseUrl: "",
+  getAccessToken: () => jotaiStore.get(accessTokenAtom),
+  setAccessToken: (token) => jotaiStore.set(accessTokenAtom, token),
+  onUnauthorized: () => {
+    queryClient.clear()
+    jotaiStore.set(accessTokenAtom, null)
+    jotaiStore.set(currentUserAtom, null)
+    jotaiStore.set(authStatusAtom, "anonymous")
+  },
+})
+
+setAuthClient(authClient)
 
 async function enableMocking() {
   if (!import.meta.env.DEV) {

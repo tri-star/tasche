@@ -6,7 +6,6 @@ import { cn } from "@/lib/utils"
 type NavItem = {
   icon: ReactNode
   label: string
-  mobileLabel?: string
   href: string
   end?: boolean
 }
@@ -20,14 +19,12 @@ export function Sidebar({ className }: SidebarProps) {
     {
       icon: <Home className="h-5 w-5 shrink-0" />,
       label: "ダッシュボード",
-      mobileLabel: "ホーム",
       href: "/",
       end: true,
     },
     {
       icon: <ClipboardList className="h-5 w-5 shrink-0" />,
       label: "タスク管理",
-      mobileLabel: "タスク",
       href: "/tasks",
     },
     { icon: <Target className="h-5 w-5 shrink-0" />, label: "目標設定", href: "/goals" },
@@ -54,18 +51,9 @@ export function Sidebar({ className }: SidebarProps) {
         <ul className="grid grid-cols-5 gap-1 md:flex md:h-full md:flex-col">
           {navItems.map((item) => (
             <li key={item.href} className={item.href === "/account" ? "md:mt-auto" : undefined}>
-              <NavLink
-                to={item.href}
-                end={item.end}
-                aria-label={item.label}
-                title={item.label}
-                className={linkClassName}
-              >
+              <NavLink to={item.href} end={item.end} title={item.label} className={linkClassName}>
                 {item.icon}
-                <span className="max-w-full truncate md:sr-only lg:not-sr-only">
-                  <span className="lg:hidden">{item.mobileLabel ?? item.label}</span>
-                  <span className="hidden lg:inline">{item.label}</span>
-                </span>
+                <span className="max-w-full truncate md:sr-only lg:not-sr-only">{item.label}</span>
               </NavLink>
             </li>
           ))}

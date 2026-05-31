@@ -1,11 +1,24 @@
+import type { Page } from "@playwright/test"
 import { expect, test } from "@/e2e/fixtures/auth"
 
 const routes = [
-  { path: "/", readyText: "今日の目標" },
-  { path: "/tasks", readyText: "タスク一覧" },
-  { path: "/goals", readyText: "1ユニットの時間を選んでください" },
-  { path: "/settings", readyText: "設定" },
-  { path: "/account", readyText: "アカウント" },
+  { path: "/", waitForReady: waitForDashboardReady },
+  {
+    path: "/tasks",
+    waitForReady: (page: Page) => waitForMainHeading(page, "タスク一覧"),
+  },
+  {
+    path: "/goals",
+    waitForReady: (page: Page) => waitForMainText(page, "1ユニットの時間を選んでください"),
+  },
+  {
+    path: "/settings",
+    waitForReady: (page: Page) => waitForMainHeading(page, "設定"),
+  },
+  {
+    path: "/account",
+    waitForReady: (page: Page) => waitForMainHeading(page, "アカウント"),
+  },
 ]
 
 const viewports = [
@@ -14,7 +27,20 @@ const viewports = [
   { name: "desktop-1280", width: 1280, height: 900 },
 ]
 
-async function expectNoDocumentHorizontalOverflow(page: import("@playwright/test").Page) {
+async function waitForMainHeading(page: Page, name: string) {
+  await expect(page.getByRole("main").getByRole("heading", { name })).toBeVisible()
+}
+
+async function waitForMainText(page: Page, text: string) {
+  await expect(page.getByRole("main").getByText(text)).toBeVisible()
+}
+
+async function waitForDashboardReady(page: Page) {
+  const main = page.getByRole("main")
+  await expect(main.getByText(/今日の目標|今週はまだ予定がありません/).first()).toBeVisible()
+}
+
+async function expectNoDocumentHorizontalOverflow(page: Page) {
   const overflow = await page.evaluate(() => ({
     documentOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
     bodyOverflow: document.body.scrollWidth - document.body.clientWidth,
@@ -24,7 +50,7 @@ async function expectNoDocumentHorizontalOverflow(page: import("@playwright/test
   expect(overflow.bodyOverflow).toBeLessThanOrEqual(1)
 }
 
-async function expectShellVisible(page: import("@playwright/test").Page) {
+async function expectShellVisible(page: Page) {
   await expect(page.getByRole("banner")).toBeVisible()
   await expect(page.getByRole("navigation", { name: "アプリナビゲーション" })).toBeVisible()
 
@@ -33,28 +59,20 @@ async function expectShellVisible(page: import("@playwright/test").Page) {
   }
 }
 
-async function expectNoHeaderNavMainOverlap(
-  page: import("@playwright/test").Page,
-  viewportName: string,
-) {
+async function expectNoNavMainOverlap(page: Page, viewportName: string) {
   const boxes = await page.evaluate(() => {
-    const header = document.querySelector("header")
     const nav = document.querySelector('nav[aria-label="アプリナビゲーション"]')
     const main = document.querySelector("main")
-    if (!header || !nav || !main) {
+    if (!nav || !main) {
       throw new Error("App shell elements not found")
     }
 
-    const headerBox = header.getBoundingClientRect()
     const navBox = nav.getBoundingClientRect()
     const mainBox = main.getBoundingClientRect()
     return {
-      header: {
-        bottom: headerBox.bottom,
-      },
       nav: {
+        top: navBox.top,
         right: navBox.right,
-        y: navBox.y,
       },
       main: {
         left: mainBox.left,
@@ -63,14 +81,31 @@ async function expectNoHeaderNavMainOverlap(
   })
 
   if (viewportName === "mobile-375") {
-    expect(boxes.nav.y).toBeGreaterThanOrEqual(boxes.header.bottom)
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
+    const endOfContent = await page.evaluate(() => {
+      const nav = document.querySelector('nav[aria-label="アプリナビゲーション"]')
+      const main = document.querySelector("main")
+      const lastChild = main?.lastElementChild
+      if (!nav || !lastChild) {
+        throw new Error("Mobile shell elements not found")
+      }
+
+      const navBox = nav.getBoundingClientRect()
+      const contentBox = lastChild.getBoundingClientRect()
+      return {
+        contentBottom: contentBox.bottom,
+        navTop: navBox.top,
+      }
+    })
+
+    expect(endOfContent.contentBottom).toBeLessThanOrEqual(endOfContent.navTop + 1)
     return
   }
 
   expect(boxes.nav.right).toBeLessThanOrEqual(boxes.main.left + 1)
 }
 
-async function expectFabAvoidsMobileNav(page: import("@playwright/test").Page) {
+async function expectFabAvoidsMobileNav(page: Page) {
   const boxes = await page.evaluate(() => {
     const fab = document.querySelector('button[aria-label="目標設定"]')
     const nav = document.querySelector('nav[aria-label="アプリナビゲーション"]')
@@ -100,10 +135,10 @@ test.describe("AppShell responsive layout", () => {
 
       for (const route of routes) {
         await authenticatedPage.goto(route.path)
-        await expect(authenticatedPage.getByText(route.readyText).first()).toBeVisible()
+        await route.waitForReady(authenticatedPage)
         await expectShellVisible(authenticatedPage)
         await expectNoDocumentHorizontalOverflow(authenticatedPage)
-        await expectNoHeaderNavMainOverlap(authenticatedPage, viewport.name)
+        await expectNoNavMainOverlap(authenticatedPage, viewport.name)
 
         if (viewport.name === "mobile-375" && route.path === "/") {
           await expectFabAvoidsMobileNav(authenticatedPage)
@@ -117,15 +152,31 @@ test.describe("AppShell responsive layout", () => {
     await authenticatedPage.goto("/")
 
     for (const route of [
-      { label: "タスク管理", path: "/tasks", readyText: "タスク一覧" },
-      { label: "目標設定", path: "/goals", readyText: "1ユニットの時間を選んでください" },
-      { label: "設定", path: "/settings", readyText: "設定" },
-      { label: "アカウント", path: "/account", readyText: "アカウント" },
-      { label: "ダッシュボード", path: "/", readyText: "今日の目標" },
+      {
+        label: "タスク管理",
+        path: "/tasks",
+        waitForReady: (page: Page) => waitForMainHeading(page, "タスク一覧"),
+      },
+      {
+        label: "目標設定",
+        path: "/goals",
+        waitForReady: (page: Page) => waitForMainText(page, "1ユニットの時間を選んでください"),
+      },
+      {
+        label: "設定",
+        path: "/settings",
+        waitForReady: (page: Page) => waitForMainHeading(page, "設定"),
+      },
+      {
+        label: "アカウント",
+        path: "/account",
+        waitForReady: (page: Page) => waitForMainHeading(page, "アカウント"),
+      },
+      { label: "ダッシュボード", path: "/", waitForReady: waitForDashboardReady },
     ]) {
       await authenticatedPage.getByRole("link", { name: route.label }).click()
       await authenticatedPage.waitForURL(`**${route.path}`)
-      await expect(authenticatedPage.getByText(route.readyText).first()).toBeVisible()
+      await route.waitForReady(authenticatedPage)
     }
   })
 
@@ -144,7 +195,7 @@ test.describe("AppShell responsive layout", () => {
     ]) {
       await authenticatedPage.setViewportSize(viewport)
       await authenticatedPage.goto("/")
-      await expect(authenticatedPage.getByText("今日の目標").first()).toBeVisible()
+      await waitForDashboardReady(authenticatedPage)
       await expectShellVisible(authenticatedPage)
       await expectNoDocumentHorizontalOverflow(authenticatedPage)
     }
