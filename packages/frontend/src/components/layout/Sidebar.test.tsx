@@ -19,6 +19,16 @@ function renderSidebar(initialPath = "/") {
 }
 
 describe("Sidebar", () => {
+  it("アプリナビゲーション landmark とルーティング済みリンクだけを表示する", () => {
+    renderSidebar("/")
+
+    expect(screen.getByRole("navigation", { name: "アプリナビゲーション" })).toBeInTheDocument()
+    for (const label of ["ダッシュボード", "タスク管理", "目標設定", "設定", "アカウント"]) {
+      expect(screen.getAllByRole("link", { name: label })).toHaveLength(1)
+    }
+    expect(screen.queryByRole("link", { name: "ヘルプ" })).not.toBeInTheDocument()
+  })
+
   it("/ ではダッシュボードを active 表示する", () => {
     renderSidebar("/")
 
@@ -37,6 +47,20 @@ describe("Sidebar", () => {
     renderSidebar("/tasks")
 
     expect(screen.getByRole("link", { name: "タスク管理" })).toHaveClass("bg-accent")
+    expect(screen.getByRole("link", { name: "ダッシュボード" })).not.toHaveClass("bg-accent")
+  })
+
+  it("/settings では設定だけを active 表示する", () => {
+    renderSidebar("/settings")
+
+    expect(screen.getByRole("link", { name: "設定" })).toHaveClass("bg-accent")
+    expect(screen.getByRole("link", { name: "ダッシュボード" })).not.toHaveClass("bg-accent")
+  })
+
+  it("/account ではアカウントだけを active 表示する", () => {
+    renderSidebar("/account")
+
+    expect(screen.getByRole("link", { name: "アカウント" })).toHaveClass("bg-accent")
     expect(screen.getByRole("link", { name: "ダッシュボード" })).not.toHaveClass("bg-accent")
   })
 

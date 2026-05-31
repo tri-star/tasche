@@ -97,16 +97,17 @@ describe("DashboardPage", () => {
     expect(screen.getByRole("button", { name: /目標設定/ })).toBeInTheDocument()
   })
 
-  it("サイドバーのナビゲーションが表示される", async () => {
+  it("共通ナビゲーションが表示される", async () => {
     renderWithRouter()
 
     await waitFor(() => {
       expect(screen.queryByText("読み込み中...")).not.toBeInTheDocument()
     })
 
-    expect(screen.getByText("ダッシュボード")).toBeInTheDocument()
-    expect(screen.getByText("設定")).toBeInTheDocument()
-    expect(screen.getByText("ヘルプ")).toBeInTheDocument()
+    for (const label of ["ダッシュボード", "タスク管理", "目標設定", "設定", "アカウント"]) {
+      expect(screen.getByRole("link", { name: label })).toBeInTheDocument()
+    }
+    expect(screen.queryByRole("link", { name: "ヘルプ" })).not.toBeInTheDocument()
   })
 
   it("当週の目標が未設定のとき、空状態が表示される", async () => {
