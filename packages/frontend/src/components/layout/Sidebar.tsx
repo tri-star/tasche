@@ -1,4 +1,4 @@
-import { ClipboardList, HelpCircle, Home, Settings, Target, User } from "lucide-react"
+import { ClipboardList, Home, Settings, Target, User } from "lucide-react"
 import type { ReactNode } from "react"
 import { NavLink } from "react-router-dom"
 import { cn } from "@/lib/utils"
@@ -8,6 +8,7 @@ type NavItem = {
   label: string
   href: string
   end?: boolean
+  alignBottom?: boolean
 }
 
 type SidebarProps = {
@@ -15,50 +16,50 @@ type SidebarProps = {
 }
 
 export function Sidebar({ className }: SidebarProps) {
-  const mainNavItems: NavItem[] = [
-    { icon: <Home className="h-5 w-5" />, label: "ダッシュボード", href: "/", end: true },
-    { icon: <ClipboardList className="h-5 w-5" />, label: "タスク管理", href: "/tasks" },
-    { icon: <Target className="h-5 w-5" />, label: "目標設定", href: "/goals" },
-    { icon: <Settings className="h-5 w-5" />, label: "設定", href: "/settings" },
-  ]
-
-  const bottomNavItems: NavItem[] = [
-    { icon: <HelpCircle className="h-5 w-5" />, label: "ヘルプ", href: "/help" },
-    { icon: <User className="h-5 w-5" />, label: "アカウント", href: "/account" },
+  const navItems: NavItem[] = [
+    {
+      icon: <Home className="h-5 w-5 shrink-0" />,
+      label: "ダッシュボード",
+      href: "/",
+      end: true,
+    },
+    {
+      icon: <ClipboardList className="h-5 w-5 shrink-0" />,
+      label: "タスク管理",
+      href: "/tasks",
+    },
+    { icon: <Target className="h-5 w-5 shrink-0" />, label: "目標設定", href: "/goals" },
+    { icon: <Settings className="h-5 w-5 shrink-0" />, label: "設定", href: "/settings" },
+    {
+      icon: <User className="h-5 w-5 shrink-0" />,
+      label: "アカウント",
+      href: "/account",
+      alignBottom: true,
+    },
   ]
 
   const linkClassName = ({ isActive }: { isActive: boolean }) =>
     cn(
-      "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
+      "flex min-w-0 flex-col items-center justify-center gap-1 rounded-md px-1 py-2 text-[11px] leading-tight transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring md:h-10 md:flex-row md:px-0 lg:justify-start lg:gap-3 lg:px-3 lg:text-sm",
       isActive
         ? "bg-accent text-accent-foreground font-medium"
-        : "text-muted-foreground hover:bg-muted",
+        : "text-muted-foreground hover:bg-muted hover:text-foreground",
     )
 
   return (
-    <aside className={cn("flex w-60 flex-col bg-white border-r", className)}>
-      {/* メインナビゲーション */}
-      <nav className="flex-1 px-3 pt-6">
-        <ul className="space-y-1">
-          {mainNavItems.map((item) => (
-            <li key={item.href}>
-              <NavLink to={item.href} end={item.end} className={linkClassName}>
+    <aside
+      className={cn(
+        "fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 px-2 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] pt-2 text-card-foreground backdrop-blur md:sticky md:top-16 md:h-[calc(100dvh-4rem)] md:w-20 md:shrink-0 md:border-r md:border-t-0 md:px-3 md:py-6 lg:w-60",
+        className,
+      )}
+    >
+      <nav aria-label="アプリナビゲーション" className="h-full">
+        <ul className="grid grid-cols-5 gap-1 md:flex md:h-full md:flex-col">
+          {navItems.map((item) => (
+            <li key={item.href} className={item.alignBottom ? "md:mt-auto" : undefined}>
+              <NavLink to={item.href} end={item.end} title={item.label} className={linkClassName}>
                 {item.icon}
-                {item.label}
-              </NavLink>
-            </li>
-          ))}
-        </ul>
-      </nav>
-
-      {/* 下部ナビゲーション */}
-      <nav className="px-3 pb-6">
-        <ul className="space-y-1">
-          {bottomNavItems.map((item) => (
-            <li key={item.href}>
-              <NavLink to={item.href} end={item.end} className={linkClassName}>
-                {item.icon}
-                {item.label}
+                <span className="max-w-full truncate md:sr-only lg:not-sr-only">{item.label}</span>
               </NavLink>
             </li>
           ))}

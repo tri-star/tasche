@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query"
 import { useAtom, useAtomValue, useSetAtom } from "jotai"
 import { useNavigate } from "react-router-dom"
 import { logger } from "@/lib/logger"
@@ -45,6 +46,7 @@ export function useAuth() {
   const accessToken = useAtomValue(accessTokenAtom)
   const setCurrentUser = useSetAtom(currentUserAtom)
   const user = useAtomValue(currentUserAtom)
+  const queryClient = useQueryClient()
   const navigate = useNavigate()
 
   /**
@@ -180,6 +182,7 @@ export function useAuth() {
         },
       })
     } finally {
+      queryClient.clear()
       setAccessToken(null)
       setCurrentUser(null)
       setStatus("anonymous")
