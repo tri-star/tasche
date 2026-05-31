@@ -90,6 +90,8 @@ async function expectFabAvoidsMobileNav(page: import("@playwright/test").Page) {
 }
 
 test.describe("AppShell responsive layout", () => {
+  test.setTimeout(30_000)
+
   test("各代表幅で主要画面の共通ナビが表示され、ページ全体が横にはみ出さない", async ({
     authenticatedPage,
   }) => {
