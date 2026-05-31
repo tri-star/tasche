@@ -52,10 +52,11 @@ async function expectNoDocumentHorizontalOverflow(page: Page) {
 
 async function expectShellVisible(page: Page) {
   await expect(page.getByRole("banner")).toBeVisible()
-  await expect(page.getByRole("navigation", { name: "アプリナビゲーション" })).toBeVisible()
+  const navigation = page.getByRole("navigation", { name: "アプリナビゲーション" })
+  await expect(navigation).toBeVisible()
 
   for (const label of ["ダッシュボード", "タスク管理", "目標設定", "設定", "アカウント"]) {
-    await expect(page.getByRole("link", { name: label })).toBeVisible()
+    await expect(navigation.getByRole("link", { name: label, exact: true })).toBeVisible()
   }
 }
 
@@ -174,7 +175,10 @@ test.describe("AppShell responsive layout", () => {
       },
       { label: "ダッシュボード", path: "/", waitForReady: waitForDashboardReady },
     ]) {
-      await authenticatedPage.getByRole("link", { name: route.label }).click()
+      await authenticatedPage
+        .getByRole("navigation", { name: "アプリナビゲーション" })
+        .getByRole("link", { name: route.label, exact: true })
+        .click()
       await authenticatedPage.waitForURL(`**${route.path}`)
       await route.waitForReady(authenticatedPage)
     }
