@@ -25,7 +25,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       <div className="flex min-w-0 flex-1">
         <Sidebar />
         <div className="flex min-w-0 flex-1 justify-center">
-          <main className="w-full min-w-0 max-w-6xl px-4 py-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] md:px-6 md:py-6 md:pb-6 lg:px-8 lg:py-8">
+          <main className="w-full min-w-0 max-w-6xl px-4 py-4 pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] md:px-6 md:py-6 md:pb-6 lg:px-8 lg:py-8">
             {children}
           </main>
         </div>

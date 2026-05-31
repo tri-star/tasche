@@ -25,7 +25,7 @@ describe("GoalSettingFab", () => {
 
     expect(screen.getByRole("button", { name: "目標設定" })).toHaveClass(
       "fixed",
-      "bottom-[calc(5.75rem+env(safe-area-inset-bottom))]",
+      "bottom-[calc(5.75rem+env(safe-area-inset-bottom,0px))]",
       "md:bottom-6",
       "right-4",
       "md:right-6",

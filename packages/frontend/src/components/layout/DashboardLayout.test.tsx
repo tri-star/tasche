@@ -47,7 +47,7 @@ describe("DashboardLayout", () => {
     renderLayout()
 
     expect(screen.getByRole("main")).toHaveClass(
-      "pb-[calc(5.5rem+env(safe-area-inset-bottom))]",
+      "pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))]",
       "md:pb-6",
     )
   })
