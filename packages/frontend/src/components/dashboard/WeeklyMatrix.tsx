@@ -35,6 +35,7 @@ function ProgressSprite({ rate }: { rate: number | null | undefined }) {
   if (rate === null || rate === undefined) return null
   return (
     <div
+      aria-hidden="true"
       className="inline-block h-[18px] w-[18px] shrink-0 bg-no-repeat"
       style={{
         backgroundImage: "url(/images/dashboard/task-progress-sprites.png)",
@@ -66,14 +67,16 @@ export function WeeklyMatrix({ data, currentDay }: WeeklyMatrixProps) {
           <div key={item.task_id} className="rounded-md border bg-muted/10 p-3">
             <div className="mb-2 text-sm font-medium">{item.task_name}</div>
             <div className="grid grid-cols-2 gap-1">
-              {DAYS_OF_WEEK_ORDER.map((day) => {
+              {DAYS_OF_WEEK_ORDER.map((day, idx) => {
                 const dayData = item.daily_data[day]
                 const rate = dayData?.completion_rate
+                const isLast = idx === DAYS_OF_WEEK_ORDER.length - 1
                 return (
                   <div
                     key={day}
                     className={cn(
                       "flex items-center gap-1.5 rounded px-2 py-1",
+                      isLast && "col-span-2",
                       day === currentDay && "bg-primary/10",
                       getCompletionColorClass(rate),
                     )}
@@ -101,12 +104,15 @@ export function WeeklyMatrix({ data, currentDay }: WeeklyMatrixProps) {
           <div className="grid grid-cols-2 gap-1">
             {totals.map((total, index) => {
               const day = DAYS_OF_WEEK_ORDER[index]
+              const isLast = index === totals.length - 1
               return (
                 <div
                   key={day}
                   className={cn(
                     "flex items-center gap-1.5 rounded px-2 py-1",
+                    isLast && "col-span-2",
                     day === currentDay && "bg-primary/10",
+                    getCompletionColorClass(total),
                   )}
                 >
                   <span className="w-4 shrink-0 text-xs text-muted-foreground">

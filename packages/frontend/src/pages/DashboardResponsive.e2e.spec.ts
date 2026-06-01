@@ -55,17 +55,25 @@ test.describe("Dashboard responsive layout (375px)", () => {
 
     const dashboard = new DashboardPage(authenticatedPage)
 
-    const sectionFitsViewport = await authenticatedPage.evaluate(() => {
-      const section = document.querySelector('[aria-label="週間達成状況"]')
-      if (!section) return null
-      const rect = section.getBoundingClientRect()
-      return rect.right <= window.innerWidth
-    })
+    const section = authenticatedPage.locator('[aria-label="週間達成状況"]')
+    await expect(section).toBeVisible()
 
-    expect(sectionFitsViewport).not.toBeNull()
-    expect(sectionFitsViewport).toBe(true)
+    const fitsViewport = await authenticatedPage.evaluate(() => {
+      const el = document.querySelector('[aria-label="週間達成状況"]')!
+      return el.getBoundingClientRect().right <= window.innerWidth
+    })
+    expect(fitsViewport).toBe(true)
 
     await expect(dashboard.weeklyMatrix.getByText("合計")).toBeVisible()
+  })
+
+  test("768px以上で週間達成状況テーブルが表示される", async ({ authenticatedPage }) => {
+    await authenticatedPage.setViewportSize({ width: 768, height: 1024 })
+    await authenticatedPage.goto("/")
+    await waitForDashboardReady(authenticatedPage)
+
+    const scrollContainer = authenticatedPage.locator('[data-testid="weekly-matrix-scroll"]')
+    await expect(scrollContainer).toBeVisible()
   })
 
   test("目標未設定時、空状態とFABが本文を隠さない (MSW限定)", async ({ authenticatedPage }) => {
