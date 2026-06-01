@@ -38,9 +38,7 @@ async function expectFabAvoidsMobileNav(page: import("@playwright/test").Page) {
 test.describe("Dashboard responsive layout (375px)", () => {
   test.setTimeout(30_000)
 
-  test("ダッシュボード本文がドキュメント全体を横に押し広げない", async ({
-    authenticatedPage,
-  }) => {
+  test("ダッシュボード本文がドキュメント全体を横に押し広げない", async ({ authenticatedPage }) => {
     await authenticatedPage.setViewportSize({ width: 375, height: 812 })
     await authenticatedPage.goto("/")
     await waitForDashboardReady(authenticatedPage)
@@ -90,9 +88,7 @@ test.describe("Dashboard responsive layout (375px)", () => {
     await expect(dashboard.weeklyMatrix.getByText("合計")).toBeVisible()
   })
 
-  test("目標未設定時、空状態とFABが本文を隠さない (MSW限定)", async ({
-    authenticatedPage,
-  }) => {
+  test("目標未設定時、空状態とFABが本文を隠さない (MSW限定)", async ({ authenticatedPage }) => {
     test.skip(process.env.E2E_USE_MSW !== "true", "MSWモックデータ専用のテスト")
 
     await authenticatedPage.setViewportSize({ width: 375, height: 812 })
@@ -126,9 +122,7 @@ test.describe("Dashboard responsive layout (375px)", () => {
       authenticatedPage.getByRole("main").getByText("今週はまだ予定がありません"),
     ).toBeVisible()
 
-    await expect(
-      authenticatedPage.getByRole("button", { name: "目標を設定する" }),
-    ).toBeVisible()
+    await expect(authenticatedPage.getByRole("button", { name: "目標を設定する" })).toBeVisible()
 
     await expectFabAvoidsMobileNav(authenticatedPage)
     await expectNoDocumentHorizontalOverflow(authenticatedPage)
