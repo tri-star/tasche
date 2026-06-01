@@ -64,7 +64,8 @@ test.describe("Dashboard responsive layout (375px)", () => {
     })
     expect(fitsViewport).toBe(true)
 
-    await expect(dashboard.weeklyMatrix.getByText("合計")).toBeVisible()
+    const mobileLayout = dashboard.weeklyMatrix.locator('[data-testid="weekly-matrix-mobile"]')
+    await expect(mobileLayout.getByText("合計")).toBeVisible()
   })
 
   test("768px以上で週間達成状況テーブルが表示される", async ({ authenticatedPage }) => {

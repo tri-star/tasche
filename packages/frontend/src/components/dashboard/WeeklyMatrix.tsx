@@ -62,7 +62,7 @@ export function WeeklyMatrix({ data, currentDay }: WeeklyMatrixProps) {
       <h3 className="px-4 py-3 text-lg font-semibold">週間達成状況</h3>
 
       {/* モバイルレイアウト (md未満): タスクをカード形式で縦積み */}
-      <div className="block space-y-2 px-4 pb-4 md:hidden">
+      <div className="block space-y-2 px-4 pb-4 md:hidden" data-testid="weekly-matrix-mobile">
         {data.map((item) => (
           <div key={item.task_id} className="rounded-md border bg-muted/10 p-3">
             <div className="mb-2 text-sm font-medium">{item.task_name}</div>
