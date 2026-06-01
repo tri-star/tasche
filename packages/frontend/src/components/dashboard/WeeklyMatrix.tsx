@@ -31,6 +31,19 @@ function getSpriteOffset(rate: number | null | undefined): number {
   return 36
 }
 
+function ProgressSprite({ rate }: { rate: number | null | undefined }) {
+  if (rate === null || rate === undefined) return null
+  return (
+    <div
+      className="inline-block h-[18px] w-[18px] shrink-0 bg-no-repeat"
+      style={{
+        backgroundImage: "url(/images/dashboard/task-progress-sprites.png)",
+        backgroundPosition: `-${getSpriteOffset(rate)}px 0`,
+      }}
+    />
+  )
+}
+
 export function WeeklyMatrix({ data, currentDay }: WeeklyMatrixProps) {
   const totals = DAYS_OF_WEEK_ORDER.map((day) => {
     const dayData = data.map((item) => item.daily_data[day]).filter((d) => d !== undefined)
@@ -46,7 +59,73 @@ export function WeeklyMatrix({ data, currentDay }: WeeklyMatrixProps) {
   return (
     <section className="overflow-hidden rounded-lg border bg-card" aria-label="週間達成状況">
       <h3 className="px-4 py-3 text-lg font-semibold">週間達成状況</h3>
-      <div className="overflow-x-auto">
+
+      {/* モバイルレイアウト (md未満): タスクをカード形式で縦積み */}
+      <div className="block space-y-2 px-4 pb-4 md:hidden">
+        {data.map((item) => (
+          <div key={item.task_id} className="rounded-md border bg-muted/10 p-3">
+            <div className="mb-2 text-sm font-medium">{item.task_name}</div>
+            <div className="grid grid-cols-2 gap-1">
+              {DAYS_OF_WEEK_ORDER.map((day) => {
+                const dayData = item.daily_data[day]
+                const rate = dayData?.completion_rate
+                return (
+                  <div
+                    key={day}
+                    className={cn(
+                      "flex items-center gap-1.5 rounded px-2 py-1",
+                      day === currentDay && "bg-primary/10",
+                      getCompletionColorClass(rate),
+                    )}
+                  >
+                    <span className="w-4 shrink-0 text-xs text-muted-foreground">
+                      {DAY_LABELS[day]}
+                    </span>
+                    {rate !== null && rate !== undefined ? (
+                      <>
+                        <ProgressSprite rate={rate} />
+                        <span className="text-xs">{rate}%</span>
+                      </>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">--</span>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        ))}
+
+        <div className="rounded-md border bg-muted/30 p-3">
+          <div className="mb-2 text-sm font-medium">合計</div>
+          <div className="grid grid-cols-2 gap-1">
+            {totals.map((total, index) => {
+              const day = DAYS_OF_WEEK_ORDER[index]
+              return (
+                <div
+                  key={day}
+                  className={cn(
+                    "flex items-center gap-1.5 rounded px-2 py-1",
+                    day === currentDay && "bg-primary/10",
+                  )}
+                >
+                  <span className="w-4 shrink-0 text-xs text-muted-foreground">
+                    {DAY_LABELS[day]}
+                  </span>
+                  {total !== null ? (
+                    <span className="text-xs">{total}%</span>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">--</span>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* デスクトップレイアウト (md以上): 横スクロール可能なテーブル */}
+      <div className="hidden overflow-x-auto md:block" data-testid="weekly-matrix-scroll">
         <Table className="min-w-[680px]">
           <TableHeader>
             <TableRow>
@@ -82,13 +161,7 @@ export function WeeklyMatrix({ data, currentDay }: WeeklyMatrixProps) {
                     >
                       {rate !== null && rate !== undefined ? (
                         <div className="flex items-center justify-center gap-1">
-                          <div
-                            className="h-[18px] w-[18px] bg-no-repeat inline-block"
-                            style={{
-                              backgroundImage: "url(/images/dashboard/task-progress-sprites.png)",
-                              backgroundPosition: `-${getSpriteOffset(rate)}px 0`,
-                            }}
-                          />
+                          <ProgressSprite rate={rate} />
                           <span className="text-sm">{rate}%</span>
                         </div>
                       ) : null}

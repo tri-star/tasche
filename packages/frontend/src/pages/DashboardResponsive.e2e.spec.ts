@@ -46,7 +46,7 @@ test.describe("Dashboard responsive layout (375px)", () => {
     await expectNoDocumentHorizontalOverflow(authenticatedPage)
   })
 
-  test("週間達成状況テーブルがテーブル領域内で横スクロールできる", async ({
+  test("週間達成状況が375pxでviewportをはみ出さずカード形式で表示される", async ({
     authenticatedPage,
   }) => {
     await authenticatedPage.setViewportSize({ width: 375, height: 812 })
@@ -55,35 +55,15 @@ test.describe("Dashboard responsive layout (375px)", () => {
 
     const dashboard = new DashboardPage(authenticatedPage)
 
-    const sectionOverflow = await authenticatedPage.evaluate(() => {
+    const sectionFitsViewport = await authenticatedPage.evaluate(() => {
       const section = document.querySelector('[aria-label="週間達成状況"]')
       if (!section) return null
-      return {
-        sectionOverflow: section.scrollWidth - section.clientWidth,
-      }
+      const rect = section.getBoundingClientRect()
+      return rect.right <= window.innerWidth
     })
 
-    if (sectionOverflow === null) {
-      test.skip()
-      return
-    }
-
-    expect(sectionOverflow.sectionOverflow).toBeLessThanOrEqual(1)
-
-    const scrollContainerInfo = await authenticatedPage.evaluate(() => {
-      const section = document.querySelector('[aria-label="週間達成状況"]')
-      if (!section) return null
-      const scrollContainer = section.querySelector(".overflow-x-auto")
-      if (!scrollContainer) return null
-      return {
-        scrollWidth: scrollContainer.scrollWidth,
-        clientWidth: scrollContainer.clientWidth,
-      }
-    })
-
-    if (scrollContainerInfo !== null) {
-      expect(scrollContainerInfo.scrollWidth).toBeGreaterThan(scrollContainerInfo.clientWidth - 1)
-    }
+    expect(sectionFitsViewport).not.toBeNull()
+    expect(sectionFitsViewport).toBe(true)
 
     await expect(dashboard.weeklyMatrix.getByText("合計")).toBeVisible()
   })
