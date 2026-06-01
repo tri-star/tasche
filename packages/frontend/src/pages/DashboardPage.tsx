@@ -100,8 +100,8 @@ export function DashboardPage() {
   return (
     <DashboardLayout>
       {dashboard.has_goals_configured ? (
-        <div className="space-y-6">
-          <div className="grid gap-6 md:grid-cols-2">
+        <div className="min-w-0 space-y-4 md:space-y-6">
+          <div className="grid gap-4 md:gap-6 md:grid-cols-2">
             <TodayGoalsWidget
               date={formatDate(dashboard.current_date, dashboard.current_day_of_week)}
               goals={dashboard.today_goals}
