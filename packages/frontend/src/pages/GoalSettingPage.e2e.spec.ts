@@ -67,7 +67,9 @@ test.describe("GoalSettingPage", () => {
 
       await authenticatedPage.waitForURL("**/")
       await dashboardPage.waitForLoaded()
-      const desktopTable = dashboardPage.weeklyMatrix.locator('[data-testid="weekly-matrix-scroll"]')
+      const desktopTable = dashboardPage.weeklyMatrix.locator(
+        '[data-testid="weekly-matrix-scroll"]',
+      )
       await expect(desktopTable.getByText(taskName)).toBeVisible()
     })
   })
