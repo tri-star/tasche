@@ -34,17 +34,17 @@ export function RecordWidget({ currentDay, weekStartDate, tasks, onRecord }: Rec
         aria-hidden="true"
       />
 
-      <CardHeader className="flex flex-row items-center gap-2 pb-2">
+      <CardHeader className="flex flex-row items-center gap-2 pb-2 pr-14">
         <img
           src="/images/dashboard/dashboard-widget-icon2.png"
           alt=""
-          className="h-6 w-6 object-contain"
+          className="h-6 w-6 shrink-0 object-contain"
         />
         <CardTitle className="text-lg">実績を記録</CardTitle>
       </CardHeader>
 
       <CardContent className="space-y-4">
-        <div className="relative z-10 space-y-4">
+        <div className="relative z-10 min-w-0 space-y-4">
           {/* 曜日セレクタ */}
           <DaySelector
             weekStartDate={weekStartDate}

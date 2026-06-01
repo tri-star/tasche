@@ -19,13 +19,13 @@ export function TodayGoalsWidget({ date, goals, onToggleGoal }: TodayGoalsWidget
         aria-hidden="true"
       />
 
-      <CardHeader className="flex flex-row items-center gap-2 pb-2">
+      <CardHeader className="flex flex-row items-center gap-2 pb-2 pr-14">
         <img
           src="/images/dashboard/dashboard-widget-icon1.png"
           alt=""
-          className="h-7 w-7 object-contain"
+          className="h-7 w-7 shrink-0 object-contain"
         />
-        <div>
+        <div className="min-w-0">
           <CardTitle className="text-lg">今日の目標</CardTitle>
           <p className="text-sm text-muted-foreground">{date}</p>
         </div>
@@ -34,16 +34,16 @@ export function TodayGoalsWidget({ date, goals, onToggleGoal }: TodayGoalsWidget
       <CardContent>
         <ul className="relative z-10 space-y-3">
           {goals.map((goal) => (
-            <li key={goal.task_id} className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
+            <li key={goal.task_id} className="flex min-w-0 items-center justify-between">
+              <div className="flex min-w-0 items-center gap-2">
                 <img
                   src="/images/dashboard/task-icon.png"
                   alt=""
-                  className="h-5 w-5 object-contain"
+                  className="h-5 w-5 shrink-0 object-contain"
                 />
-                <span className="text-sm">{goal.task_name}</span>
+                <span className="truncate text-sm">{goal.task_name}</span>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="ml-2 flex shrink-0 items-center gap-3">
                 <span className="text-sm text-muted-foreground">
                   {goal.target_units} unit{goal.target_units !== 1 ? "s" : ""}
                 </span>

@@ -44,13 +44,13 @@ export function WeeklyMatrix({ data, currentDay }: WeeklyMatrixProps) {
   })
 
   return (
-    <section className="rounded-lg border bg-card" aria-label="週間達成状況">
+    <section className="overflow-hidden rounded-lg border bg-card" aria-label="週間達成状況">
       <h3 className="px-4 py-3 text-lg font-semibold">週間達成状況</h3>
       <div className="overflow-x-auto">
-        <Table>
+        <Table className="min-w-[680px]">
           <TableHeader>
             <TableRow>
-              <TableHead className="w-32"></TableHead>
+              <TableHead className="sticky left-0 z-10 w-32 bg-card"></TableHead>
               {DAYS_OF_WEEK_ORDER.map((day) => (
                 <TableHead
                   key={day}
@@ -64,7 +64,9 @@ export function WeeklyMatrix({ data, currentDay }: WeeklyMatrixProps) {
           <TableBody>
             {data.map((item) => (
               <TableRow key={item.task_id}>
-                <TableCell className="font-medium">{item.task_name}</TableCell>
+                <TableCell className="sticky left-0 z-10 bg-card font-medium">
+                  {item.task_name}
+                </TableCell>
                 {DAYS_OF_WEEK_ORDER.map((day) => {
                   const dayData = item.daily_data[day]
                   const rate = dayData?.completion_rate
@@ -97,7 +99,7 @@ export function WeeklyMatrix({ data, currentDay }: WeeklyMatrixProps) {
             ))}
 
             <TableRow className="bg-muted/30 font-medium">
-              <TableCell>合計</TableCell>
+              <TableCell className="sticky left-0 z-10 bg-muted/30">合計</TableCell>
               {totals.map((total, index) => (
                 <TableCell
                   key={DAYS_OF_WEEK_ORDER[index]}

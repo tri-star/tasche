@@ -36,7 +36,7 @@ export function DaySelector({
       onValueChange={(next) => {
         if (next) onChange(next as DayOfWeek)
       }}
-      className={cn("justify-start gap-1", className)}
+      className={cn("flex w-full justify-start gap-1 overflow-x-auto pb-1", className)}
       aria-label="曜日を選択"
     >
       {DAYS_OF_WEEK_ORDER.map((day) => {
@@ -50,7 +50,7 @@ export function DaySelector({
             aria-current={isToday ? "date" : undefined}
             aria-label={`${ariaLabelPrefix ?? "曜日"} ${DAY_LABELS[day]} ${formatMonthDay(date)}`}
             className={cn(
-              "flex h-16 w-14 flex-col items-center justify-center gap-1.5 rounded-xl py-2",
+              "flex h-16 w-14 shrink-0 flex-col items-center justify-center gap-1.5 rounded-xl py-2",
               "data-[state=on]:bg-primary data-[state=on]:text-primary-foreground",
               isToday && "ring-2 ring-primary/40",
             )}
