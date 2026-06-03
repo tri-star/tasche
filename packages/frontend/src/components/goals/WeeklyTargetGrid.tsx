@@ -27,7 +27,10 @@ export function WeeklyTargetGrid({
   )
 
   return (
-    <div className="overflow-x-auto rounded-3xl border border-emerald-100 bg-white/80 p-4 shadow-sm">
+    <div
+      data-testid="weekly-target-grid"
+      className="min-w-0 overflow-x-auto rounded-3xl border border-emerald-100 bg-white/80 p-4 shadow-sm"
+    >
       <table className="w-full min-w-[720px] border-separate border-spacing-y-2 text-sm">
         <thead>
           <tr className="text-muted-foreground">

@@ -312,7 +312,7 @@ export function GoalWizard() {
   }
 
   return (
-    <section className="space-y-8" aria-label="目標設定ウィザード">
+    <section className="min-w-0 space-y-8" aria-label="目標設定ウィザード">
       <StepIndicator currentStep={currentStep} steps={steps} />
 
       {isUsingPreviousGoals && (
@@ -321,7 +321,7 @@ export function GoalWizard() {
         </div>
       )}
 
-      <div className="rounded-3xl border border-emerald-100 bg-white/90 p-6 shadow-md">
+      <div className="min-w-0 rounded-3xl border border-emerald-100 bg-white/90 p-6 shadow-md">
         {currentStep === 1 ? (
           <Step1UnitDuration
             value={unitDurationMinutes}

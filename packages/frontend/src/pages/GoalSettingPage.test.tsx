@@ -70,11 +70,12 @@ describe("GoalSettingPage", () => {
       </MemoryRouter>,
     )
 
-    expect(await screen.findByText("ユニット時間選択")).toBeInTheDocument()
-    expect(screen.getByText("確保可能ユニット")).toBeInTheDocument()
-    expect(screen.getByText("タスク選択")).toBeInTheDocument()
-    expect(screen.getByText("曜日別目標設定")).toBeInTheDocument()
-    expect(screen.getByText("確認")).toBeInTheDocument()
+    // モバイル/デスクトップで同じラベルが2つ存在するため getAllByText を使用
+    expect((await screen.findAllByText("ユニット時間選択")).length).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByText("確保可能ユニット").length).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByText("タスク選択").length).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByText("曜日別目標設定").length).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByText("確認").length).toBeGreaterThanOrEqual(1)
   })
 
   it("確保可能ユニットの初期値が復元される", async () => {

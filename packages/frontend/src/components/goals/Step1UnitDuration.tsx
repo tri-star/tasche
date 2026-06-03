@@ -42,10 +42,10 @@ export function Step1UnitDuration({ value, onChange, onNext, onCancel }: Step1Pr
         <img
           src="/images/goals/step1-illust.png"
           alt=""
-          className="h-28 w-auto"
+          className="h-20 w-auto sm:h-28"
           aria-hidden="true"
         />
-        <h2 className="text-2xl font-bold text-emerald-900">1ユニットの時間を選んでください</h2>
+        <h2 className="text-xl font-bold text-emerald-900 sm:text-2xl">1ユニットの時間を選んでください</h2>
         <p className="text-sm text-muted-foreground">
           あなたのペースに合わせて、今週のリズムを決めましょう。
         </p>

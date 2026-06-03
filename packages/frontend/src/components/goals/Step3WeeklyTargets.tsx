@@ -39,7 +39,7 @@ export function Step3WeeklyTargets({
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-emerald-900">各タスクの曜日ごとの目標を設定</h2>
+        <h2 className="text-xl font-bold text-emerald-900 sm:text-2xl">各タスクの曜日ごとの目標を設定</h2>
         <p className="mt-2 text-sm text-muted-foreground">
           0.5ユニットずつ調整できます。まずはざっくりでOKです。
         </p>
