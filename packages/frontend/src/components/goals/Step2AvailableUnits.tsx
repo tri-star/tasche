@@ -26,7 +26,9 @@ export function Step2AvailableUnits({
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-emerald-900">曜日ごとの確保可能ユニットを入力</h2>
+        <h2 className="text-xl font-bold text-emerald-900 sm:text-2xl">
+          曜日ごとの確保可能ユニットを入力
+        </h2>
         <p className="mt-2 text-sm text-muted-foreground">
           今週それぞれの曜日で使える時間を、ユニット数で入力してください。
         </p>
@@ -40,7 +42,7 @@ export function Step2AvailableUnits({
 
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-emerald-100 bg-white/70 px-4 py-3">
         <p className="text-sm font-semibold text-emerald-900">今週確保できる合計</p>
-        <p className="text-base font-bold text-emerald-900">
+        <p className="whitespace-nowrap text-base font-bold text-emerald-900">
           {totalUnits.toFixed(1)}ユニット / 約{totalHours.toFixed(1)}時間
         </p>
       </div>

@@ -27,13 +27,13 @@ export function Step4Confirmation({
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-emerald-900">設定内容を確認</h2>
+        <h2 className="text-xl font-bold text-emerald-900 sm:text-2xl">設定内容を確認</h2>
         <p className="mt-2 text-sm text-muted-foreground">
           ここまでの内容でよければ保存してください。
         </p>
       </div>
 
-      <div className="rounded-3xl border border-emerald-100 bg-white/80 p-5 shadow-sm">
+      <div className="min-w-0 rounded-3xl border border-emerald-100 bg-white/80 p-5 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm text-muted-foreground">1ユニットの時間</p>
           <p className="text-lg font-semibold text-emerald-900">{unitDurationMinutes}分</p>
@@ -54,7 +54,7 @@ export function Step4Confirmation({
             ))}
           </div>
         </div>
-        <div className="mt-4 overflow-x-auto">
+        <div data-testid="confirmation-table" className="mt-4 min-w-0 overflow-x-auto">
           <table className="w-full min-w-[720px] text-sm">
             <thead>
               <tr className="text-muted-foreground">

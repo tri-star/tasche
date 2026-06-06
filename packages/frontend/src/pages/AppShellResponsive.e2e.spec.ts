@@ -1,5 +1,6 @@
 import type { Page } from "@playwright/test"
 import { expect, test } from "@/e2e/fixtures/auth"
+import { expectNoDocumentHorizontalOverflow } from "@/e2e/helpers/responsive"
 
 const routes = [
   { path: "/", waitForReady: waitForDashboardReady },
@@ -38,16 +39,6 @@ async function waitForMainText(page: Page, text: string) {
 async function waitForDashboardReady(page: Page) {
   const main = page.getByRole("main")
   await expect(main.getByText(/今日の目標|今週はまだ予定がありません/).first()).toBeVisible()
-}
-
-async function expectNoDocumentHorizontalOverflow(page: Page) {
-  const overflow = await page.evaluate(() => ({
-    documentOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
-    bodyOverflow: document.body.scrollWidth - document.body.clientWidth,
-  }))
-
-  expect(overflow.documentOverflow).toBeLessThanOrEqual(1)
-  expect(overflow.bodyOverflow).toBeLessThanOrEqual(1)
 }
 
 async function expectShellVisible(page: Page) {

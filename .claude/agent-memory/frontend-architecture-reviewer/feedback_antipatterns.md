@@ -40,6 +40,20 @@ TCH-9 の GoalWizard で Critical として指摘済み。
 
 ---
 
+## E2E ヘルパー関数の複数ファイル間重複
+
+`expectNoDocumentHorizontalOverflow` のようなレスポンシブ検証ヘルパーが、
+`DashboardResponsive.e2e.spec.ts`、`AppShellResponsive.e2e.spec.ts`、`GoalSettingResponsive.e2e.spec.ts`
+と複数の E2E スペックファイルにコピーされている。`src/e2e/helpers/` ディレクトリは未作成。
+
+**Why:** 共通化されていないため、判定ロジックを変更したい場合に全ファイルを修正する必要がある。
+また、ファイルごとに微妙に実装が変わるリスクがある。
+
+**How to apply:** `src/e2e/helpers/responsive.ts` 等に切り出してインポートする。
+TCH-65 の GoalSettingResponsive.e2e.spec.ts でも同関数がコピーされ再指摘が必要な状態。
+
+---
+
 ## settings フェッチ失敗 + フォールバック値による保存操作
 
 useBootstrapAuth で settings フェッチが失敗すると currentSettingsAtom が null のまま authenticated に遷移する。

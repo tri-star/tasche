@@ -46,10 +46,12 @@ export function Step2TaskSelection({
         <img
           src="/images/goals/step-2-illust.png"
           alt=""
-          className="h-28 w-auto"
+          className="h-20 w-auto sm:h-28"
           aria-hidden="true"
         />
-        <h2 className="text-2xl font-bold text-emerald-900">今週取り組むタスクを選んでください</h2>
+        <h2 className="text-xl font-bold text-emerald-900 sm:text-2xl">
+          今週取り組むタスクを選んでください
+        </h2>
         <p className="text-sm text-muted-foreground">気になることから、ゆるっと選んで大丈夫。</p>
       </div>
 
@@ -77,14 +79,19 @@ export function Step2TaskSelection({
             onDelete={() => onDeleteTask(task.tempId)}
           />
         ))}
-        <div className="flex justify-between items-center rounded-2xl border-2 border-dashed border-emerald-200 bg-white/70 px-2 gap-2">
+        <div className="flex flex-col gap-2 rounded-2xl border-2 border-dashed border-emerald-200 bg-white/70 p-2 sm:flex-row sm:items-center sm:justify-between sm:px-2">
           <input
             value={newTaskName}
             onChange={(event) => setNewTaskName(event.target.value)}
             placeholder="例: ストレッチ"
             className="w-full rounded-xl border border-emerald-100 bg-white px-3 py-2 text-sm focus:border-emerald-300 focus:outline-none"
           />
-          <Button variant="secondary" onClick={handleAdd} disabled={!newTaskName.trim()}>
+          <Button
+            variant="secondary"
+            onClick={handleAdd}
+            disabled={!newTaskName.trim()}
+            className="w-full whitespace-nowrap sm:w-auto"
+          >
             追加する
           </Button>
         </div>
