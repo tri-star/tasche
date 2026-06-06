@@ -392,10 +392,13 @@ describe("GoalSettingPage", () => {
 
     // Step4: 曜日別目標が復元されていること（月曜日目標2.0の入力値を確認）
     await user.click(screen.getByRole("button", { name: /次へ/ }))
-    // 月曜日の目標値 2.0 が入力フィールドに設定されていること
-    const inputs = screen.getAllByRole("spinbutton")
-    // 最初の入力（月曜日）の値が 2 であること
-    expect(inputs[0]).toHaveValue(2)
+    // モバイル/デスクトップ両レイアウトが DOM に存在するため aria-label で取得し全件検証
+    const mondayTargets = screen.getAllByRole("spinbutton", {
+      name: "英語学習の月曜日の目標ユニット",
+    })
+    for (const input of mondayTargets) {
+      expect(input).toHaveValue(2)
+    }
   })
 
   it("過去にも目標が無い場合（previous_goals: null）、フォームは初期状態（ユニット時間未選択）", async () => {

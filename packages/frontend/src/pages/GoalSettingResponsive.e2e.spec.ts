@@ -119,6 +119,13 @@ test.describe("GoalSetting responsive layout (375px)", () => {
     })
     expect(fitsViewport).toBe(true)
 
+    // モバイルカードレイアウトが表示されていること
+    await expect(authenticatedPage.locator('[data-testid="weekly-target-cards"]')).toBeVisible()
+    // 入力欄が表示・操作可能であること(aria-label 経由)
+    await expect(
+      authenticatedPage.getByRole("spinbutton", { name: /の月曜日の目標ユニット/ }).first(),
+    ).toBeVisible()
+
     await expectNoDocumentHorizontalOverflow(authenticatedPage)
   })
 })

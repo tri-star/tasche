@@ -90,25 +90,16 @@ export class GoalSettingPage {
   }
 
   async fillTarget(taskName: string, dayLabel: string, units: string) {
-    const taskRow = this.page.getByRole("row").filter({ hasText: taskName })
-    const dayColumnIndex = await this.getColumnIndex(dayLabel)
-    await taskRow
-      .getByRole("spinbutton")
-      .nth(dayColumnIndex - 1)
-      .fill(units)
+    // デスクトップ表・モバイルカード双方の input に同一 aria-label を付与済み。
+    // 表示中(visible)の input のみ操作する(片方は display:none でアクセシビリティツリー外)。
+    const input = this.page
+      .getByRole("spinbutton", { name: `${taskName}の${dayLabel}曜日の目標ユニット` })
+      .filter({ visible: true })
+      .first()
+    await input.fill(units)
   }
 
   async save() {
     await this.saveButton.click()
-  }
-
-  private async getColumnIndex(label: string): Promise<number> {
-    const headers = await this.page.getByRole("columnheader").all()
-    for (const [index, header] of headers.entries()) {
-      if ((await header.textContent())?.trim() === label) {
-        return index
-      }
-    }
-    throw new Error(`Column header not found: ${label}`)
   }
 }
