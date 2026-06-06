@@ -49,7 +49,9 @@ export function Step2TaskSelection({
           className="h-20 w-auto sm:h-28"
           aria-hidden="true"
         />
-        <h2 className="text-xl font-bold text-emerald-900 sm:text-2xl">今週取り組むタスクを選んでください</h2>
+        <h2 className="text-xl font-bold text-emerald-900 sm:text-2xl">
+          今週取り組むタスクを選んでください
+        </h2>
         <p className="text-sm text-muted-foreground">気になることから、ゆるっと選んで大丈夫。</p>
       </div>
 

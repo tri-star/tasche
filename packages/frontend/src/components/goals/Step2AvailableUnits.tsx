@@ -26,7 +26,9 @@ export function Step2AvailableUnits({
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-xl font-bold text-emerald-900 sm:text-2xl">曜日ごとの確保可能ユニットを入力</h2>
+        <h2 className="text-xl font-bold text-emerald-900 sm:text-2xl">
+          曜日ごとの確保可能ユニットを入力
+        </h2>
         <p className="mt-2 text-sm text-muted-foreground">
           今週それぞれの曜日で使える時間を、ユニット数で入力してください。
         </p>
