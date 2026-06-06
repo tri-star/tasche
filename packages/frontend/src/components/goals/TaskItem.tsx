@@ -39,36 +39,31 @@ export function TaskItem({ name, isSelected, isNew, onToggle, onEdit, onDelete }
       }`}
     >
       <div className="flex items-center justify-between gap-3">
-        <button
-          type="button"
-          onClick={onToggle}
-          className="flex min-w-0 flex-1 items-start gap-3 text-left"
-        >
-          <Checkbox
-            checked={isSelected}
-            onCheckedChange={onToggle}
-            onClick={(event) => event.stopPropagation()}
-            aria-label={name}
-          />
-          <div className="min-w-0 flex">
+        <div className="flex min-w-0 flex-1 items-start gap-3 text-left">
+          <Checkbox checked={isSelected} onCheckedChange={onToggle} aria-label={name} />
+          <div className="min-w-0 flex-1">
             {isNew ? (
               <span className="inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
                 new
               </span>
             ) : null}
             {isEditing ? (
-              <div className="min-w-0 flex-1 flex">
-                <input
-                  value={draftName}
-                  onChange={(event) => setDraftName(event.target.value)}
-                  className="w-full rounded-lg border border-emerald-200 bg-white px-2 py-1 text-sm focus:border-emerald-400 focus:outline-none"
-                />
-              </div>
+              <input
+                value={draftName}
+                onChange={(event) => setDraftName(event.target.value)}
+                className="w-full rounded-lg border border-emerald-200 bg-white px-2 py-1 text-sm focus:border-emerald-400 focus:outline-none"
+              />
             ) : (
-              <p className="break-words text-sm font-semibold text-emerald-900">{name}</p>
+              <button
+                type="button"
+                onClick={onToggle}
+                className="block w-full text-left break-words text-sm font-semibold text-emerald-900"
+              >
+                {name}
+              </button>
             )}
           </div>
-        </button>
+        </div>
         <div className="flex shrink-0 items-center gap-2">
           {isEditing ? (
             <>

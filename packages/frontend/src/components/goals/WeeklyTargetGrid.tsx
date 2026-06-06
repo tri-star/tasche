@@ -39,7 +39,7 @@ export function WeeklyTargetGrid({
     const targets = weeklyTargets[task.id]
     onUpdateTargets(task.id, {
       ...(targets ?? createEmptyTargets()),
-      [day]: Number.isFinite(nextValue) ? nextValue : 0,
+      [day]: Number.isFinite(nextValue) ? Math.max(0, nextValue) : 0,
     })
   }
 
