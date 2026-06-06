@@ -112,13 +112,17 @@ export function WeeklyTargetGrid({
         <table className="w-full min-w-[720px] border-separate border-spacing-y-2 text-sm">
           <thead>
             <tr className="text-muted-foreground">
-              <th className="px-2 text-left">タスク</th>
+              <th scope="col" className="px-2 text-left">
+                タスク
+              </th>
               {DAYS_OF_WEEK_ORDER.map((day) => (
-                <th key={day} className="px-2 text-center font-semibold">
+                <th key={day} scope="col" className="px-2 text-center font-semibold">
                   {DAY_LABELS[day]}
                 </th>
               ))}
-              <th className="px-2 text-center">合計</th>
+              <th scope="col" className="px-2 text-center">
+                合計
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -144,9 +148,10 @@ export function WeeklyTargetGrid({
                   {DAYS_OF_WEEK_ORDER.map((day) => (
                     <td
                       key={day}
-                      className={`px-2 py-2 text-center ${
-                        exceededDays.has(day) ? "bg-rose-50/80" : ""
-                      }`}
+                      className={cn(
+                        "px-2 py-2 text-center",
+                        exceededDays.has(day) ? "bg-rose-50/80" : "",
+                      )}
                     >
                       <input
                         type="number"
@@ -155,11 +160,12 @@ export function WeeklyTargetGrid({
                         value={targets?.[day] ?? 0}
                         onChange={(e) => handleChange(task, day, e.target.value)}
                         aria-label={targetInputLabel(task.name, day)}
-                        className={`w-16 rounded-lg border bg-white px-2 py-1 text-center text-sm focus:outline-none ${
+                        className={cn(
+                          "w-16 rounded-lg border bg-white px-2 py-1 text-center text-sm focus:outline-none",
                           exceededDays.has(day)
                             ? "border-rose-300 focus:border-rose-400"
-                            : "border-emerald-100 focus:border-emerald-300"
-                        }`}
+                            : "border-emerald-100 focus:border-emerald-300",
+                        )}
                       />
                     </td>
                   ))}
@@ -172,7 +178,9 @@ export function WeeklyTargetGrid({
           </tbody>
           <tfoot>
             <tr className="bg-emerald-50/80 font-semibold text-emerald-900">
-              <td className="px-2 py-3">目標合計 / 確保可能</td>
+              <th scope="row" className="px-2 py-3">
+                目標合計 / 確保可能
+              </th>
               {DAYS_OF_WEEK_ORDER.map((day) => {
                 const isExceeded = exceededDays.has(day)
                 const targetTotal = totalsByDay[day]
@@ -181,7 +189,10 @@ export function WeeklyTargetGrid({
                 return (
                   <td
                     key={day}
-                    className={`px-2 py-3 text-center ${isExceeded ? "bg-rose-100 text-rose-700" : ""}`}
+                    className={cn(
+                      "px-2 py-3 text-center",
+                      isExceeded ? "bg-rose-100 text-rose-700" : "",
+                    )}
                   >
                     <span className={isBelowAvailable ? "text-sky-700" : undefined}>
                       {targetTotal.toFixed(1)}
@@ -191,7 +202,7 @@ export function WeeklyTargetGrid({
                 )
               })}
               <td className="px-2 py-3 text-center">
-                {DAYS_OF_WEEK_ORDER.reduce((sum, day) => sum + totalsByDay[day], 0).toFixed(1)} /{" "}
+                {weeklyTotal.toFixed(1)} /{" "}
                 {DAYS_OF_WEEK_ORDER.reduce(
                   (sum, day) => sum + (dailyAvailableUnits[day] ?? 0),
                   0,
@@ -199,15 +210,18 @@ export function WeeklyTargetGrid({
               </td>
             </tr>
             <tr className="text-xs text-muted-foreground">
-              <td className="px-2 py-2">確保可能との差分</td>
+              <th scope="row" className="px-2 py-2">
+                確保可能との差分
+              </th>
               {DAYS_OF_WEEK_ORDER.map((day) => {
                 const remaining = (dailyAvailableUnits[day] ?? 0) - totalsByDay[day]
                 return (
                   <td
                     key={day}
-                    className={`px-2 py-2 text-center ${
-                      remaining < 0 ? "font-semibold text-rose-700" : ""
-                    }`}
+                    className={cn(
+                      "px-2 py-2 text-center",
+                      remaining < 0 ? "font-semibold text-rose-700" : "",
+                    )}
                   >
                     {remaining.toFixed(1)}
                   </td>

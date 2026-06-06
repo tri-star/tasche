@@ -11,7 +11,6 @@ export class GoalSettingPage {
   readonly wizard: Locator
 
   // ヘッダー
-  readonly wizardHeader: Locator
   readonly wizardTitle: Locator
   readonly saveButton: Locator
 
@@ -22,7 +21,6 @@ export class GoalSettingPage {
     this.wizard = page.getByRole("region", { name: "目標設定ウィザード" })
 
     // ヘッダー
-    this.wizardHeader = page.locator("header, [role=banner]").first()
     this.wizardTitle = page.getByRole("heading", { level: 2 }).first()
     this.saveButton = page.getByRole("button", { name: "保存" })
   }

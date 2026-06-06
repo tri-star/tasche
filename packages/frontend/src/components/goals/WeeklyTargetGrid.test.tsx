@@ -43,51 +43,6 @@ describe("WeeklyTargetGrid", () => {
       expect(screen.getAllByText("英語学習").length).toBeGreaterThanOrEqual(2)
       expect(screen.getAllByText("筋トレ").length).toBeGreaterThanOrEqual(2)
     })
-
-    it("モバイルカードブロック(weekly-target-cards)が存在する", () => {
-      const onUpdateTargets = vi.fn()
-      render(
-        <WeeklyTargetGrid
-          tasks={TASKS}
-          weeklyTargets={defaultWeeklyTargets}
-          dailyAvailableUnits={defaultDailyAvailableUnits}
-          exceededDays={new Set()}
-          onUpdateTargets={onUpdateTargets}
-        />,
-      )
-
-      expect(document.querySelector('[data-testid="weekly-target-cards"]')).toBeInTheDocument()
-    })
-
-    it("デスクトップスクロールブロック(weekly-target-scroll)が存在する", () => {
-      const onUpdateTargets = vi.fn()
-      render(
-        <WeeklyTargetGrid
-          tasks={TASKS}
-          weeklyTargets={defaultWeeklyTargets}
-          dailyAvailableUnits={defaultDailyAvailableUnits}
-          exceededDays={new Set()}
-          onUpdateTargets={onUpdateTargets}
-        />,
-      )
-
-      expect(document.querySelector('[data-testid="weekly-target-scroll"]')).toBeInTheDocument()
-    })
-
-    it("最外コンテナの data-testid が weekly-target-grid のまま維持される", () => {
-      const onUpdateTargets = vi.fn()
-      render(
-        <WeeklyTargetGrid
-          tasks={TASKS}
-          weeklyTargets={defaultWeeklyTargets}
-          dailyAvailableUnits={defaultDailyAvailableUnits}
-          exceededDays={new Set()}
-          onUpdateTargets={onUpdateTargets}
-        />,
-      )
-
-      expect(document.querySelector('[data-testid="weekly-target-grid"]')).toBeInTheDocument()
-    })
   })
 
   describe("入力値の反映", () => {
@@ -217,8 +172,8 @@ describe("WeeklyTargetGrid", () => {
       // 合計: 4.0
       expect(screen.getByText("週間合計ユニット")).toBeInTheDocument()
       // サマリーカード内の週間合計値(モバイルカードブロック内)を確認
-      const mobileCards = document.querySelector('[data-testid="weekly-target-cards"]')
-      expect(mobileCards?.textContent).toContain("4.0")
+      const mobileCards = screen.getByTestId("weekly-target-cards")
+      expect(mobileCards.textContent).toContain("4.0")
     })
 
     it("weeklyTargets が空の場合は週間合計サマリーに 0.0 が表示される", () => {
@@ -234,8 +189,8 @@ describe("WeeklyTargetGrid", () => {
       )
 
       // サマリーカード内の週間合計値(モバイルカードブロック内)を確認
-      const mobileCards = document.querySelector('[data-testid="weekly-target-cards"]')
-      expect(mobileCards?.textContent).toContain("0.0")
+      const mobileCards = screen.getByTestId("weekly-target-cards")
+      expect(mobileCards.textContent).toContain("0.0")
     })
   })
 

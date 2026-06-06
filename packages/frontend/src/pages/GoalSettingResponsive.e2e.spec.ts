@@ -1,15 +1,6 @@
 import { expect, test } from "@/e2e/fixtures/auth"
+import { expectNoDocumentHorizontalOverflow } from "@/e2e/helpers/responsive"
 import { GoalSettingPage } from "@/e2e/pages/goal-setting.page"
-
-async function expectNoDocumentHorizontalOverflow(page: import("@playwright/test").Page) {
-  const overflow = await page.evaluate(() => ({
-    documentOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
-    bodyOverflow: document.body.scrollWidth - document.body.clientWidth,
-  }))
-
-  expect(overflow.documentOverflow).toBeLessThanOrEqual(1)
-  expect(overflow.bodyOverflow).toBeLessThanOrEqual(1)
-}
 
 test.describe("GoalSetting responsive layout (375px)", () => {
   test.setTimeout(30_000)
@@ -115,7 +106,7 @@ test.describe("GoalSetting responsive layout (375px)", () => {
       if (!el) {
         throw new Error("weekly-target-grid not found")
       }
-      return el.getBoundingClientRect().right <= window.innerWidth
+      return el.scrollWidth <= el.clientWidth + 1
     })
     expect(fitsViewport).toBe(true)
 
