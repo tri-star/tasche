@@ -305,7 +305,7 @@ export function GoalWizard() {
 
   if (errorMessage) {
     return (
-      <div className="rounded-3xl border border-rose-100 bg-rose-50 p-6 text-sm text-rose-700">
+      <div className="rounded-3xl border border-destructive/40 bg-destructive-soft p-6 text-sm text-destructive-soft-foreground">
         {errorMessage}
       </div>
     )
@@ -316,12 +316,12 @@ export function GoalWizard() {
       <StepIndicator currentStep={currentStep} steps={steps} />
 
       {isUsingPreviousGoals && (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-800">
+        <div className="rounded-lg border border-warning/40 bg-warning-soft px-4 py-2 text-sm text-warning-soft-foreground">
           直近の目標設定をデフォルト値として読み込みました。内容を確認して保存してください。
         </div>
       )}
 
-      <div className="min-w-0 rounded-3xl border border-emerald-100 bg-white/90 p-6 shadow-md">
+      <div className="min-w-0 rounded-3xl border border-border bg-card p-6 shadow-md">
         {currentStep === 1 ? (
           <Step1UnitDuration
             value={unitDurationMinutes}

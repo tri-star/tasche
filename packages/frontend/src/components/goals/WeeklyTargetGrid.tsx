@@ -46,12 +46,12 @@ export function WeeklyTargetGrid({
   return (
     <div
       data-testid="weekly-target-grid"
-      className="min-w-0 rounded-3xl border border-emerald-100 bg-white/80 p-4 shadow-sm"
+      className="min-w-0 rounded-3xl border border-border bg-card p-4 shadow-sm"
     >
       {/* モバイルレイアウト (md未満): タスクをカード形式で縦積み */}
       <div className="space-y-3 md:hidden" data-testid="weekly-target-cards">
         {tasks.map((task) => (
-          <div key={task.id} className="rounded-2xl border border-emerald-100 bg-amber-50/40 p-3">
+          <div key={task.id} className="rounded-2xl border border-border bg-muted/40 p-3">
             {/* タスク名ヘッダー */}
             <div className="mb-2 flex items-center gap-2">
               <img
@@ -60,7 +60,7 @@ export function WeeklyTargetGrid({
                 aria-hidden="true"
                 className="h-5 w-5"
               />
-              <span className="font-semibold text-emerald-900">{task.name}</span>
+              <span className="font-semibold text-foreground">{task.name}</span>
             </div>
 
             {/* 曜日ラベル行 */}
@@ -84,12 +84,12 @@ export function WeeklyTargetGrid({
                   onChange={(e) => handleChange(task, day, e.target.value)}
                   aria-label={targetInputLabel(task.name, day)}
                   className={cn(
-                    "w-full min-w-0 rounded-md border bg-white px-1 py-1 text-center text-sm focus:outline-none",
+                    "w-full min-w-0 rounded-md border px-1 py-1 text-center text-sm focus:outline-none",
                     exceededDays.has(day)
-                      ? "border-rose-300 bg-rose-50/80 focus:border-rose-400"
+                      ? "border-destructive bg-destructive-soft focus:border-destructive"
                       : (dailyAvailableUnits[day] ?? 0) > 0
-                        ? "border-emerald-200 bg-emerald-50/60"
-                        : "border-emerald-100 focus:border-emerald-300",
+                        ? "border-success bg-success-soft/60"
+                        : "border-border bg-card focus:border-ring",
                   )}
                 />
               ))}
@@ -98,10 +98,10 @@ export function WeeklyTargetGrid({
         ))}
 
         {/* 週間合計サマリーカード */}
-        <div className="flex items-baseline justify-between rounded-2xl bg-emerald-50/80 px-4 py-3">
-          <span className="text-sm font-semibold text-emerald-900">週間合計ユニット</span>
+        <div className="flex items-baseline justify-between rounded-2xl bg-accent px-4 py-3">
+          <span className="text-sm font-semibold text-foreground">週間合計ユニット</span>
           <span>
-            <span className="text-lg font-bold text-emerald-900">{weeklyTotal.toFixed(1)}</span>{" "}
+            <span className="text-lg font-bold text-foreground">{weeklyTotal.toFixed(1)}</span>{" "}
             <span className="text-xs text-muted-foreground">units</span>
           </span>
         </div>
@@ -133,7 +133,7 @@ export function WeeklyTargetGrid({
                 0,
               )
               return (
-                <tr key={task.id} className="rounded-2xl bg-amber-50/40">
+                <tr key={task.id} className="rounded-2xl bg-muted/40">
                   <td className="px-2 py-2">
                     <div className="flex items-center gap-2">
                       <img
@@ -142,7 +142,7 @@ export function WeeklyTargetGrid({
                         className="h-5 w-5"
                         aria-hidden="true"
                       />
-                      <span className="font-semibold text-emerald-900">{task.name}</span>
+                      <span className="font-semibold text-foreground">{task.name}</span>
                     </div>
                   </td>
                   {DAYS_OF_WEEK_ORDER.map((day) => (
@@ -150,7 +150,7 @@ export function WeeklyTargetGrid({
                       key={day}
                       className={cn(
                         "px-2 py-2 text-center",
-                        exceededDays.has(day) ? "bg-rose-50/80" : "",
+                        exceededDays.has(day) ? "bg-destructive-soft/60" : "",
                       )}
                     >
                       <input
@@ -161,15 +161,17 @@ export function WeeklyTargetGrid({
                         onChange={(e) => handleChange(task, day, e.target.value)}
                         aria-label={targetInputLabel(task.name, day)}
                         className={cn(
-                          "w-16 rounded-lg border bg-white px-2 py-1 text-center text-sm focus:outline-none",
+                          "w-16 rounded-lg border bg-card px-2 py-1 text-center text-sm focus:outline-none",
                           exceededDays.has(day)
-                            ? "border-rose-300 focus:border-rose-400"
-                            : "border-emerald-100 focus:border-emerald-300",
+                            ? "border-destructive focus:border-destructive"
+                            : (dailyAvailableUnits[day] ?? 0) > 0
+                              ? "border-success bg-success-soft/60"
+                              : "border-border focus:border-ring",
                         )}
                       />
                     </td>
                   ))}
-                  <td className="px-2 py-2 text-center font-semibold text-emerald-800">
+                  <td className="px-2 py-2 text-center font-semibold text-foreground">
                     {rowTotal.toFixed(1)}
                   </td>
                 </tr>
@@ -177,7 +179,7 @@ export function WeeklyTargetGrid({
             })}
           </tbody>
           <tfoot>
-            <tr className="bg-emerald-50/80 font-semibold text-emerald-900">
+            <tr className="bg-accent font-semibold text-foreground">
               <th scope="row" className="px-2 py-3">
                 目標合計 / 確保可能
               </th>
@@ -191,10 +193,10 @@ export function WeeklyTargetGrid({
                     key={day}
                     className={cn(
                       "px-2 py-3 text-center",
-                      isExceeded ? "bg-rose-100 text-rose-700" : "",
+                      isExceeded ? "bg-destructive-soft text-destructive-soft-foreground" : "",
                     )}
                   >
-                    <span className={isBelowAvailable ? "text-sky-700" : undefined}>
+                    <span className={isBelowAvailable ? "text-info" : undefined}>
                       {targetTotal.toFixed(1)}
                     </span>{" "}
                     / {availableTotal.toFixed(1)}
@@ -220,7 +222,7 @@ export function WeeklyTargetGrid({
                     key={day}
                     className={cn(
                       "px-2 py-2 text-center",
-                      remaining < 0 ? "font-semibold text-rose-700" : "",
+                      remaining < 0 ? "font-semibold text-destructive" : "",
                     )}
                   >
                     {remaining.toFixed(1)}

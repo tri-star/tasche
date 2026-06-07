@@ -4,8 +4,8 @@ import { authStatusAtom } from "@/auth/atoms"
 
 function FullscreenSpinner() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-tasche-ivory">
-      <div className="text-tasche-textSub text-sm">読み込み中...</div>
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="text-muted-foreground text-sm">読み込み中...</div>
     </div>
   )
 }

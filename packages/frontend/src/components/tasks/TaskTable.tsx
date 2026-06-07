@@ -49,7 +49,7 @@ export function TaskTable({
 
   return (
     <div className="space-y-3">
-      <div className="rounded-2xl border border-emerald-100 bg-emerald-50/40 p-4 sm:hidden">
+      <div className="rounded-2xl border border-border bg-accent/10 p-4 sm:hidden">
         <label htmlFor={mobileSelectAllId} className="flex cursor-pointer items-start gap-3">
           <Checkbox
             id={mobileSelectAllId}
@@ -89,7 +89,7 @@ export function TaskTable({
                   <div className="min-w-0 space-y-2 select-none">
                     <p className="break-words text-base font-medium text-foreground">{task.name}</p>
                     {!task.is_archived ? (
-                      <span className="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700">
+                      <span className="inline-flex items-center rounded-full bg-accent px-2.5 py-1 text-xs font-medium text-primary">
                         アクティブ
                       </span>
                     ) : null}
@@ -114,7 +114,7 @@ export function TaskTable({
                     onClick={() => onDelete(task)}
                     disabled={disabled}
                   >
-                    <Trash2 className="h-4 w-4 text-rose-600" />
+                    <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
                 </div>
               </div>
@@ -179,7 +179,7 @@ export function TaskTable({
                 </TableCell>
                 <TableCell>
                   {!task.is_archived ? (
-                    <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                    <span className="inline-flex items-center rounded-full bg-accent px-2 py-0.5 text-xs font-medium text-primary">
                       アクティブ
                     </span>
                   ) : null}
@@ -204,7 +204,7 @@ export function TaskTable({
                       onClick={() => onDelete(task)}
                       disabled={disabled}
                     >
-                      <Trash2 className="h-4 w-4 text-rose-600" />
+                      <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
                   </div>
                 </TableCell>

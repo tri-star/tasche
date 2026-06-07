@@ -43,7 +43,7 @@ export function AuthCallbackPage() {
         <p role="alert" className="text-destructive mb-4">
           ログインに失敗しました: {error}
         </p>
-        <Link to="/login" className="text-tasche-green underline">
+        <Link to="/login" className="text-primary underline">
           ログイン画面に戻る
         </Link>
       </LoginLayout>
@@ -52,7 +52,7 @@ export function AuthCallbackPage() {
 
   return (
     <LoginLayout>
-      <p className="text-tasche-textSub">ログイン処理中...</p>
+      <p className="text-muted-foreground">ログイン処理中...</p>
     </LoginLayout>
   )
 }

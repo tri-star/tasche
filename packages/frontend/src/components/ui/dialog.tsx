@@ -154,7 +154,7 @@ export function DialogContent({
       ref={contentRef}
       closedby={disabled ? "none" : "any"}
       className={cn(
-        "tasche-dialog relative w-[calc(100%-2rem)] max-w-lg rounded-3xl border bg-white p-6 shadow-2xl outline-none",
+        "tasche-dialog relative w-[calc(100%-2rem)] max-w-lg rounded-3xl border bg-card p-6 shadow-2xl outline-none",
         className,
       )}
       {...props}
@@ -186,7 +186,7 @@ export function DialogFooter({ className, ...props }: HTMLAttributes<HTMLDivElem
 }
 
 export function DialogTitle({ className, ...props }: HTMLAttributes<HTMLHeadingElement>) {
-  return <h2 className={cn("text-xl font-semibold text-emerald-950", className)} {...props} />
+  return <h2 className={cn("text-xl font-semibold text-foreground", className)} {...props} />
 }
 
 export function DialogDescription({ className, ...props }: HTMLAttributes<HTMLParagraphElement>) {

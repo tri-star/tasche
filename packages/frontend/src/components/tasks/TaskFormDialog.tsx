@@ -65,7 +65,7 @@ export function TaskFormDialog({
       <DialogContent
         aria-labelledby={titleId}
         aria-describedby={descriptionId}
-        className="border-emerald-100 sm:max-w-lg"
+        className="border-border sm:max-w-lg"
         disabled={isSubmitting}
         showCloseButton
       >
@@ -85,7 +85,7 @@ export function TaskFormDialog({
               onChange={(event) => setName(event.target.value)}
               placeholder="例: 英語学習"
               maxLength={100}
-              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm shadow-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm shadow-sm outline-none transition focus:border-ring focus:ring-2 focus:ring-ring/30"
               disabled={isSubmitting}
             />
             <p className="text-xs text-muted-foreground">100文字以内で入力してください。</p>
@@ -95,7 +95,7 @@ export function TaskFormDialog({
             <p
               id={errorId}
               role="alert"
-              className="rounded-xl border border-rose-100 bg-rose-50 px-3 py-2 text-sm text-rose-700"
+              className="rounded-xl border border-destructive/40 bg-destructive-soft px-3 py-2 text-sm text-destructive-soft-foreground"
             >
               {errorMessage}
             </p>

@@ -17,11 +17,9 @@ type WeeklyMatrixProps = {
 
 function getCompletionColorClass(rate: number | null | undefined): string {
   if (rate === null || rate === undefined) return ""
-  if (rate === 0) return "bg-red-200"
-  if (rate < 50) return "bg-red-100"
-  if (rate < 80) return "bg-yellow-100"
-  if (rate < 100) return "bg-yellow-50"
-  return "bg-green-200"
+  if (rate < 50) return "bg-destructive-soft"
+  if (rate < 100) return "bg-warning-soft"
+  return "bg-success-soft"
 }
 
 function getSpriteOffset(rate: number | null | undefined): number {

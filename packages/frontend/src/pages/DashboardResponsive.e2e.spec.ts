@@ -50,8 +50,8 @@ test.describe("Dashboard responsive layout (375px)", () => {
     await expect(section).toBeVisible()
 
     const fitsViewport = await authenticatedPage.evaluate(() => {
-      const el = document.querySelector('[aria-label="週間達成状況"]')!
-      return el.getBoundingClientRect().right <= window.innerWidth
+      const el = document.querySelector('[aria-label="週間達成状況"]')
+      return el != null && el.getBoundingClientRect().right <= window.innerWidth
     })
     expect(fitsViewport).toBe(true)
 

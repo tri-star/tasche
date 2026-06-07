@@ -30,7 +30,7 @@ export function RecordWidget({ currentDay, weekStartDate, tasks, onRecord }: Rec
       <img
         src="/images/dashboard/dashboard-widget-illust2.png"
         alt=""
-        className="absolute right-2 top-2 h-12 w-12 object-contain"
+        className="absolute right-2 top-2 h-12 w-12 object-contain dark:opacity-80"
         aria-hidden="true"
       />
 
@@ -80,7 +80,7 @@ export function RecordWidget({ currentDay, weekStartDate, tasks, onRecord }: Rec
       <img
         src="/images/dashboard/widget-background.png"
         alt=""
-        className="absolute bottom-0 right-4 h-12 w-12 object-contain opacity-80"
+        className="absolute bottom-0 right-4 h-12 w-12 object-contain opacity-80 dark:opacity-60"
         aria-hidden="true"
       />
     </Card>

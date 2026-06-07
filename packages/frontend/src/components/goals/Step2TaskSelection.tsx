@@ -46,10 +46,10 @@ export function Step2TaskSelection({
         <img
           src="/images/goals/step-2-illust.png"
           alt=""
-          className="h-20 w-auto sm:h-28"
+          className="h-20 w-auto dark:opacity-80 sm:h-28"
           aria-hidden="true"
         />
-        <h2 className="text-xl font-bold text-emerald-900 sm:text-2xl">
+        <h2 className="text-xl font-bold text-foreground sm:text-2xl">
           今週取り組むタスクを選んでください
         </h2>
         <p className="text-sm text-muted-foreground">気になることから、ゆるっと選んで大丈夫。</p>
@@ -79,12 +79,12 @@ export function Step2TaskSelection({
             onDelete={() => onDeleteTask(task.tempId)}
           />
         ))}
-        <div className="flex flex-col gap-2 rounded-2xl border-2 border-dashed border-emerald-200 bg-white/70 p-2 sm:flex-row sm:items-center sm:justify-between sm:px-2">
+        <div className="flex flex-col gap-2 rounded-2xl border-2 border-dashed border-border bg-card p-2 sm:flex-row sm:items-center sm:justify-between sm:px-2">
           <input
             value={newTaskName}
             onChange={(event) => setNewTaskName(event.target.value)}
             placeholder="例: ストレッチ"
-            className="w-full rounded-xl border border-emerald-100 bg-white px-3 py-2 text-sm focus:border-emerald-300 focus:outline-none"
+            className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm focus:border-ring focus:outline-none"
           />
           <Button
             variant="secondary"

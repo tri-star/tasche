@@ -50,7 +50,7 @@ export function TimezoneSection() {
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="flex items-center gap-3">
-          <label htmlFor="timezone-select" className="text-sm text-tasche-text">
+          <label htmlFor="timezone-select" className="text-sm text-foreground">
             タイムゾーン
           </label>
           <TimezoneCombobox id="timezone-select" value={draft} onChange={setDraft} />

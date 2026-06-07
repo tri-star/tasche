@@ -2,6 +2,7 @@ import { Check, Pencil, Trash2, X } from "lucide-react"
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
+import { cn } from "@/lib/utils"
 
 type TaskItemProps = {
   id: string
@@ -34,16 +35,17 @@ export function TaskItem({ name, isSelected, isNew, onToggle, onEdit, onDelete }
 
   return (
     <div
-      className={`rounded-2xl border bg-white/90 p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
-        isSelected ? "border-emerald-300" : "border-transparent"
-      }`}
+      className={cn(
+        "rounded-2xl border bg-card p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md",
+        isSelected ? "border-primary" : "border-border",
+      )}
     >
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 flex-1 items-start gap-3 text-left">
           <Checkbox checked={isSelected} onCheckedChange={onToggle} aria-label={name} />
           <div className="min-w-0 flex-1">
             {isNew ? (
-              <span className="inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
+              <span className="inline-flex rounded-full bg-warning-soft px-2 py-0.5 text-xs font-semibold text-warning-soft-foreground">
                 new
               </span>
             ) : null}
@@ -51,13 +53,13 @@ export function TaskItem({ name, isSelected, isNew, onToggle, onEdit, onDelete }
               <input
                 value={draftName}
                 onChange={(event) => setDraftName(event.target.value)}
-                className="w-full rounded-lg border border-emerald-200 bg-white px-2 py-1 text-sm focus:border-emerald-400 focus:outline-none"
+                className="w-full rounded-lg border border-border bg-card px-2 py-1 text-sm focus:border-ring focus:outline-none"
               />
             ) : (
               <button
                 type="button"
                 onClick={onToggle}
-                className="block w-full text-left break-words text-sm font-semibold text-emerald-900"
+                className="block w-full text-left break-words text-sm font-semibold text-foreground"
               >
                 {name}
               </button>
