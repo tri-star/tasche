@@ -39,6 +39,7 @@ export function TaskBulkDeleteDialog({
       <AlertDialogContent
         aria-labelledby={titleId}
         aria-describedby={descriptionId}
+        className="sm:max-w-lg"
         disabled={isSubmitting}
       >
         <AlertDialogHeader>
@@ -62,7 +63,7 @@ export function TaskBulkDeleteDialog({
           </p>
         ) : null}
 
-        <AlertDialogFooter className="mt-6">
+        <AlertDialogFooter className="mt-6 flex-col-reverse gap-2 sm:flex-row">
           <Button type="button" variant="secondary" onClick={onClose} disabled={isSubmitting}>
             キャンセル
           </Button>

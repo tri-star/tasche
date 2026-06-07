@@ -51,15 +51,16 @@ export function TaskListPagination({
   disabled = false,
 }: TaskListPaginationProps) {
   const totalPages = Math.max(1, Math.ceil(total / perPage))
-  const displayedCount = Math.min(perPage, total - (page - 1) * perPage)
+  const remainingCount = Math.max(0, total - (page - 1) * perPage)
+  const displayedCount = total === 0 ? 0 : Math.min(perPage, remainingCount)
   const pageNumbers = buildPageNumbers(page, totalPages)
 
   return (
-    <div className="flex items-center justify-between py-4">
+    <div className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
       <p className="text-sm text-muted-foreground">
         全{total}件中{displayedCount}件を表示
       </p>
-      <Pagination className="mx-0 w-auto justify-end">
+      <Pagination className="mx-0 w-full justify-start sm:w-auto sm:justify-end">
         <PaginationContent>
           <PaginationItem>
             <PaginationPrevious
@@ -71,11 +72,18 @@ export function TaskListPagination({
           {pageNumbers.map((pageNum, index) =>
             pageNum === "ellipsis" ? (
               // biome-ignore lint/suspicious/noArrayIndexKey: 省略記号は位置で区別する
-              <PaginationItem key={`ellipsis-${index}`}>
+              <PaginationItem key={`ellipsis-${index}`} className="hidden sm:block">
                 <PaginationEllipsis />
               </PaginationItem>
             ) : (
-              <PaginationItem key={pageNum}>
+              <PaginationItem
+                key={pageNum}
+                className={
+                  pageNum === page || pageNum === 1 || pageNum === totalPages
+                    ? ""
+                    : "hidden sm:block"
+                }
+              >
                 <PaginationLink
                   isActive={pageNum === page}
                   onClick={() => onPageChange(pageNum)}

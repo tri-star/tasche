@@ -65,7 +65,7 @@ export function TaskFormDialog({
       <DialogContent
         aria-labelledby={titleId}
         aria-describedby={descriptionId}
-        className="border-emerald-100"
+        className="border-emerald-100 sm:max-w-lg"
         disabled={isSubmitting}
         showCloseButton
       >
@@ -101,7 +101,7 @@ export function TaskFormDialog({
             </p>
           ) : null}
 
-          <DialogFooter>
+          <DialogFooter className="flex-col-reverse gap-2 sm:flex-row">
             <Button type="button" variant="secondary" onClick={onClose} disabled={isSubmitting}>
               キャンセル
             </Button>
