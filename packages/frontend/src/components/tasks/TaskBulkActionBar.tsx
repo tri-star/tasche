@@ -24,7 +24,7 @@ export function TaskBulkActionBar({
   const isDisabled = disabled || selectedCount === 0
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
       <Select
         value=""
         onValueChange={(v) => {
@@ -34,7 +34,7 @@ export function TaskBulkActionBar({
         onOpenChange={setOpen}
         disabled={isDisabled}
       >
-        <SelectTrigger className="w-[220px]">
+        <SelectTrigger className="w-full sm:w-[220px]">
           <SelectValue placeholder="バルク操作を選択" />
         </SelectTrigger>
         <SelectContent>

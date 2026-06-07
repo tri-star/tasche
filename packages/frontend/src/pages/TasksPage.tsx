@@ -217,17 +217,18 @@ export function TasksPage() {
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="grid grid-cols-1 gap-2 sm:flex sm:flex-wrap">
             <Button
               type="button"
               variant="outline"
               onClick={handleRefresh}
               disabled={tasksQuery.isFetching}
+              className="w-full sm:w-auto"
             >
               <RefreshCw className={tasksQuery.isFetching ? "animate-spin" : undefined} />
               再読み込み
             </Button>
-            <Button type="button" onClick={openCreateDialog}>
+            <Button type="button" onClick={openCreateDialog} className="w-full sm:w-auto">
               <Plus />
               タスクを追加
             </Button>

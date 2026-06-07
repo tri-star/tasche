@@ -144,8 +144,8 @@ describe("TasksPage", () => {
 
     expect(screen.getByRole("heading", { name: "タスク一覧" })).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "タスクを追加" })).toBeInTheDocument()
-    expect(screen.getByText("英語学習")).toBeInTheDocument()
-    expect(screen.getByText("筋トレ")).toBeInTheDocument()
+    expect(screen.getAllByText("英語学習").length).toBeGreaterThan(0)
+    expect(screen.getAllByText("筋トレ").length).toBeGreaterThan(0)
     expect(mockGetTasks).toHaveBeenCalledWith({
       include_archived: false,
       page: 1,
@@ -157,7 +157,7 @@ describe("TasksPage", () => {
     renderWithRouter()
 
     await waitFor(() => {
-      expect(screen.getByText("英語学習")).toBeInTheDocument()
+      expect(screen.getAllByText("英語学習").length).toBeGreaterThan(0)
     })
 
     // 英語学習: 先週3 Unit, 累計10 Unit
@@ -179,7 +179,7 @@ describe("TasksPage", () => {
     renderWithRouter()
 
     await waitFor(() => {
-      expect(screen.getByText("英語学習")).toBeInTheDocument()
+      expect(screen.getAllByText("英語学習").length).toBeGreaterThan(0)
     })
 
     await user.click(screen.getByRole("button", { name: "タスクを追加" }))
@@ -196,7 +196,7 @@ describe("TasksPage", () => {
     renderWithRouter()
 
     await waitFor(() => {
-      expect(screen.getByText("英語学習")).toBeInTheDocument()
+      expect(screen.getAllByText("英語学習").length).toBeGreaterThan(0)
     })
 
     const row = screen.getByRole("row", { name: /英語学習/ })
@@ -216,7 +216,7 @@ describe("TasksPage", () => {
     renderWithRouter()
 
     await waitFor(() => {
-      expect(screen.getByText("筋トレ")).toBeInTheDocument()
+      expect(screen.getAllByText("筋トレ").length).toBeGreaterThan(0)
     })
 
     const row = screen.getByRole("row", { name: /筋トレ/ })
@@ -257,7 +257,7 @@ describe("TasksPage", () => {
     renderWithRouter()
 
     await waitFor(() => {
-      expect(screen.getByText("英語学習")).toBeInTheDocument()
+      expect(screen.getAllByText("英語学習").length).toBeGreaterThan(0)
     })
 
     await user.click(screen.getByRole("button", { name: "タスクを追加" }))
@@ -276,7 +276,7 @@ describe("TasksPage", () => {
     renderWithRouter()
 
     await waitFor(() => {
-      expect(screen.getByText("英語学習")).toBeInTheDocument()
+      expect(screen.getAllByText("英語学習").length).toBeGreaterThan(0)
     })
 
     const row = screen.getByRole("row", { name: /英語学習/ })
@@ -298,7 +298,7 @@ describe("TasksPage", () => {
     renderWithRouter()
 
     await waitFor(() => {
-      expect(screen.getByText("筋トレ")).toBeInTheDocument()
+      expect(screen.getAllByText("筋トレ").length).toBeGreaterThan(0)
     })
 
     const row = screen.getByRole("row", { name: /筋トレ/ })
@@ -320,10 +320,10 @@ describe("TasksPage", () => {
     renderWithRouter()
 
     await waitFor(() => {
-      expect(screen.getByText("英語学習")).toBeInTheDocument()
+      expect(screen.getAllByText("英語学習").length).toBeGreaterThan(0)
     })
 
-    const headerCheckbox = screen.getByRole("checkbox", { name: "表示中の全タスクを選択" })
+    const headerCheckbox = screen.getAllByRole("checkbox", { name: "表示中の全タスクを選択" })[0]
     await user.click(headerCheckbox)
 
     const rowCheckboxes = screen.getAllByRole("checkbox", { name: /を選択$/ })
@@ -337,10 +337,10 @@ describe("TasksPage", () => {
     renderWithRouter()
 
     await waitFor(() => {
-      expect(screen.getByText("英語学習")).toBeInTheDocument()
+      expect(screen.getAllByText("英語学習").length).toBeGreaterThan(0)
     })
 
-    const eigo = screen.getByRole("checkbox", { name: "英語学習を選択" })
+    const eigo = screen.getAllByRole("checkbox", { name: "英語学習を選択" })[0]
     await user.click(eigo)
 
     expect(screen.getByText("1件選択中")).toBeInTheDocument()
@@ -350,7 +350,7 @@ describe("TasksPage", () => {
     renderWithRouter()
 
     await waitFor(() => {
-      expect(screen.getByText("英語学習")).toBeInTheDocument()
+      expect(screen.getAllByText("英語学習").length).toBeGreaterThan(0)
     })
 
     const trigger = screen.getByRole("combobox")
@@ -362,11 +362,11 @@ describe("TasksPage", () => {
     renderWithRouter()
 
     await waitFor(() => {
-      expect(screen.getByText("英語学習")).toBeInTheDocument()
+      expect(screen.getAllByText("英語学習").length).toBeGreaterThan(0)
     })
 
     // 全選択
-    const headerCheckbox = screen.getByRole("checkbox", { name: "表示中の全タスクを選択" })
+    const headerCheckbox = screen.getAllByRole("checkbox", { name: "表示中の全タスクを選択" })[0]
     await user.click(headerCheckbox)
 
     // バルク削除を選択
@@ -396,10 +396,10 @@ describe("TasksPage", () => {
     renderWithRouter()
 
     await waitFor(() => {
-      expect(screen.getByText("英語学習")).toBeInTheDocument()
+      expect(screen.getAllByText("英語学習").length).toBeGreaterThan(0)
     })
 
-    const eiGoCheckbox = screen.getByRole("checkbox", { name: "英語学習を選択" })
+    const eiGoCheckbox = screen.getAllByRole("checkbox", { name: "英語学習を選択" })[0]
     await user.click(eiGoCheckbox)
     expect(screen.getByText("1件選択中")).toBeInTheDocument()
 
@@ -448,7 +448,7 @@ describe("TasksPage", () => {
     renderWithRouter()
 
     await waitFor(() => {
-      expect(screen.getByText("英語学習")).toBeInTheDocument()
+      expect(screen.getAllByText("英語学習").length).toBeGreaterThan(0)
     })
 
     const nextBtn = screen.getByRole("button", { name: "次のページに移動" })
@@ -470,10 +470,10 @@ describe("TasksPage", () => {
     renderWithRouter()
 
     await waitFor(() => {
-      expect(screen.getByText("英語学習")).toBeInTheDocument()
+      expect(screen.getAllByText("英語学習").length).toBeGreaterThan(0)
     })
 
-    const eiGoCheckbox = screen.getByRole("checkbox", { name: "英語学習を選択" })
+    const eiGoCheckbox = screen.getAllByRole("checkbox", { name: "英語学習を選択" })[0]
     await user.click(eiGoCheckbox)
     expect(screen.getByText("1件選択中")).toBeInTheDocument()
 
@@ -483,5 +483,46 @@ describe("TasksPage", () => {
     await waitFor(() => {
       expect(screen.queryByText(/件選択中/)).not.toBeInTheDocument()
     })
+  })
+
+  it("モバイル向けカード表示に必要な情報を描画する", async () => {
+    renderWithRouter()
+
+    await waitFor(() => {
+      expect(screen.getAllByText("英語学習").length).toBeGreaterThan(0)
+    })
+
+    expect(screen.getAllByText("先週の消化ユニット数").length).toBeGreaterThan(0)
+    expect(screen.getAllByText("累計の消化ユニット数").length).toBeGreaterThan(0)
+    expect(screen.getAllByText("このページのタスクをまとめて選択").length).toBeGreaterThan(0)
+  })
+
+  it("モバイル一括選択の説明文をクリックしても選択を切り替えられる", async () => {
+    const user = userEvent.setup()
+    renderWithRouter()
+
+    await waitFor(() => {
+      expect(screen.getAllByText("英語学習").length).toBeGreaterThan(0)
+    })
+
+    await user.click(screen.getByText("このページのタスクをまとめて選択"))
+
+    const rowCheckboxes = screen.getAllByRole("checkbox", { name: /を選択$/ })
+    for (const cb of rowCheckboxes) {
+      expect(cb).toBeChecked()
+    }
+  })
+
+  it("モバイルカードのタスク名をクリックしても選択を切り替えられる", async () => {
+    const user = userEvent.setup()
+    renderWithRouter()
+
+    await waitFor(() => {
+      expect(screen.getAllByText("英語学習").length).toBeGreaterThan(0)
+    })
+
+    await user.click(screen.getAllByText("英語学習")[0])
+
+    expect(screen.getByText("1件選択中")).toBeInTheDocument()
   })
 })
