@@ -18,7 +18,7 @@ export function ThemeSection() {
       </CardHeader>
       <CardContent>
         <div className="flex items-center justify-between">
-          <label htmlFor="dark-mode-switch" className="text-sm text-tasche-text">
+          <label htmlFor="dark-mode-switch" className="text-sm text-foreground">
             ダークモードを有効にする
           </label>
           <Switch

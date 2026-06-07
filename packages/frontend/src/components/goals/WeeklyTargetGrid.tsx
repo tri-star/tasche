@@ -164,7 +164,9 @@ export function WeeklyTargetGrid({
                           "w-16 rounded-lg border bg-card px-2 py-1 text-center text-sm focus:outline-none",
                           exceededDays.has(day)
                             ? "border-destructive focus:border-destructive"
-                            : "border-border focus:border-ring",
+                            : (dailyAvailableUnits[day] ?? 0) > 0
+                              ? "border-success bg-success-soft/60"
+                              : "border-border focus:border-ring",
                         )}
                       />
                     </td>
@@ -194,7 +196,7 @@ export function WeeklyTargetGrid({
                       isExceeded ? "bg-destructive-soft text-destructive-soft-foreground" : "",
                     )}
                   >
-                    <span className={isBelowAvailable ? "text-info" : undefined}>
+                    <span className={isBelowAvailable ? "text-info" : "text-foreground"}>
                       {targetTotal.toFixed(1)}
                     </span>{" "}
                     / {availableTotal.toFixed(1)}

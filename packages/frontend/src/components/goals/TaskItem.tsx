@@ -2,6 +2,7 @@ import { Check, Pencil, Trash2, X } from "lucide-react"
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
+import { cn } from "@/lib/utils"
 
 type TaskItemProps = {
   id: string
@@ -34,9 +35,10 @@ export function TaskItem({ name, isSelected, isNew, onToggle, onEdit, onDelete }
 
   return (
     <div
-      className={`rounded-2xl border bg-card p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
-        isSelected ? "border-primary" : "border-border"
-      }`}
+      className={cn(
+        "rounded-2xl border bg-card p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md",
+        isSelected ? "border-primary" : "border-border",
+      )}
     >
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 flex-1 items-start gap-3 text-left">

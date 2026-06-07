@@ -50,6 +50,8 @@
 
     --info: 199 89% 48%;
     --info-foreground: 0 0% 100%;
+    --info-soft: 199 60% 90%;
+    --info-soft-foreground: 199 89% 25%;
 
     --border: 0 0% 85%;
     --input: 0 0% 85%;
@@ -97,6 +99,8 @@
 
     --info: 199 80% 60%;
     --info-foreground: 0 0% 10%;
+    --info-soft: 199 40% 20%;
+    --info-soft-foreground: 199 80% 80%;
 
     --border: 220 20% 20%;
     --input: 220 20% 20%;

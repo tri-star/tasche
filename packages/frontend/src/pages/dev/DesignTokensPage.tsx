@@ -45,6 +45,8 @@ function TokenGroup({ title, tokens }: TokenGroupProps) {
 
 export function DesignTokensPage() {
   const handleToggleDark = () => {
+    // ThemeProvider を意図的に迂回し、htmlクラスを直接操作するローカル操作
+    // このページはデザイントークンの確認専用であり、テーマ設定は永続化しない
     document.documentElement.classList.toggle("dark")
   }
 

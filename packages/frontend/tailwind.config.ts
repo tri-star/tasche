@@ -59,10 +59,13 @@ export default {
         info: {
           DEFAULT: "hsl(var(--info))",
           foreground: "hsl(var(--info-foreground))",
+          soft: "hsl(var(--info-soft))",
+          "soft-foreground": "hsl(var(--info-soft-foreground))",
         },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
+        // ログイン画面・ブランド色専用。ダークモード非対応のため、アプリ本体では使用しないこと
         tasche: {
           green: "#7FBF8F",
           greenSoft: "#B7D8BE",

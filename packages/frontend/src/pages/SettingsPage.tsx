@@ -10,7 +10,7 @@ export function SettingsPage() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <h1 className="text-2xl font-semibold text-tasche-text">設定</h1>
+        <h1 className="text-2xl font-semibold text-foreground">設定</h1>
         {!settings ? (
           <p className="text-sm text-destructive">
             設定情報の取得に失敗しました。ページを再読み込みしてください。

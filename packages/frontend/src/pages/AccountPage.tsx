@@ -12,7 +12,7 @@ export function AccountPage() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <h1 className="text-2xl font-semibold text-tasche-text">アカウント</h1>
+        <h1 className="text-2xl font-semibold text-foreground">アカウント</h1>
 
         {/* プロフィール Card */}
         <Card>
@@ -28,13 +28,13 @@ export function AccountPage() {
                   className="h-12 w-12 rounded-full"
                 />
               ) : (
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-tasche-greenSoft text-lg font-semibold text-tasche-text">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent text-lg font-semibold text-accent-foreground">
                   {currentUser?.name ? currentUser.name.charAt(0) : "?"}
                 </div>
               )}
               <div className="space-y-1">
-                <p className="font-medium text-tasche-text">{currentUser?.name}</p>
-                <p className="text-sm text-tasche-textSub">{currentUser?.email}</p>
+                <p className="font-medium text-foreground">{currentUser?.name}</p>
+                <p className="text-sm text-muted-foreground">{currentUser?.email}</p>
               </div>
             </div>
           </CardContent>
