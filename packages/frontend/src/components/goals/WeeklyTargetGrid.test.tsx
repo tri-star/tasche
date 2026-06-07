@@ -261,8 +261,7 @@ describe("WeeklyTargetGrid", () => {
       // モバイルカード(最初の要素)に success ハイライトクラスがあること
       const hasSuccessClass = mondayInputs.some(
         (input) =>
-          input.className.includes("border-success") ||
-          input.className.includes("bg-success-soft"),
+          input.className.includes("border-success") || input.className.includes("bg-success-soft"),
       )
       expect(hasSuccessClass).toBe(true)
     })

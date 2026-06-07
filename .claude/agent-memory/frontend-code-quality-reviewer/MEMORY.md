@@ -6,3 +6,4 @@
 - [Checkbox二重ハンドラ](feedback_checkbox_double_handler.md) — TCH-65: button内にCheckbox(onCheckedChange)を同居させるとダブルトグルが発生。toggle責務はどちらか一方に一本化する。
 - [テーブル内number inputのaria-label欠落](feedback_aria_label_table_inputs.md) — TCH-65: N×Mテーブル内のinputはth見出しでは自動ラベル付けされない。aria-label必須。
 - [E2Eでのoverflow検出パターン](feedback_e2e_overflow_check.md) — TCH-65: overflow-x-autoコンテナの内部オーバーフローはgetBoundingClientRectでは誤検知。scrollWidth<=clientWidthを使う。
+- [WeeklyMatrix固定カラー](feedback_weekly_matrix_color_tokens.md) — TCH-16: getCompletionColorClassが固定red/yellow/greenを使用。dark:修飾子はあるがセマンティックトークン化未完。段階グラデーション用トークン追加が必要。
