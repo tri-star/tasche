@@ -33,12 +33,12 @@ export function AvailableUnitsGrid({
         return (
           <div
             key={day}
-            className="rounded-xl border border-dashed border-emerald-200 bg-emerald-50/35 p-2.5"
+            className="rounded-xl border border-dashed border-border bg-accent/40 p-2.5"
           >
             <div className="mb-2 flex items-baseline justify-between gap-2">
               <label
                 htmlFor={`available-units-${day}`}
-                className="text-sm font-semibold text-emerald-900"
+                className="text-sm font-semibold text-foreground"
               >
                 {DAY_LABELS[day]}
               </label>
@@ -67,8 +67,8 @@ export function AvailableUnitsGrid({
                 onChange={(event) => onChange(day, normalizeUnit(Number(event.target.value)))}
                 aria-label={label}
                 className={cn(
-                  "h-7 w-12 shrink-0 rounded-md border border-emerald-100 bg-white px-1 text-center",
-                  "text-sm font-semibold text-emerald-950 focus:border-emerald-300 focus:outline-none",
+                  "h-7 w-12 shrink-0 rounded-md border border-border bg-card px-1 text-center",
+                  "text-sm font-semibold text-foreground focus:border-ring focus:outline-none",
                 )}
               />
               <Button

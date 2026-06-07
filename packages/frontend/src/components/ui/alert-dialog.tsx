@@ -27,7 +27,7 @@ export function AlertDialog(props: AlertDialogProps) {
 }
 
 export function AlertDialogContent({ className, ...props }: AlertDialogContentProps) {
-  return <DialogContent className={cn("border-rose-100", className)} {...props} />
+  return <DialogContent className={cn("border-destructive/30", className)} {...props} />
 }
 
 export const AlertDialogHeader = DialogHeader

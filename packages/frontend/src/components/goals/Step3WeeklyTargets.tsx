@@ -39,7 +39,7 @@ export function Step3WeeklyTargets({
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-xl font-bold text-emerald-900 sm:text-2xl">
+        <h2 className="text-xl font-bold text-foreground sm:text-2xl">
           各タスクの曜日ごとの目標を設定
         </h2>
         <p className="mt-2 text-sm text-muted-foreground">
@@ -56,7 +56,7 @@ export function Step3WeeklyTargets({
       />
 
       {exceededDays.length > 0 ? (
-        <p className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
+        <p className="rounded-2xl border border-destructive/40 bg-destructive-soft px-4 py-3 text-sm font-medium text-destructive-soft-foreground">
           {exceededDayLabels}曜日の目標合計が、確保可能ユニットを超えています。
         </p>
       ) : null}

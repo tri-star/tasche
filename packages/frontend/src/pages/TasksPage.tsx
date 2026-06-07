@@ -203,11 +203,11 @@ export function TasksPage() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="space-y-2">
             <div className="flex items-center gap-3">
-              <div className="rounded-2xl bg-emerald-100 p-3 text-emerald-700">
+              <div className="rounded-2xl bg-accent p-3 text-primary">
                 <ClipboardList className="h-6 w-6" />
               </div>
               <div>
-                <h1 className="text-3xl font-semibold tracking-tight text-emerald-950">
+                <h1 className="text-3xl font-semibold tracking-tight text-foreground">
                   タスク一覧
                 </h1>
                 <p className="text-sm text-muted-foreground">
@@ -234,18 +234,18 @@ export function TasksPage() {
           </div>
         </div>
 
-        <Card className="border-emerald-100 shadow-sm">
+        <Card className="border-border shadow-sm">
           <CardContent className="p-6">
             {tasksQuery.isPending ? (
               <div className="flex min-h-[240px] flex-col items-center justify-center gap-3 text-sm text-muted-foreground">
-                <Loader2 className="h-6 w-6 animate-spin text-emerald-600" />
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
                 <p>読み込み中...</p>
               </div>
             ) : null}
 
             {!tasksQuery.isPending && errorMessage ? (
-              <div className="flex min-h-[240px] flex-col items-center justify-center gap-4 rounded-2xl border border-rose-100 bg-rose-50/70 px-6 py-10 text-center">
-                <p className="text-sm text-rose-700">{errorMessage}</p>
+              <div className="flex min-h-[240px] flex-col items-center justify-center gap-4 rounded-2xl border border-destructive/40 bg-destructive-soft/70 px-6 py-10 text-center">
+                <p className="text-sm text-destructive-soft-foreground">{errorMessage}</p>
                 <Button type="button" variant="secondary" onClick={handleRefresh}>
                   <RefreshCw />
                   再読み込み

@@ -7,10 +7,14 @@ import { GoalSettingPage } from "@/pages/GoalSettingPage"
 import { LoginPage } from "@/pages/LoginPage"
 import { SettingsPage } from "@/pages/SettingsPage"
 import { TasksPage } from "@/pages/TasksPage"
+import { DesignTokensPage } from "@/pages/dev/DesignTokensPage"
 
 export const router = createBrowserRouter([
   { path: "/login", element: <LoginPage /> },
   { path: "/auth/callback", element: <AuthCallbackPage /> },
+  ...(import.meta.env.DEV
+    ? [{ path: "/_dev/design/tokens", element: <DesignTokensPage /> }]
+    : []),
   {
     element: <ProtectedRoute />,
     children: [

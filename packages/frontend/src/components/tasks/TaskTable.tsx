@@ -87,7 +87,7 @@ export function TaskTable({
             </TableCell>
             <TableCell>
               {!task.is_archived ? (
-                <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                <span className="inline-flex items-center rounded-full bg-accent px-2 py-0.5 text-xs font-medium text-primary">
                   アクティブ
                 </span>
               ) : null}
@@ -112,7 +112,7 @@ export function TaskTable({
                   onClick={() => onDelete(task)}
                   disabled={disabled}
                 >
-                  <Trash2 className="h-4 w-4 text-rose-600" />
+                  <Trash2 className="h-4 w-4 text-destructive" />
                 </Button>
               </div>
             </TableCell>

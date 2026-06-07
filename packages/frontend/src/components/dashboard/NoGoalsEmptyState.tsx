@@ -15,7 +15,7 @@ export function NoGoalsEmptyState({ onClickGoalSetting }: NoGoalsEmptyStateProps
         src="/images/dashboard/dashboard-widget-illust1.png"
         alt=""
         aria-hidden
-        className="w-48 object-contain"
+        className="w-48 object-contain dark:opacity-80"
       />
       <div className="flex flex-col items-center gap-2 text-center">
         <h2 className="text-xl font-semibold">今週はまだ予定がありません</h2>

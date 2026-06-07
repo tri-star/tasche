@@ -1,4 +1,5 @@
 import { Check } from "lucide-react"
+import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 
 type Step1Props = {
@@ -42,10 +43,10 @@ export function Step1UnitDuration({ value, onChange, onNext, onCancel }: Step1Pr
         <img
           src="/images/goals/step1-illust.png"
           alt=""
-          className="h-20 w-auto sm:h-28"
+          className="h-20 w-auto dark:opacity-80 sm:h-28"
           aria-hidden="true"
         />
-        <h2 className="text-xl font-bold text-emerald-900 sm:text-2xl">
+        <h2 className="text-xl font-bold text-foreground sm:text-2xl">
           1ユニットの時間を選んでください
         </h2>
         <p className="text-sm text-muted-foreground">
@@ -61,23 +62,25 @@ export function Step1UnitDuration({ value, onChange, onNext, onCancel }: Step1Pr
               key={option.minutes}
               type="button"
               onClick={() => onChange(option.minutes)}
-              className={`group relative flex w-full items-center gap-4 rounded-2xl border bg-white/80 p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
-                isSelected ? "border-emerald-400 bg-emerald-50" : "border-transparent"
-              }`}
+              className={cn(
+                "group relative flex w-full items-center gap-4 rounded-2xl border bg-card p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md",
+                isSelected ? "border-primary bg-accent" : "border-border",
+              )}
             >
-              <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-100">
+              <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-warning-soft">
                 <img src={option.icon} alt="" className="h-10 w-10" aria-hidden="true" />
               </span>
               <span className="flex-1">
-                <span className="block text-lg font-semibold text-emerald-900">{option.title}</span>
+                <span className="block text-lg font-semibold text-foreground">{option.title}</span>
                 <span className="text-sm text-muted-foreground">{option.description}</span>
               </span>
               <span
-                className={`flex h-7 w-7 items-center justify-center rounded-full border ${
+                className={cn(
+                  "flex h-7 w-7 items-center justify-center rounded-full border",
                   isSelected
-                    ? "border-emerald-400 bg-emerald-400 text-white"
-                    : "border-muted bg-white text-muted-foreground"
-                }`}
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border bg-card text-muted-foreground",
+                )}
               >
                 {isSelected ? <Check className="h-4 w-4" /> : null}
               </span>

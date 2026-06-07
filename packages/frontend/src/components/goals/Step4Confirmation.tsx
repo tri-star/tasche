@@ -27,27 +27,27 @@ export function Step4Confirmation({
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-xl font-bold text-emerald-900 sm:text-2xl">設定内容を確認</h2>
+        <h2 className="text-xl font-bold text-foreground sm:text-2xl">設定内容を確認</h2>
         <p className="mt-2 text-sm text-muted-foreground">
           ここまでの内容でよければ保存してください。
         </p>
       </div>
 
-      <div className="min-w-0 rounded-3xl border border-emerald-100 bg-white/80 p-5 shadow-sm">
+      <div className="min-w-0 rounded-3xl border border-border bg-card p-5 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm text-muted-foreground">1ユニットの時間</p>
-          <p className="text-lg font-semibold text-emerald-900">{unitDurationMinutes}分</p>
+          <p className="text-lg font-semibold text-foreground">{unitDurationMinutes}分</p>
         </div>
-        <div className="mt-4 border-t border-dashed border-emerald-100 pt-4">
-          <p className="text-sm font-semibold text-emerald-900">確保可能ユニット</p>
+        <div className="mt-4 border-t border-dashed border-border pt-4">
+          <p className="text-sm font-semibold text-foreground">確保可能ユニット</p>
           <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-7">
             {DAYS_OF_WEEK_ORDER.map((day) => (
               <div
                 key={day}
-                className="flex items-center justify-between gap-2 rounded-xl bg-emerald-50/70 px-3 py-2"
+                className="flex items-center justify-between gap-2 rounded-xl bg-accent px-3 py-2"
               >
                 <span className="text-sm text-muted-foreground">{DAY_LABELS[day]}</span>
-                <span className="text-sm font-semibold text-emerald-900">
+                <span className="text-sm font-semibold text-foreground">
                   {(dailyAvailableUnits[day] ?? 0).toFixed(1)}
                 </span>
               </div>
@@ -75,8 +75,8 @@ export function Step4Confirmation({
                   0,
                 )
                 return (
-                  <tr key={task.id} className="border-t border-dashed border-emerald-100">
-                    <td className="px-2 py-3 font-semibold text-emerald-900">{task.name}</td>
+                  <tr key={task.id} className="border-t border-dashed border-border">
+                    <td className="px-2 py-3 font-semibold text-foreground">{task.name}</td>
                     {DAYS_OF_WEEK_ORDER.map((day) => (
                       <td key={day} className="px-2 py-3 text-center">
                         {(targets?.[day] ?? 0).toFixed(1)}

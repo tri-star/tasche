@@ -195,7 +195,7 @@ describe("WeeklyTargetGrid", () => {
   })
 
   describe("exceededDays ハイライト", () => {
-    it("exceededDays の曜日の input に rose クラスが付く(モバイルカード)", () => {
+    it("exceededDays の曜日の input に destructive クラスが付く(モバイルカード)", () => {
       const onUpdateTargets = vi.fn()
       render(
         <WeeklyTargetGrid
@@ -210,15 +210,16 @@ describe("WeeklyTargetGrid", () => {
       const mondayInputs = screen.getAllByRole("spinbutton", {
         name: "英語学習の月曜日の目標ユニット",
       })
-      // 少なくとも1件が rose クラスを持つ
-      const hasRoseClass = mondayInputs.some(
+      // 少なくとも1件が destructive クラスを持つ
+      const hasDestructiveClass = mondayInputs.some(
         (input) =>
-          input.className.includes("border-rose-300") || input.className.includes("bg-rose-50"),
+          input.className.includes("border-destructive") ||
+          input.className.includes("bg-destructive-soft"),
       )
-      expect(hasRoseClass).toBe(true)
+      expect(hasDestructiveClass).toBe(true)
     })
 
-    it("超過していない曜日には rose クラスが付かない", () => {
+    it("超過していない曜日には destructive クラスが付かない", () => {
       const onUpdateTargets = vi.fn()
       render(
         <WeeklyTargetGrid
@@ -234,14 +235,14 @@ describe("WeeklyTargetGrid", () => {
         name: "英語学習の火曜日の目標ユニット",
       })
       for (const input of tuesdayInputs) {
-        expect(input.className).not.toContain("border-rose-300")
-        expect(input.className).not.toContain("bg-rose-50")
+        expect(input.className).not.toContain("border-destructive")
+        expect(input.className).not.toContain("bg-destructive-soft")
       }
     })
   })
 
   describe("確保可能ユニットハイライト", () => {
-    it("確保可能ユニット > 0 の曜日の input(モバイルカード)に emerald クラスが付く", () => {
+    it("確保可能ユニット > 0 の曜日の input(モバイルカード)に success クラスが付く", () => {
       const onUpdateTargets = vi.fn()
       render(
         <WeeklyTargetGrid
@@ -257,13 +258,13 @@ describe("WeeklyTargetGrid", () => {
       const mondayInputs = screen.getAllByRole("spinbutton", {
         name: "英語学習の月曜日の目標ユニット",
       })
-      // モバイルカード(最初の要素)に emerald ハイライトクラスがあること
-      const hasEmeraldClass = mondayInputs.some(
+      // モバイルカード(最初の要素)に success ハイライトクラスがあること
+      const hasSuccessClass = mondayInputs.some(
         (input) =>
-          input.className.includes("border-emerald-200") ||
-          input.className.includes("bg-emerald-50"),
+          input.className.includes("border-success") ||
+          input.className.includes("bg-success-soft"),
       )
-      expect(hasEmeraldClass).toBe(true)
+      expect(hasSuccessClass).toBe(true)
     })
   })
 

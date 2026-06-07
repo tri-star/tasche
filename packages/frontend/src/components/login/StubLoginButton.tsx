@@ -30,8 +30,8 @@ export function StubLoginButton({ onLogin, defaultEmail = "e2e-test@example.com"
       disabled={loading}
       className="mt-4 inline-flex items-center justify-center
                  w-[320px] max-w-full px-6 py-3
-                 bg-gray-100 hover:bg-gray-200 rounded-pill
-                 text-[13px] font-medium text-tasche-textSub
+                 bg-muted hover:bg-muted/80 rounded-pill
+                 text-[13px] font-medium text-muted-foreground
                  transition-colors duration-150
                  disabled:opacity-60 disabled:pointer-events-none"
     >

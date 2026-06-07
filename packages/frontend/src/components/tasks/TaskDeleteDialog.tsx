@@ -59,7 +59,7 @@ export function TaskDeleteDialog({
           <p
             id={errorId}
             role="alert"
-            className="mt-4 rounded-xl border border-rose-100 bg-rose-50 px-3 py-2 text-sm text-rose-700"
+            className="mt-4 rounded-xl border border-destructive/40 bg-destructive-soft px-3 py-2 text-sm text-destructive-soft-foreground"
           >
             {errorMessage}
           </p>
