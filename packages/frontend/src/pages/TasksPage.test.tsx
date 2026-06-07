@@ -496,4 +496,33 @@ describe("TasksPage", () => {
     expect(screen.getAllByText("累計の消化ユニット数").length).toBeGreaterThan(0)
     expect(screen.getAllByText("このページのタスクをまとめて選択").length).toBeGreaterThan(0)
   })
+
+  it("モバイル一括選択の説明文をクリックしても選択を切り替えられる", async () => {
+    const user = userEvent.setup()
+    renderWithRouter()
+
+    await waitFor(() => {
+      expect(screen.getAllByText("英語学習").length).toBeGreaterThan(0)
+    })
+
+    await user.click(screen.getByText("このページのタスクをまとめて選択"))
+
+    const rowCheckboxes = screen.getAllByRole("checkbox", { name: /を選択$/ })
+    for (const cb of rowCheckboxes) {
+      expect(cb).toBeChecked()
+    }
+  })
+
+  it("モバイルカードのタスク名をクリックしても選択を切り替えられる", async () => {
+    const user = userEvent.setup()
+    renderWithRouter()
+
+    await waitFor(() => {
+      expect(screen.getAllByText("英語学習").length).toBeGreaterThan(0)
+    })
+
+    await user.click(screen.getAllByText("英語学習")[0])
+
+    expect(screen.getByText("1件選択中")).toBeInTheDocument()
+  })
 })

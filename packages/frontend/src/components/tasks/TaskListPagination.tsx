@@ -51,7 +51,7 @@ export function TaskListPagination({
   disabled = false,
 }: TaskListPaginationProps) {
   const totalPages = Math.max(1, Math.ceil(total / perPage))
-  const remainingCount = total - (page - 1) * perPage
+  const remainingCount = Math.max(0, total - (page - 1) * perPage)
   const displayedCount = total === 0 ? 0 : Math.min(perPage, remainingCount)
   const pageNumbers = buildPageNumbers(page, totalPages)
 
