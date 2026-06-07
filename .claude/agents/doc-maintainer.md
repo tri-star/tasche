@@ -23,6 +23,7 @@ model: opus
 - `<project-root>/docs/**/*.md`
 - `<project-root>/packages/frontend/README.md`
 - `<project-root>/packages/frontend/docs/**/*.md`
+- `<project-root>/packages/frontend/src/pages/dev/DesignTokensPage.tsx`
 - `<project-root>/packages/backend/README.md`
 - `<project-root>/packages/backend/docs/**/*.md`
 
