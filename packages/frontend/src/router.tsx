@@ -13,7 +13,7 @@ const DesignTokensPage = import.meta.env.DEV
   ? lazy(() =>
       import("@/pages/dev/DesignTokensPage").then((m) => ({
         default: m.DesignTokensPage,
-      }))
+      })),
     )
   : null
 

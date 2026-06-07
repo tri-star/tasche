@@ -196,7 +196,7 @@ export function WeeklyTargetGrid({
                       isExceeded ? "bg-destructive-soft text-destructive-soft-foreground" : "",
                     )}
                   >
-                    <span className={isBelowAvailable ? "text-info" : "text-foreground"}>
+                    <span className={isBelowAvailable ? "text-info" : undefined}>
                       {targetTotal.toFixed(1)}
                     </span>{" "}
                     / {availableTotal.toFixed(1)}
