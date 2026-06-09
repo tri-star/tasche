@@ -1,6 +1,7 @@
 """Google OAuth 2.0 クライアント（Authlib + httpx）."""
 
 import asyncio
+import logging
 import secrets
 import time
 from typing import Any
@@ -14,6 +15,9 @@ from joserfc.jwk import KeySet
 from joserfc.jwt import JWTClaimsRegistry
 
 from tasche.core.config import settings
+from tasche.core.exceptions import InvalidAuthorizationCodeError
+
+logger = logging.getLogger(__name__)
 
 GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
@@ -82,18 +86,23 @@ async def verify_google_id_token(id_token: str) -> dict:
     jwks = await get_google_jwks()
     key_set = KeySet.import_key_set(jwks)
 
-    token = jwt.decode(id_token, key_set, algorithms=["RS256"])
-
-    claims_registry = JWTClaimsRegistry(
-        iss={"essential": True, "values": list(GOOGLE_ISSUERS)},
-        aud={"essential": True, "value": settings.google_oauth_client_id},
-        exp={"essential": True},
-        iat={"essential": True},
-    )
-    claims_registry.validate(token.claims)
+    try:
+        token = jwt.decode(id_token, key_set, algorithms=["RS256"])
+        claims_registry = JWTClaimsRegistry(
+            iss={"essential": True, "values": list(GOOGLE_ISSUERS)},
+            aud={"essential": True, "value": settings.google_oauth_client_id},
+            exp={"essential": True},
+            iat={"essential": True},
+        )
+        claims_registry.validate(token.claims)
+    except JoseError as e:
+        logger.warning("Google ID token verification failed: %s", e)
+        raise InvalidAuthorizationCodeError("Invalid Google ID token") from e
 
     if token.claims.get("email_verified") is not True:
-        raise JoseError("email_not_verified")
+        logger.warning("Google ID token email_verified is not true")
+        raise InvalidAuthorizationCodeError("Google email not verified")
+
     return dict(token.claims)
 
 

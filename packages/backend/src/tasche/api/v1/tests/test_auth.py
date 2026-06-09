@@ -688,9 +688,12 @@ class TestStubLogin:
         assert isinstance(raw_refresh_token, str)
 
         # スタブ JWT を検証
-        from jose import jwt
+        from joserfc import jwt
+        from joserfc.jwk import OctKey
 
-        payload = jwt.decode(access_token, "test_stub_secret_12345678", algorithms=["HS256"])
+        key = OctKey.import_key(b"test_stub_secret_12345678")
+        decoded = jwt.decode(access_token, key)
+        payload = decoded.claims
         assert payload["stub"] is True
         assert payload["sub"] == user.id
 

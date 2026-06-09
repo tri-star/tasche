@@ -52,14 +52,17 @@ class TestIssueStubAccessToken:
 
     def test_stub_token_rejected_without_stub_claim(self):
         """stub クレームなしのトークンをスタブ JWT として検証するとエラーになることを確認."""
-        from jose import JWTError, jwt
+        from joserfc import jwt
+        from joserfc.errors import JoseError
+        from joserfc.jwk import OctKey
 
         # stub クレームを含まないトークン
         with patch.object(settings, "auth_stub_jwt_secret", "test_stub_secret"):
+            key = OctKey.import_key(b"test_stub_secret")
             payload = {"sub": "usr_test", "email": "test@example.com"}
-            token = jwt.encode(payload, "test_stub_secret", algorithm="HS256")
+            token = jwt.encode({"alg": "HS256"}, payload, key)
 
-            with pytest.raises(JWTError):
+            with pytest.raises(JoseError):
                 _decode_stub_jwt(token)
 
 
@@ -105,7 +108,8 @@ class TestGetCurrentUserSub:
     @pytest.mark.asyncio
     async def test_stub_jwt_without_stub_claim_rejected(self):
         """stub クレームなしのトークンがスタブ JWT として拒否されることを確認."""
-        from jose import jwt
+        from joserfc import jwt
+        from joserfc.jwk import OctKey
 
         with (
             patch.object(settings, "app_env", "local"),
@@ -113,8 +117,9 @@ class TestGetCurrentUserSub:
             patch.object(settings, "auth_stub_jwt_secret", "test_stub_secret"),
         ):
             # stub クレームなし
+            key = OctKey.import_key(b"test_stub_secret")
             payload = {"sub": "usr_test", "email": "test@example.com"}
-            token = jwt.encode(payload, "test_stub_secret", algorithm="HS256")
+            token = jwt.encode({"alg": "HS256"}, payload, key)
             credentials = HTTPAuthorizationCredentials(scheme="Bearer", credentials=token)
 
             with pytest.raises(InvalidTokenError):
@@ -123,7 +128,8 @@ class TestGetCurrentUserSub:
     @pytest.mark.asyncio
     async def test_expired_token_raises_invalid_token(self):
         """期限切れトークンで InvalidTokenError が raise されることを確認."""
-        from jose import jwt
+        from joserfc import jwt
+        from joserfc.jwk import OctKey
 
         # exp を過去に設定したトークン
         payload = {
@@ -131,7 +137,13 @@ class TestGetCurrentUserSub:
             "email": "test@example.com",
             "exp": int(time.time()) - 3600,  # 1時間前
         }
-        token = jwt.encode(payload, settings.jwt_secret, algorithm=settings.jwt_algorithm)
+        secret_bytes = (
+            settings.jwt_secret.encode()
+            if isinstance(settings.jwt_secret, str)
+            else settings.jwt_secret
+        )
+        key = OctKey.import_key(secret_bytes)
+        token = jwt.encode({"alg": settings.jwt_algorithm}, payload, key)
         credentials = HTTPAuthorizationCredentials(scheme="Bearer", credentials=token)
 
         with (
