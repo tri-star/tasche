@@ -45,6 +45,9 @@ model: GPT-5.4 (copilot)
 - テスト追加や整理の提案
 - 別 PR で安全に対応可能な品質改善
 
+non-blocking な指摘をコメントする場合は、本文中に「別 PR での対応も可能です」
+または同等の文言を含めてください。
+
 ## 調査の進め方
 
 1. `tmp/review/pr-metadata.json` と `tmp/review/context.json` を確認してください
