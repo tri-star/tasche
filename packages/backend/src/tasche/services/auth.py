@@ -6,7 +6,7 @@ import secrets
 from datetime import datetime, timedelta, timezone
 
 import httpx
-from authlib.jose.errors import JoseError
+from joserfc.errors import JoseError
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from ulid import ULID

@@ -8,8 +8,10 @@ from urllib.parse import urlencode
 
 import httpx
 from authlib.integrations.httpx_client import AsyncOAuth2Client
-from authlib.jose import JsonWebKey, JsonWebToken
-from authlib.jose.errors import JoseError
+from joserfc import jwt
+from joserfc.errors import JoseError
+from joserfc.jwk import KeySet
+from joserfc.jwt import JWTClaimsRegistry
 
 from tasche.core.config import settings
 
@@ -78,20 +80,21 @@ async def exchange_code_for_token(*, code: str, code_verifier: str, redirect_uri
 async def verify_google_id_token(id_token: str) -> dict:
     """Google ID Token を検証し claims を返す."""
     jwks = await get_google_jwks()
-    key_set = JsonWebKey.import_key_set(jwks)
-    jwt = JsonWebToken(["RS256"])
-    claims = jwt.decode(
-        id_token,
-        key=key_set,
-        claims_options={
-            "iss": {"essential": True, "values": list(GOOGLE_ISSUERS)},
-            "aud": {"essential": True, "value": settings.google_oauth_client_id},
-        },
+    key_set = KeySet.import_key_set(jwks)
+
+    token = jwt.decode(id_token, key_set, algorithms=["RS256"])
+
+    claims_registry = JWTClaimsRegistry(
+        iss={"essential": True, "values": list(GOOGLE_ISSUERS)},
+        aud={"essential": True, "value": settings.google_oauth_client_id},
+        exp={"essential": True},
+        iat={"essential": True},
     )
-    claims.validate()  # exp / iat チェック
-    if claims.get("email_verified") is not True:
+    claims_registry.validate(token.claims)
+
+    if token.claims.get("email_verified") is not True:
         raise JoseError("email_not_verified")
-    return dict(claims)
+    return dict(token.claims)
 
 
 def generate_state() -> str:
