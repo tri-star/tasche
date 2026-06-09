@@ -47,15 +47,18 @@ def main() -> None:
             "severity": severity,
             "category": category,
         }
-        comment_body = "\n".join(
-            [
-                MARKER,
-                f"<!-- ai-pr-review-summary-metadata {json.dumps(metadata, ensure_ascii=False, sort_keys=True)} -->",
-                f"[{severity}/{category}] {body}",
-                "",
-                f"_AI review summary comment: run {args.run_id}, attempt {args.run_attempt}, item {index}_",
-            ]
-        )
+        lines = [
+            MARKER,
+            f"<!-- ai-pr-review-summary-metadata {json.dumps(metadata, ensure_ascii=False, sort_keys=True)} -->",
+            f"[{severity}/{category}] {body}",
+        ]
+        if severity == "non-blocking":
+            lines.append("\n> この指摘は non-blocking です。別 PR での対応も可能です。")
+        lines += [
+            "",
+            f"_AI review summary comment: run {args.run_id}, attempt {args.run_attempt}, item {index}_",
+        ]
+        comment_body = "\n".join(lines)
         payloads.append(
             {
                 "summary_index": index,
