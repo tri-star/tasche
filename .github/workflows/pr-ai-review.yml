@@ -124,9 +124,14 @@ jobs:
         run: python -m pip install pyyaml
 
       - name: Write PR body
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p tmp/review
-          python3 - <<'PY'
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            gh api "repos/${REPO}/pulls/${PR_NUMBER}" --jq '.body // ""' > tmp/review/pr-body.txt
+          else
+            python3 - <<'PY'
           import json
           import os
           from pathlib import Path
@@ -134,6 +139,7 @@ jobs:
           body = event["pull_request"].get("body") or ""
           Path("tmp/review/pr-body.txt").write_text(body)
           PY
+          fi
 
       - name: Build review context
         if: env.SAME_REPO == 'true'
@@ -344,7 +350,7 @@ jobs:
             body=$(printf '%s' "${item}" | jq -r '"<!-- ai-pr-review-line -->\n[" + .severity + "/" + .category + "] " + .body')
             gh api --method POST "repos/${REPO}/pulls/${PR_NUMBER}/comments" \
               -f body="${body}" \
-              -f commit_id="${{ github.event.pull_request.head.sha }}" \
+              -f commit_id="${HEAD_SHA}" \
               -f path="${path}" \
               -F line="${line}" \
               -f side="RIGHT" >/dev/null
