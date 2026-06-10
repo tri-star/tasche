@@ -2,7 +2,8 @@
 
 import time
 
-from jose import jwt as jose_jwt
+from joserfc import jwt
+from joserfc.jwk import RSAKey
 
 from tasche.core.config import settings
 
@@ -35,9 +36,10 @@ def make_google_id_token(
         "exp": now + exp_offset,
     }
 
-    return jose_jwt.encode(
-        payload,
-        rsa_private_key_pem,
-        algorithm="RS256",
-        headers={"kid": "test-key-id"},
+    pem_bytes = (
+        rsa_private_key_pem.encode()
+        if isinstance(rsa_private_key_pem, str)
+        else rsa_private_key_pem
     )
+    key = RSAKey.import_key(pem_bytes)
+    return jwt.encode({"alg": "RS256", "kid": "test-key-id"}, payload, key)

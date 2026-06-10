@@ -2,7 +2,8 @@
 
 from datetime import datetime, timedelta, timezone
 
-from jose import jwt
+from joserfc import jwt
+from joserfc.jwk import OctKey
 
 from tasche.core.config import settings
 
@@ -30,10 +31,12 @@ class TestTokenService:
         payload = {
             "sub": user_id,
             "email": email,
-            "exp": datetime.now(timezone.utc) + expires_delta,
+            "exp": int((datetime.now(timezone.utc) + expires_delta).timestamp()),
         }
-        return jwt.encode(
-            payload,
-            settings.test_jwt_secret,
-            algorithm="HS256",
+        secret_bytes = (
+            settings.test_jwt_secret.encode()
+            if isinstance(settings.test_jwt_secret, str)
+            else settings.test_jwt_secret
         )
+        key = OctKey.import_key(secret_bytes)
+        return jwt.encode({"alg": "HS256"}, payload, key)

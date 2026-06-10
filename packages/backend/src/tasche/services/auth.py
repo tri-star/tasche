@@ -6,7 +6,6 @@ import secrets
 from datetime import datetime, timedelta, timezone
 
 import httpx
-from authlib.jose.errors import JoseError
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from ulid import ULID
@@ -139,17 +138,8 @@ async def handle_google_callback(
     if not id_token:
         raise InvalidAuthorizationCodeError("No id_token in Google response")
 
-    try:
-        claims = await verify_google_id_token(id_token)
-        logger.debug("handle_google_callback: ID token verified sub=%r", claims.get("sub"))
-    except JoseError as e:
-        logger.warning("Google ID token verification failed: %s", e)
-        raise InvalidAuthorizationCodeError("Invalid Google ID token") from e
-
-    # email_verified の二重チェック（oauth.py 側で検証済みだが念のため再確認）
-    if claims.get("email_verified") is not True:
-        logger.warning("Google ID token email_verified is not true")
-        raise InvalidAuthorizationCodeError("Google email not verified")
+    claims = await verify_google_id_token(id_token)
+    logger.debug("handle_google_callback: ID token verified sub=%r", claims.get("sub"))
 
     # ユーザーを upsert
     google_sub = claims["sub"]

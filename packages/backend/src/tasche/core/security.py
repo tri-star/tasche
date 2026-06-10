@@ -4,7 +4,10 @@ from datetime import datetime, timezone
 
 from fastapi import Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from jose import JWTError, jwt
+from joserfc import jwt
+from joserfc.errors import JoseError
+from joserfc.jwk import OctKey
+from joserfc.jwt import JWTClaimsRegistry
 
 from tasche.core.config import settings
 from tasche.core.env import is_auth_stub_enabled
@@ -22,7 +25,13 @@ def issue_access_token(*, user_id: str, email: str) -> tuple[str, int]:
     now = int(datetime.now(tz=timezone.utc).timestamp())
     exp = now + settings.jwt_access_token_expires_seconds
     payload = {"sub": user_id, "email": email, "iat": now, "exp": exp}
-    token = jwt.encode(payload, settings.jwt_secret, algorithm=settings.jwt_algorithm)
+    secret_bytes = (
+        settings.jwt_secret.encode()
+        if isinstance(settings.jwt_secret, str)
+        else settings.jwt_secret
+    )
+    key = OctKey.import_key(secret_bytes)
+    token = jwt.encode({"alg": settings.jwt_algorithm}, payload, key)
     return token, settings.jwt_access_token_expires_seconds
 
 
@@ -35,21 +44,43 @@ def issue_stub_access_token(*, user_id: str, email: str) -> tuple[str, int]:
     now = int(datetime.now(tz=timezone.utc).timestamp())
     exp = now + settings.jwt_access_token_expires_seconds
     payload = {"sub": user_id, "email": email, "iat": now, "exp": exp, "stub": True}
-    token = jwt.encode(payload, settings.auth_stub_jwt_secret, algorithm="HS256")
+    secret_bytes = (
+        settings.auth_stub_jwt_secret.encode()
+        if isinstance(settings.auth_stub_jwt_secret, str)
+        else settings.auth_stub_jwt_secret
+    )
+    key = OctKey.import_key(secret_bytes)
+    token = jwt.encode({"alg": "HS256"}, payload, key)
     return token, settings.jwt_access_token_expires_seconds
 
 
 def _decode_app_jwt(token: str) -> dict:
     """自前 JWT をデコード・検証する."""
-    return jwt.decode(token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
+    secret_bytes = (
+        settings.jwt_secret.encode()
+        if isinstance(settings.jwt_secret, str)
+        else settings.jwt_secret
+    )
+    key = OctKey.import_key(secret_bytes)
+    decoded = jwt.decode(token, key, algorithms=[settings.jwt_algorithm])
+    JWTClaimsRegistry(leeway=60, exp={"essential": True}).validate(decoded.claims)
+    return decoded.claims
 
 
 def _decode_stub_jwt(token: str) -> dict:
     """スタブ JWT をデコード・検証する（stub クレーム必須）."""
-    payload = jwt.decode(token, settings.auth_stub_jwt_secret, algorithms=["HS256"])
-    if not payload.get("stub"):
-        raise JWTError("not a stub token")
-    return payload
+    secret_bytes = (
+        settings.auth_stub_jwt_secret.encode()
+        if isinstance(settings.auth_stub_jwt_secret, str)
+        else settings.auth_stub_jwt_secret
+    )
+    key = OctKey.import_key(secret_bytes)
+    decoded = jwt.decode(token, key, algorithms=["HS256"])
+    JWTClaimsRegistry(leeway=60, exp={"essential": True}).validate(decoded.claims)
+    claims = decoded.claims
+    if not claims.get("stub"):
+        raise JoseError("not a stub token")
+    return claims
 
 
 async def get_current_user_sub(
@@ -65,11 +96,11 @@ async def get_current_user_sub(
 
     try:
         payload = _decode_app_jwt(token)
-    except JWTError:
+    except JoseError:
         if is_auth_stub_enabled(settings.app_env, settings.auth_stub_enabled):
             try:
                 payload = _decode_stub_jwt(token)
-            except JWTError as e:
+            except JoseError as e:
                 raise InvalidTokenError("Invalid token") from e
         else:
             raise InvalidTokenError("Invalid token")

@@ -1,6 +1,7 @@
 """Google OAuth 2.0 クライアント（Authlib + httpx）."""
 
 import asyncio
+import logging
 import secrets
 import time
 from typing import Any
@@ -8,10 +9,15 @@ from urllib.parse import urlencode
 
 import httpx
 from authlib.integrations.httpx_client import AsyncOAuth2Client
-from authlib.jose import JsonWebKey, JsonWebToken
-from authlib.jose.errors import JoseError
+from joserfc import jwt
+from joserfc.errors import JoseError
+from joserfc.jwk import KeySet
+from joserfc.jwt import JWTClaimsRegistry
 
 from tasche.core.config import settings
+from tasche.core.exceptions import InvalidAuthorizationCodeError
+
+logger = logging.getLogger(__name__)
 
 GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
@@ -78,20 +84,27 @@ async def exchange_code_for_token(*, code: str, code_verifier: str, redirect_uri
 async def verify_google_id_token(id_token: str) -> dict:
     """Google ID Token を検証し claims を返す."""
     jwks = await get_google_jwks()
-    key_set = JsonWebKey.import_key_set(jwks)
-    jwt = JsonWebToken(["RS256"])
-    claims = jwt.decode(
-        id_token,
-        key=key_set,
-        claims_options={
-            "iss": {"essential": True, "values": list(GOOGLE_ISSUERS)},
-            "aud": {"essential": True, "value": settings.google_oauth_client_id},
-        },
-    )
-    claims.validate()  # exp / iat チェック
-    if claims.get("email_verified") is not True:
-        raise JoseError("email_not_verified")
-    return dict(claims)
+    key_set = KeySet.import_key_set(jwks)
+
+    try:
+        token = jwt.decode(id_token, key_set, algorithms=["RS256"])
+        claims_registry = JWTClaimsRegistry(
+            leeway=120,
+            iss={"essential": True, "values": list(GOOGLE_ISSUERS)},
+            aud={"essential": True, "value": settings.google_oauth_client_id},
+            exp={"essential": True},
+            iat={"essential": True},
+        )
+        claims_registry.validate(token.claims)
+    except JoseError as e:
+        logger.warning("Google ID token verification failed: %s", e)
+        raise InvalidAuthorizationCodeError("Invalid Google ID token") from e
+
+    if token.claims.get("email_verified") is not True:
+        logger.warning("Google ID token email_verified is not true")
+        raise InvalidAuthorizationCodeError("Google email not verified")
+
+    return dict(token.claims)
 
 
 def generate_state() -> str:

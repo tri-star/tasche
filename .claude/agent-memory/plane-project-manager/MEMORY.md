@@ -16,7 +16,7 @@
 | `caf882e5-...` | In Progress | started |
 | `2e0f7960-...` | Done | completed |
 | `5c87a3ef-...` | Cancelled | cancelled |
-| `b3b26d51-...` | Review | started（レビュー待ち・レビュー中）|
+| `b3b26d51-25dd-42d0-9149-e611c0e652ae` | Review | started（レビュー待ち・レビュー中）|
 
 - [ステート詳細](project-states.md) — 全ステートのID・カラーを記録
 
