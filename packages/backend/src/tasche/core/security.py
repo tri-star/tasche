@@ -62,8 +62,8 @@ def _decode_app_jwt(token: str) -> dict:
         else settings.jwt_secret
     )
     key = OctKey.import_key(secret_bytes)
-    decoded = jwt.decode(token, key)
-    JWTClaimsRegistry(exp={"essential": True}).validate(decoded.claims)
+    decoded = jwt.decode(token, key, algorithms=[settings.jwt_algorithm])
+    JWTClaimsRegistry(leeway=60, exp={"essential": True}).validate(decoded.claims)
     return decoded.claims
 
 
@@ -75,8 +75,8 @@ def _decode_stub_jwt(token: str) -> dict:
         else settings.auth_stub_jwt_secret
     )
     key = OctKey.import_key(secret_bytes)
-    decoded = jwt.decode(token, key)
-    JWTClaimsRegistry(exp={"essential": True}).validate(decoded.claims)
+    decoded = jwt.decode(token, key, algorithms=["HS256"])
+    JWTClaimsRegistry(leeway=60, exp={"essential": True}).validate(decoded.claims)
     claims = decoded.claims
     if not claims.get("stub"):
         raise JoseError("not a stub token")

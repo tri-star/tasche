@@ -89,6 +89,7 @@ async def verify_google_id_token(id_token: str) -> dict:
     try:
         token = jwt.decode(id_token, key_set, algorithms=["RS256"])
         claims_registry = JWTClaimsRegistry(
+            leeway=120,
             iss={"essential": True, "values": list(GOOGLE_ISSUERS)},
             aud={"essential": True, "value": settings.google_oauth_client_id},
             exp={"essential": True},

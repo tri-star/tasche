@@ -63,6 +63,16 @@ Python 3.12 + pytest-asyncio `asyncio_default_fixture_loop_scope=function` で s
 
 **How to apply:** engine は function スコープのまま毎テスト生成・破棄する方が安全。速度より安定性を優先。
 
+## joserfc は exp クレームを decode 時に自動検証しない
+
+`jwt.decode(token, key)` だけでは `exp` の期限切れチェックは行われない。
+python-jose の `jwt.decode()` は自動検証していたが、joserfc は明示的な検証が必要。
+
+**Why:** joserfc の設計方針として claims 検証はデコードと分離されている。
+
+**How to apply:** デコード後に必ず `JWTClaimsRegistry(exp={"essential": True}).validate(decoded.claims)` を呼ぶ。
+RS256 の Google ID Token 検証でも同様（`verify_google_id_token()` 内の `JWTClaimsRegistry` でまとめて検証）。
+
 ## TestTokenService 認証はjwt_secretと揃える必要がある
 
 `TestTokenService` は `settings.test_jwt_secret` でJWTを発行する。
