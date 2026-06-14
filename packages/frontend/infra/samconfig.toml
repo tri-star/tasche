@@ -11,7 +11,7 @@ region = "ap-southeast-1"
 capabilities = "CAPABILITY_NAMED_IAM"
 confirm_changeset = false
 fail_on_empty_changeset = false
-parameter_overrides = "Env=dev BackendFunctionUrl=/tasche/dev/sam/backend-function-url Domain=dev.tasche.life"
+parameter_overrides = "Env=dev BackendFunctionUrl=/tasche/dev/sam/backend-function-url Domain=dev.tasche.life AcmCertificateArn=/tasche/dev/frontend/acm-certificate-arn HostedZoneId=/tasche/dev/frontend/hosted-zone-id"
 
 # prod 環境 (枠のみ; 別タスクで完成させる)
 [prod.deploy.parameters]
