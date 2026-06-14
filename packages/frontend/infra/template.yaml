@@ -22,11 +22,15 @@ Parameters:
       CloudFront に割り当てる独自ドメイン名.
       空の場合は CloudFront デフォルトドメイン (xxx.cloudfront.net) を使用する。
   AcmCertificateArn:
-    Type: String
-    Default: ""
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /tasche/dev/frontend/acm-certificate-arn
     Description: |
-      ACM 証明書 ARN (us-east-1). Domain を指定する場合は必須。
-      空の場合は CloudFront デフォルト証明書を使用する。
+      ACM 証明書 ARN (us-east-1) を格納した SSM パラメータのパス. Domain を指定する場合は必須。
+  HostedZoneId:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /tasche/dev/frontend/hosted-zone-id
+    Description: |
+      Route53 ホストゾーン ID を格納した SSM パラメータのパス. Domain を指定する場合に使用する。
 
 Conditions:
   HasCustomDomain:
@@ -185,6 +189,29 @@ Resources:
             Condition:
               StringEquals:
                 AWS:SourceArn: !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${Distribution}"
+
+  # ----------------------------------------------------------------------------
+  # Route53 レコード: 独自ドメインを CloudFront へ Alias する (A / AAAA)
+  # HostedZoneId: Z2FDTNDATAQYW2 は CloudFront 固定のゾーン ID。
+  # ----------------------------------------------------------------------------
+  DnsRecords:
+    Type: AWS::Route53::RecordSetGroup
+    Condition: HasCustomDomain
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      RecordSets:
+        - Name: !Ref Domain
+          Type: A
+          AliasTarget:
+            DNSName: !GetAtt Distribution.DomainName
+            HostedZoneId: Z2FDTNDATAQYW2
+            EvaluateTargetHealth: false
+        - Name: !Ref Domain
+          Type: AAAA
+          AliasTarget:
+            DNSName: !GetAtt Distribution.DomainName
+            HostedZoneId: Z2FDTNDATAQYW2
+            EvaluateTargetHealth: false
 
 Outputs:
   AssetsBucketName:
