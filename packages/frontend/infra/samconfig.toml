@@ -15,8 +15,8 @@ parameter_overrides = [
     "Env=dev",
     "BackendFunctionUrl=/tasche/dev/sam/backend-function-url",
     "Domain=dev.tasche.life",
-    "AcmCertificateArn=/tasche/dev/frontend/acm-certificate-arn",
-    "HostedZoneId=/tasche/dev/frontend/hosted-zone-id",
+    "AcmCertificateArn={{resolve:ssm:/tasche/dev/frontend/acm-certificate-arn}}",
+    "HostedZoneId={{resolve:ssm:/tasche/dev/frontend/hosted-zone-id}}",
 ]
 
 # prod 環境 (枠のみ; 別タスクで完成させる)

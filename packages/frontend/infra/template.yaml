@@ -22,15 +22,18 @@ Parameters:
       CloudFront に割り当てる独自ドメイン名.
       空の場合は CloudFront デフォルトドメイン (xxx.cloudfront.net) を使用する。
   AcmCertificateArn:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /tasche/dev/frontend/acm-certificate-arn
+    Type: String
+    Default: ""
     Description: |
-      ACM 証明書 ARN (us-east-1) を格納した SSM パラメータのパス. Domain を指定する場合は必須。
+      ACM 証明書 ARN (us-east-1). Domain を指定する場合は必須。
+      空の場合は CloudFront デフォルト証明書を使用する。
+      SSM から取得する場合は samconfig.toml で {{resolve:ssm:/path/to/param}} 形式で指定する。
   HostedZoneId:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /tasche/dev/frontend/hosted-zone-id
+    Type: String
+    Default: ""
     Description: |
-      Route53 ホストゾーン ID を格納した SSM パラメータのパス. Domain を指定する場合に使用する。
+      Route53 ホストゾーン ID. Domain を指定する場合に使用する。
+      SSM から取得する場合は samconfig.toml で {{resolve:ssm:/path/to/param}} 形式で指定する。
 
 Conditions:
   HasCustomDomain:
