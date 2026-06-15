@@ -4,7 +4,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-Theme = Literal["light", "dark"]
+Theme = Literal["light", "dark", "system"]
 
 
 class SettingsResponse(BaseModel):
