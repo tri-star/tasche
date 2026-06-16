@@ -49,6 +49,8 @@ export function useTheme(): UseThemeResult {
     }
   }
 
+  // isDark（OSまたは明示設定による現在の表示状態）を基準にトグルする。
+  // system 選択中に呼ぶと system 設定が light/dark に上書きされる点に注意。
   async function toggleTheme(): Promise<void> {
     await setTheme(isDark ? "light" : "dark")
   }

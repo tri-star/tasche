@@ -6,6 +6,11 @@ import { resolveIsDark } from "@/theme/resolveSystemTheme"
 
 type ThemeProviderProps = { children: React.ReactNode }
 
+const VALID_THEMES: Theme[] = ["light", "dark", "system"]
+function parseTheme(raw: string | null): Theme | null {
+  return VALID_THEMES.includes(raw as Theme) ? (raw as Theme) : null
+}
+
 /**
  * currentSettingsAtom.theme を購読し、<html> の dark クラスを副作用で同期する Provider。
  * DB が真実のソースだが、起動時フラッシュを防ぐため localStorage をキャッシュとして使用する。
@@ -15,7 +20,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
   const settings = useAtomValue(currentSettingsAtom)
 
   useEffect(() => {
-    const cachedTheme = localStorage.getItem("theme") as Theme | null
+    const cachedTheme = parseTheme(localStorage.getItem("theme"))
     const theme: Theme = settings?.theme ?? cachedTheme ?? "light"
 
     const apply = (isDark: boolean) => {

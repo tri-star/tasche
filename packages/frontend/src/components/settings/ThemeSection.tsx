@@ -30,7 +30,7 @@ export function ThemeSection() {
           value={theme}
           disabled={isUpdating}
           onValueChange={(next) => {
-            if (next) void setTheme(next as Theme)
+            if (next && THEME_OPTIONS.some((o) => o.value === next)) void setTheme(next as Theme)
           }}
           aria-label="テーマを選択"
         >
