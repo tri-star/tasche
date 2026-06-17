@@ -85,9 +85,9 @@ describe("SettingsPage", () => {
     expect(elements.length).toBeGreaterThanOrEqual(1)
   })
 
-  it("「ダークモード」セクションが表示されること", () => {
+  it("「テーマ」セクションが表示されること", () => {
     renderSettingsPage()
-    expect(screen.getAllByText("ダークモード")[0]).toBeInTheDocument()
+    expect(screen.getByText("テーマ")).toBeInTheDocument()
   })
 
   it("ログアウトボタンが存在しないこと", () => {

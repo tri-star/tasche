@@ -29,4 +29,10 @@ describe("currentSettingsAtom", () => {
     store.set(currentSettingsAtom, { ...current, theme: "dark" })
     expect(store.get(currentSettingsAtom)).toEqual({ timezone: "Asia/Tokyo", theme: "dark" })
   })
+
+  it("theme に system を設定できること", () => {
+    const store = createStore()
+    store.set(currentSettingsAtom, { timezone: "Asia/Tokyo", theme: "system" })
+    expect(store.get(currentSettingsAtom)?.theme).toBe("system")
+  })
 })

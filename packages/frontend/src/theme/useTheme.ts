@@ -4,6 +4,7 @@ import { useUpdateSettings } from "@/hooks/useUpdateSettings"
 import { currentSettingsAtom } from "@/settings/atoms"
 import type { Theme } from "@/settings/types"
 import { DEFAULT_SETTINGS } from "@/settings/types"
+import { resolveIsDark } from "@/theme/resolveSystemTheme"
 
 type UseThemeResult = {
   theme: Theme
@@ -25,7 +26,7 @@ export function useTheme(): UseThemeResult {
   const [error, setError] = useState<Error | null>(null)
 
   const theme: Theme = settings?.theme ?? "light"
-  const isDark = theme === "dark"
+  const isDark = resolveIsDark(theme)
 
   async function setTheme(next: Theme): Promise<void> {
     const previous = settings
@@ -48,6 +49,8 @@ export function useTheme(): UseThemeResult {
     }
   }
 
+  // isDark（OSまたは明示設定による現在の表示状態）を基準にトグルする。
+  // system 選択中に呼ぶと system 設定が light/dark に上書きされる点に注意。
   async function toggleTheme(): Promise<void> {
     await setTheme(isDark ? "light" : "dark")
   }

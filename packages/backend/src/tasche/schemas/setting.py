@@ -1,10 +1,8 @@
 """設定リソースのスキーマ."""
 
-from typing import Literal
-
 from pydantic import BaseModel, ConfigDict, Field
 
-Theme = Literal["light", "dark"]
+from tasche.models.enums import Theme
 
 
 class SettingsResponse(BaseModel):

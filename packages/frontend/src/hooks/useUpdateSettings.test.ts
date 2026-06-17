@@ -117,6 +117,24 @@ describe("useUpdateSettings", () => {
     expect(mockUpdateCurrentSettings).toHaveBeenCalledWith({ timezone: "UTC", theme: "dark" })
   })
 
+  it("mutateAsync({ theme: 'system' }) で updateCurrentSettings が { theme: 'system' } で呼ばれること", async () => {
+    const mockResponse: SettingsResponse = { timezone: "Asia/Tokyo", theme: "system" }
+    mockUpdateCurrentSettings.mockResolvedValue({
+      status: 200,
+      data: { data: mockResponse },
+    })
+
+    const { result } = renderHook(() => useUpdateSettings(), {
+      wrapper: createWrapper(),
+    })
+
+    await act(async () => {
+      await result.current.mutateAsync({ theme: "system" })
+    })
+
+    expect(mockUpdateCurrentSettings).toHaveBeenCalledWith({ theme: "system" })
+  })
+
   it("ネットワークエラー時に reject されること", async () => {
     mockUpdateCurrentSettings.mockRejectedValue(new Error("Network Error"))
 

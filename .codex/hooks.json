@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$(git rev-parse --show-toplevel)/scripts/lint-format-hook.sh\" record"
+            "command": "bash \"$(git rev-parse --show-toplevel)/scripts/lint-format-hook-codex.sh\" check"
           }
         ]
       }
@@ -16,7 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$(git rev-parse --show-toplevel)/scripts/lint-format-hook.sh\" flush"
+            "command": "bash \"$(git rev-parse --show-toplevel)/scripts/lint-format-hook-codex.sh\" flush"
           }
         ]
       }

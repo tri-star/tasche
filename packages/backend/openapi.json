@@ -1976,7 +1976,8 @@
             "type": "string",
             "enum": [
               "light",
-              "dark"
+              "dark",
+              "system"
             ],
             "title": "Theme"
           }
@@ -2010,7 +2011,8 @@
                 "type": "string",
                 "enum": [
                   "light",
-                  "dark"
+                  "dark",
+                  "system"
                 ]
               },
               {

@@ -12,4 +12,5 @@ export type SettingsResponseTheme = typeof SettingsResponseTheme[keyof typeof Se
 export const SettingsResponseTheme = {
   light: 'light',
   dark: 'dark',
+  system: 'system',
 } as const;

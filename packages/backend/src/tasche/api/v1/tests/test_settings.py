@@ -177,6 +177,58 @@ async def test_patch_settings_empty_body(
 
 
 @pytest.mark.asyncio
+async def test_patch_settings_update_theme_system(
+    client: AsyncClient,
+    test_user: User,
+    token_service: TestTokenService,
+    db_session: AsyncSession,
+):
+    """theme を "system" に更新できる（DB 永続化も確認）."""
+    token = token_service.create_token(test_user.id, test_user.email)
+
+    response = await client.patch(
+        "/api/settings",
+        json={"theme": "system"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["theme"] == "system"
+
+    await db_session.refresh(test_user)
+    assert test_user.theme == "system"
+
+
+@pytest.mark.asyncio
+async def test_get_settings_returns_system_theme(
+    client: AsyncClient,
+    test_user: User,
+    token_service: TestTokenService,
+    db_session: AsyncSession,
+):
+    """PATCH で "system" に更新後、GET でも "system" が返ること."""
+    token = token_service.create_token(test_user.id, test_user.email)
+
+    # まず PATCH で "system" に更新
+    patch_response = await client.patch(
+        "/api/settings",
+        json={"theme": "system"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert patch_response.status_code == 200
+
+    # 次に GET で確認
+    get_response = await client.get(
+        "/api/settings",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert get_response.status_code == 200
+    data = get_response.json()["data"]
+    assert data["theme"] == "system"
+
+
+@pytest.mark.asyncio
 async def test_patch_settings_unauthorized(client: AsyncClient):
     """認証なしで PATCH すると 401."""
     response = await client.patch(

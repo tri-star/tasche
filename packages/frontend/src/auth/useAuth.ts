@@ -2,6 +2,8 @@ import { useQueryClient } from "@tanstack/react-query"
 import { useAtom, useAtomValue, useSetAtom } from "jotai"
 import { useNavigate } from "react-router-dom"
 import { logger } from "@/lib/logger"
+import { currentSettingsAtom } from "@/settings/atoms"
+import type { Settings } from "@/settings/types"
 import { accessTokenAtom, authStatusAtom, currentUserAtom } from "./atoms"
 import { createPkcePair } from "./pkce"
 import { clearPendingOAuth, readPendingOAuth, savePendingOAuth } from "./storage"
@@ -40,11 +42,26 @@ async function fetchUserMe(token: string): Promise<AuthUser> {
   return json.data
 }
 
+async function fetchSettings(token: string): Promise<Settings | null> {
+  logger.debug("[fetchSettings] start")
+  const res = await fetch(`${BASE_URL}/api/settings`, {
+    headers: { Authorization: `Bearer ${token}` },
+    credentials: "include",
+  })
+  if (!res.ok) {
+    logger.error(`[fetchSettings] failed: status=${res.status}`)
+    return null
+  }
+  const json = await parseJsonResponse<{ data: Settings }>(res, "fetchSettings")
+  return json.data
+}
+
 export function useAuth() {
   const [status, setStatus] = useAtom(authStatusAtom)
   const [, setAccessToken] = useAtom(accessTokenAtom)
   const accessToken = useAtomValue(accessTokenAtom)
   const setCurrentUser = useSetAtom(currentUserAtom)
+  const setCurrentSettings = useSetAtom(currentSettingsAtom)
   const user = useAtomValue(currentUserAtom)
   const queryClient = useQueryClient()
   const navigate = useNavigate()
@@ -131,8 +148,12 @@ export function useAuth() {
 
     setAccessToken(access_token)
 
-    const userInfo = await fetchUserMe(access_token)
+    const [userInfo, settings] = await Promise.all([
+      fetchUserMe(access_token),
+      fetchSettings(access_token),
+    ])
     setCurrentUser(userInfo)
+    if (settings) setCurrentSettings(settings)
     setStatus("authenticated")
 
     clearPendingOAuth()
@@ -162,8 +183,12 @@ export function useAuth() {
 
     setAccessToken(access_token)
 
-    const userInfo = await fetchUserMe(access_token)
+    const [userInfo, settings] = await Promise.all([
+      fetchUserMe(access_token),
+      fetchSettings(access_token),
+    ])
     setCurrentUser(userInfo)
+    if (settings) setCurrentSettings(settings)
     setStatus("authenticated")
 
     navigate("/", { replace: true })

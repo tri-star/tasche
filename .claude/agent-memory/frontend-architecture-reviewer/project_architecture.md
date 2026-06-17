@@ -43,6 +43,8 @@ metadata:
 - `currentSettingsAtom.theme` を購読して `<html>` の dark クラスを同期
 - DB が真実のソース。起動時フラッシュ防止のため localStorage をキャッシュとして使用（DB更新時に localStorage も更新）
 - ログインページは ThemeProvider の外なので `dark` クラスが乗らない（ログインページはライトモード固定）
+- theme === "system" のとき matchMedia change イベントを購読して OS テーマ変化に追従（useEffect クリーンアップで解除）
+- `prefersDark()` / `resolveIsDark(theme)` は `theme/resolveSystemTheme.ts` に純粋関数として定義。ThemeProvider と useTheme の両方から呼ぶことで system 時の isDark を一元化している（TCH-69）
 
 ## デザイントークン構成（TCH-16）
 
