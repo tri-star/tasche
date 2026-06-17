@@ -35,3 +35,13 @@ type: feedback
 - `.claude/settings.json` と `.claude/settings.local.json` には `mcp__plane__*` の許可設定が存在していても、実行セッションにツール定義が注入されないケースがある。
 
 **How to apply:** 権限設定ファイルだけでは利用可否を判断せず、実セッションで Plane MCP が列挙・呼び出し可能かを先に確認する。
+
+## state_ids フィルタの挙動（2026-06-14 確認）
+
+`list_work_items` の `state_ids` パラメータでフィルタすると結果が空になる場合がある。  
+同じリクエストを `state_groups` パラメータに置き換えると正常に結果が返る。
+
+**How to apply:** タスク一覧をステートで絞り込む際は `state_ids` より `state_groups` を優先して使う。
+- backlog → `state_groups: ["backlog"]`
+- Todo → `state_groups: ["unstarted"]`
+- In Progress / Review → `state_groups: ["started"]`

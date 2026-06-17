@@ -69,6 +69,17 @@ dark クラスが適用されない。また、ブランドカラーは意匠上
 
 ---
 
+## Radix ToggleGroup onValueChange のキャスト漏れ
+
+`ToggleGroup` の `onValueChange` は `(value: string) => void` で、型引数はありません。
+`next as Theme` のようにキャストすると ToggleGroupItem の value に想定外の文字列が来ても TypeScript が検出できない。
+
+**Why:** キャストは型の証明ではなく抑圧。THEME_OPTIONS で制約されているうちは実害なくても、将来 Item を直接追記した際の抜け道になる。
+
+**How to apply:** `isTheme(v: string): v is Theme` 型ガードを `settings/types.ts` に用意し、キャスト箇所を置き換える。TCH-69 の ThemeSection.tsx で Warning として指摘済み。
+
+---
+
 ## settings フェッチ失敗 + フォールバック値による保存操作
 
 useBootstrapAuth で settings フェッチが失敗すると currentSettingsAtom が null のまま authenticated に遷移する。
