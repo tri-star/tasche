@@ -9,15 +9,15 @@ function mockMatchMedia(matches: boolean) {
   const mql = {
     matches,
     media: "(prefers-color-scheme: dark)",
-    addEventListener: vi.fn((_: string, cb: (e: MediaQueryListEvent) => void) =>
-      listeners.add(cb),
-    ),
+    addEventListener: vi.fn((_: string, cb: (e: MediaQueryListEvent) => void) => listeners.add(cb)),
     removeEventListener: vi.fn((_: string, cb: (e: MediaQueryListEvent) => void) =>
       listeners.delete(cb),
     ),
     _emit: (next: boolean) => {
       mql.matches = next
-      listeners.forEach((cb) => cb({ matches: next } as MediaQueryListEvent))
+      listeners.forEach((cb) => {
+        cb({ matches: next } as MediaQueryListEvent)
+      })
     },
   }
   vi.stubGlobal("matchMedia", vi.fn().mockReturnValue(mql))

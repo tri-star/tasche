@@ -24,8 +24,7 @@ function mockMatchMedia(matches: boolean) {
     matches,
     media: "(prefers-color-scheme: dark)",
     addEventListener: (_: string, cb: (e: MediaQueryListEvent) => void) => listeners.add(cb),
-    removeEventListener: (_: string, cb: (e: MediaQueryListEvent) => void) =>
-      listeners.delete(cb),
+    removeEventListener: (_: string, cb: (e: MediaQueryListEvent) => void) => listeners.delete(cb),
   }
   vi.stubGlobal("matchMedia", vi.fn().mockReturnValue(mql))
   return mql
