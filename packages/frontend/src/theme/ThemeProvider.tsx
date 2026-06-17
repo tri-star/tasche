@@ -20,7 +20,12 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
   const settings = useAtomValue(currentSettingsAtom)
 
   useEffect(() => {
-    const cachedTheme = parseTheme(localStorage.getItem("theme"))
+    let cachedTheme: Theme | null = null
+    try {
+      cachedTheme = parseTheme(localStorage.getItem("theme"))
+    } catch {
+      // localStorage が利用不可の場合（プライベートブラウジング等）はフォールバック
+    }
     const theme: Theme = settings?.theme ?? cachedTheme ?? "light"
 
     const apply = (isDark: boolean) => {
@@ -30,7 +35,11 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     apply(resolveIsDark(theme))
 
     if (settings?.theme) {
-      localStorage.setItem("theme", settings.theme)
+      try {
+        localStorage.setItem("theme", settings.theme)
+      } catch {
+        // localStorage が利用不可の場合は無視
+      }
     }
 
     // system のときのみ OS テーマ変更に追従する

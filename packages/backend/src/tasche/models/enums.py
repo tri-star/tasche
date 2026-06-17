@@ -13,3 +13,11 @@ class DayOfWeek(str, Enum):
     FRIDAY = "friday"
     SATURDAY = "saturday"
     SUNDAY = "sunday"
+
+
+class Theme(str, Enum):
+    """UIテーマの列挙型."""
+
+    LIGHT = "light"
+    DARK = "dark"
+    SYSTEM = "system"
