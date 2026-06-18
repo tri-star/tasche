@@ -20,6 +20,15 @@ describe("RecordWidget", () => {
     expect(screen.getAllByRole("option")).toHaveLength(2)
   })
 
+  // TaskCombobox のドロップダウンは Portal ではなくカード内に absolute 配置されるため、
+  // カードに overflow-hidden が付くとドロップダウンがカード内に埋もれてしまう（TCH-76）。
+  // jsdom では視覚的なクリップを再現できないため、クラスの有無で回帰を検知する。
+  it("カードに overflow-hidden を付けずドロップダウンの表示領域を確保する", () => {
+    render(<RecordWidget currentDay="thursday" weekStartDate="2026-04-20" tasks={tasks} />)
+
+    expect(screen.getByRole("region", { name: "実績を記録" })).not.toHaveClass("overflow-hidden")
+  })
+
   it("SpinButtonで0.1刻みに変更した実績ユニット数を記録できる", async () => {
     const user = userEvent.setup()
     const onRecord = vi.fn()
