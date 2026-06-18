@@ -150,6 +150,40 @@ set -e
 assert_status 1 "$status" "backend check should fail"
 
 rm -f "$HOOK_LOG_DIR/commands.log"
+export PNPM_BIOME_FAIL_ON=""
+export DOCKER_RUFF_FAIL_ON=""
+"$CORE" format-check format-ok \
+  packages/frontend/src/main.tsx \
+  packages/backend/src/tasche/main.py \
+  packages/backend/pyproject.toml \
+  packages/frontend/src/missing.ts
+assert_status 0 $? "format-check should succeed"
+assert_contains "$PROJECT_ROOT/packages/frontend/src/main.tsx" "$(queue_file format-ok)"
+assert_contains "$PROJECT_ROOT/packages/backend/src/tasche/main.py" "$(queue_file format-ok)"
+assert_contains "$PROJECT_ROOT/packages/backend/pyproject.toml" "$(queue_file format-ok)"
+assert_contains "$PROJECT_ROOT/packages/frontend/src/missing.ts" "$(queue_file format-ok)"
+assert_contains "pnpm exec biome check --write src/main.tsx" "$HOOK_LOG_DIR/commands.log"
+assert_contains "docker compose exec -T api uv run ruff format src/tasche/main.py" "$HOOK_LOG_DIR/commands.log"
+assert_contains "docker compose exec -T api uv run ruff check src/tasche/main.py --fix" "$HOOK_LOG_DIR/commands.log"
+assert_contains "docker compose exec -T api uv run ruff check src/tasche/main.py" "$HOOK_LOG_DIR/commands.log"
+
+rm -f "$HOOK_LOG_DIR/commands.log"
+export PNPM_BIOME_FAIL_ON="src/main.tsx"
+set +e
+"$CORE" format-check format-fail packages/frontend/src/main.tsx
+status=$?
+set -e
+assert_status 1 "$status" "format-check should fail"
+
+set +e
+"$CORE" format-check format-fail packages/frontend/src/main.tsx >/dev/null 2>&1
+"$CORE" format-check format-fail packages/frontend/src/main.tsx >/dev/null 2>&1
+"$CORE" format-check format-fail packages/frontend/src/main.tsx >/dev/null 2>&1
+status=$?
+set -e
+assert_status 0 "$status" "format-check should skip after max retries"
+
+rm -f "$HOOK_LOG_DIR/commands.log"
 printf '%s\n' \
   "$PROJECT_ROOT/packages/frontend/src/a.ts" \
   "$PROJECT_ROOT/packages/frontend/src/b.ts" \

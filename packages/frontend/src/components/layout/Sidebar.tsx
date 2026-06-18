@@ -56,10 +56,7 @@ export function Sidebar({ className }: SidebarProps) {
       <nav aria-label="アプリナビゲーション" className="h-full">
         <ul className="grid min-w-0 grid-cols-5 gap-1 md:flex md:h-full md:flex-col">
           {navItems.map((item) => (
-            <li
-              key={item.href}
-              className={cn("min-w-0", item.alignBottom && "md:mt-auto")}
-            >
+            <li key={item.href} className={cn("min-w-0", item.alignBottom && "md:mt-auto")}>
               <NavLink to={item.href} end={item.end} title={item.label} className={linkClassName}>
                 {item.icon}
                 <span className="max-w-full truncate md:sr-only lg:not-sr-only">{item.label}</span>
