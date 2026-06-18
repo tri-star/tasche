@@ -25,14 +25,25 @@ export function RecordWidget({ currentDay, weekStartDate, tasks, onRecord }: Rec
   }
 
   return (
-    <Card className="relative overflow-hidden" role="region" aria-label="実績を記録">
-      {/* 右上イラスト */}
-      <img
-        src="/images/dashboard/dashboard-widget-illust2.png"
-        alt=""
-        className="absolute right-2 top-2 h-12 w-12 object-contain dark:opacity-80"
+    <Card className="relative min-w-0 overflow-hidden" role="region" aria-label="実績を記録">
+      <div
+        className="pointer-events-none absolute inset-0 overflow-hidden rounded-xl"
         aria-hidden="true"
-      />
+      >
+        {/* 右上イラスト */}
+        <img
+          src="/images/dashboard/dashboard-widget-illust2.png"
+          alt=""
+          className="absolute right-2 top-2 h-12 w-12 object-contain dark:opacity-80"
+        />
+
+        {/* 右下の植物イラスト（背景） */}
+        <img
+          src="/images/dashboard/widget-background.png"
+          alt=""
+          className="absolute bottom-0 right-4 h-12 w-12 object-contain opacity-80 dark:opacity-60"
+        />
+      </div>
 
       <CardHeader className="flex flex-row items-center gap-2 pb-2 pr-14">
         <img
@@ -75,14 +86,6 @@ export function RecordWidget({ currentDay, weekStartDate, tasks, onRecord }: Rec
           </Button>
         </div>
       </CardContent>
-
-      {/* 右下の植物イラスト（背景） */}
-      <img
-        src="/images/dashboard/widget-background.png"
-        alt=""
-        className="absolute bottom-0 right-4 h-12 w-12 object-contain opacity-80 dark:opacity-60"
-        aria-hidden="true"
-      />
     </Card>
   )
 }

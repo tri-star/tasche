@@ -9,6 +9,17 @@ const tasks = [
 ]
 
 describe("RecordWidget", () => {
+  it("タスク選択ドロップダウンを開ける", async () => {
+    const user = userEvent.setup()
+
+    render(<RecordWidget currentDay="thursday" weekStartDate="2026-04-20" tasks={tasks} />)
+
+    await user.click(screen.getByRole("button", { name: "タスクを選択..." }))
+
+    expect(screen.getByRole("dialog")).toBeInTheDocument()
+    expect(screen.getAllByRole("option")).toHaveLength(2)
+  })
+
   it("SpinButtonで0.1刻みに変更した実績ユニット数を記録できる", async () => {
     const user = userEvent.setup()
     const onRecord = vi.fn()

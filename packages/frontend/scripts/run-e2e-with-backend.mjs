@@ -144,8 +144,8 @@ function runPlaywright() {
   return runStatus("pnpm", ["exec", "playwright", "test", ...process.argv.slice(2)], {
     cwd: frontendRoot,
     env: {
-      ...process.env,
       ...frontendEnv,
+      ...process.env,
       E2E_USE_MSW: "false",
       E2E_API_BASE_URL: e2eApiBaseUrl,
       VITE_API_BASE_URL: e2eApiBaseUrl,

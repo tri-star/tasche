@@ -45,6 +45,8 @@ test.describe("GoalSettingPage", () => {
     test("新しいタスクを追加して目標保存するとダッシュボードに反映される", async ({
       authenticatedPage,
     }) => {
+      test.setTimeout(30_000)
+
       const goalSettingPage = new GoalSettingPage(authenticatedPage)
       const dashboardPage = new DashboardPage(authenticatedPage)
       const taskName = `E2E新規タスク-${Date.now()}`

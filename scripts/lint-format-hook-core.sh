@@ -73,12 +73,34 @@ run_frontend_check() {
   )
 }
 
+run_frontend_format_check() {
+  local file_path="$1"
+  local rel_path
+  rel_path="$(relative_to "$PROJECT_ROOT/packages/frontend" "$file_path")"
+  (
+    cd "$PROJECT_ROOT/packages/frontend"
+    pnpm exec biome check --write "$rel_path"
+  )
+}
+
 run_backend_check() {
   local file_path="$1"
   local rel_path
   rel_path="$(relative_to "$PROJECT_ROOT/packages/backend" "$file_path")"
   (
     cd "$PROJECT_ROOT"
+    docker compose exec -T api uv run ruff check "$rel_path"
+  )
+}
+
+run_backend_format_check() {
+  local file_path="$1"
+  local rel_path
+  rel_path="$(relative_to "$PROJECT_ROOT/packages/backend" "$file_path")"
+  (
+    cd "$PROJECT_ROOT"
+    docker compose exec -T api uv run ruff format "$rel_path"
+    docker compose exec -T api uv run ruff check "$rel_path" --fix
     docker compose exec -T api uv run ruff check "$rel_path"
   )
 }
@@ -117,6 +139,54 @@ run_check() {
         printf '%s\n' $((retry_count + 1)) > "$retry_file"
         overall_status=1
       fi
+    fi
+  done
+
+  return "$overall_status"
+}
+
+run_format_check() {
+  local raw_path normalized_path pkg retry_file retry_count overall_status=0
+
+  queue_paths "$@"
+
+  for raw_path in "$@"; do
+    [[ -z "$raw_path" ]] && continue
+    normalized_path="$(normalize_path "$raw_path")"
+    pkg="$(detect_package "$normalized_path")"
+    [[ -z "$pkg" ]] && continue
+
+    if [[ ! -f "$normalized_path" ]]; then
+      log "queued only (file missing): $(basename "$normalized_path")"
+      continue
+    fi
+
+    retry_file="$(retry_file_for "$normalized_path")"
+    retry_count="$(cat "$retry_file" 2>/dev/null || echo 0)"
+
+    if [[ "$retry_count" -ge "$MAX_RETRIES" ]]; then
+      log "skipped (max retries reached): $(basename "$normalized_path")"
+      continue
+    fi
+
+    if [[ "$pkg" == "frontend" ]]; then
+      log "format/checking: $(basename "$normalized_path") ($pkg)"
+      if run_frontend_format_check "$normalized_path"; then
+        rm -f "$retry_file"
+      else
+        printf '%s\n' $((retry_count + 1)) > "$retry_file"
+        overall_status=1
+      fi
+    elif [[ "$normalized_path" == *.py ]]; then
+      log "format/checking: $(basename "$normalized_path") ($pkg)"
+      if run_backend_format_check "$normalized_path"; then
+        rm -f "$retry_file"
+      else
+        printf '%s\n' $((retry_count + 1)) > "$retry_file"
+        overall_status=1
+      fi
+    else
+      log "queued only (unsupported immediate format): $(basename "$normalized_path")"
     fi
   done
 
@@ -201,11 +271,14 @@ case "$MODE" in
   record)
     queue_paths "$@"
     ;;
+  format-check)
+    run_format_check "$@"
+    ;;
   flush)
     run_flush "$@"
     ;;
   *)
-    printf '[lint-format-hook] unknown mode: %s (use check, record, or flush)\n' "$MODE" >&2
+    printf '[lint-format-hook] unknown mode: %s (use check, record, format-check, or flush)\n' "$MODE" >&2
     exit 1
     ;;
 esac
