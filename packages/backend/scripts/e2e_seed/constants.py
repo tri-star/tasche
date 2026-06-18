@@ -14,6 +14,13 @@ E2E_WEEK = {
     "unit_duration_minutes": 30,
     "week_start_day": "monday",
     "week_start_hour": 4,
+    "available_units_monday": 5.0,
+    "available_units_tuesday": 4.0,
+    "available_units_wednesday": 3.0,
+    "available_units_thursday": 3.0,
+    "available_units_friday": 3.0,
+    "available_units_saturday": 4.0,
+    "available_units_sunday": 4.0,
 }
 
 E2E_TASKS = [

@@ -38,5 +38,12 @@ async def seed_week(session: AsyncSession, user: User) -> Week:
     week.unit_duration_minutes = E2E_WEEK["unit_duration_minutes"]
     week.week_start_day = E2E_WEEK["week_start_day"]
     week.week_start_hour = E2E_WEEK["week_start_hour"]
+    week.available_units_monday = E2E_WEEK["available_units_monday"]
+    week.available_units_tuesday = E2E_WEEK["available_units_tuesday"]
+    week.available_units_wednesday = E2E_WEEK["available_units_wednesday"]
+    week.available_units_thursday = E2E_WEEK["available_units_thursday"]
+    week.available_units_friday = E2E_WEEK["available_units_friday"]
+    week.available_units_saturday = E2E_WEEK["available_units_saturday"]
+    week.available_units_sunday = E2E_WEEK["available_units_sunday"]
     print(f"✓ Updated E2E week: {week.id}")
     return week
