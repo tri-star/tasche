@@ -101,6 +101,7 @@ async def list_current_records(
     now: datetime | None = None,
 ) -> RecordsResponse:
     """現在の週の実績一覧を取得する."""
+    # 実績 API は current week 未作成時の 404 を維持する。
     week = await week_service.get_current_week(db, user, now=now)
     result = await db.execute(
         select(Record, Task)
@@ -142,6 +143,7 @@ async def upsert_current_record(
     if task is None:
         raise TaskNotFoundException(task_id)
 
+    # 実績 API は current week 未作成時の 404 を維持する。
     week = await week_service.get_current_week(db, user, now=now)
     record_result = await db.execute(
         select(Record).where(

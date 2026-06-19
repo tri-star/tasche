@@ -177,6 +177,7 @@ async def get_dashboard(
     timezone = _get_zoneinfo(timezone_name or user.timezone)
     local_now = now.astimezone(timezone)
     current_day = _current_day_of_week(local_now)
+    # ダッシュボードは current week 未作成時の 404 を維持する。
     week = await week_service.get_current_week(
         db,
         user,
