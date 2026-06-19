@@ -40,7 +40,7 @@ def _get_zoneinfo(timezone_name: str | None) -> ZoneInfo:
     """有効なタイムゾーンを返す."""
     try:
         return ZoneInfo(timezone_name or DEFAULT_TIMEZONE)
-    except ZoneInfoNotFoundError:
+    except (ValueError, ZoneInfoNotFoundError):
         return ZoneInfo(DEFAULT_TIMEZONE)
 
 
