@@ -6,6 +6,7 @@ PROJECT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 CORE="$PROJECT_ROOT/scripts/lint-format-hook-core.sh"
 CLAUDE="$PROJECT_ROOT/scripts/lint-format-hook-claude.sh"
 CODEX="$PROJECT_ROOT/scripts/lint-format-hook-codex.sh"
+BACKEND_COMPOSE="$PROJECT_ROOT/packages/backend/compose.yaml"
 
 TEST_TMP="$(mktemp -d)"
 trap 'rm -rf "$TEST_TMP"' EXIT
@@ -139,7 +140,7 @@ rm -f "$HOOK_LOG_DIR/commands.log"
 export DOCKER_RUFF_FAIL_ON=""
 "$CORE" check backend-ok packages/backend/app/main.py
 assert_status 0 $? "backend check should succeed"
-assert_contains "docker compose exec -T api uv run ruff check app/main.py" "$HOOK_LOG_DIR/commands.log"
+assert_contains "docker compose -f $BACKEND_COMPOSE exec -T api uv run ruff check app/main.py" "$HOOK_LOG_DIR/commands.log"
 
 rm -f "$HOOK_LOG_DIR/commands.log"
 export DOCKER_RUFF_FAIL_ON="app/bad.py"
@@ -163,9 +164,9 @@ assert_contains "$PROJECT_ROOT/packages/backend/src/tasche/main.py" "$(queue_fil
 assert_contains "$PROJECT_ROOT/packages/backend/pyproject.toml" "$(queue_file format-ok)"
 assert_contains "$PROJECT_ROOT/packages/frontend/src/missing.ts" "$(queue_file format-ok)"
 assert_contains "pnpm exec biome check --write src/main.tsx" "$HOOK_LOG_DIR/commands.log"
-assert_contains "docker compose exec -T api uv run ruff format src/tasche/main.py" "$HOOK_LOG_DIR/commands.log"
-assert_contains "docker compose exec -T api uv run ruff check src/tasche/main.py --fix" "$HOOK_LOG_DIR/commands.log"
-assert_contains "docker compose exec -T api uv run ruff check src/tasche/main.py" "$HOOK_LOG_DIR/commands.log"
+assert_contains "docker compose -f $BACKEND_COMPOSE exec -T api uv run ruff format src/tasche/main.py" "$HOOK_LOG_DIR/commands.log"
+assert_contains "docker compose -f $BACKEND_COMPOSE exec -T api uv run ruff check src/tasche/main.py --fix" "$HOOK_LOG_DIR/commands.log"
+assert_contains "docker compose -f $BACKEND_COMPOSE exec -T api uv run ruff check src/tasche/main.py" "$HOOK_LOG_DIR/commands.log"
 
 rm -f "$HOOK_LOG_DIR/commands.log"
 export PNPM_BIOME_FAIL_ON="src/main.tsx"
@@ -198,9 +199,9 @@ export DOCKER_BACKEND_CHECK_FAIL=0
 assert_status 0 $? "flush should succeed"
 assert_contains "pnpm --filter @tasche/frontend format" "$HOOK_LOG_DIR/commands.log"
 assert_contains "pnpm --filter @tasche/frontend lint" "$HOOK_LOG_DIR/commands.log"
-assert_contains "docker compose exec -T api uv run ruff format ." "$HOOK_LOG_DIR/commands.log"
-assert_contains "docker compose exec -T api uv run ruff check . --fix" "$HOOK_LOG_DIR/commands.log"
-assert_contains "docker compose exec -T api uv run ruff check ." "$HOOK_LOG_DIR/commands.log"
+assert_contains "docker compose -f $BACKEND_COMPOSE exec -T api uv run ruff format ." "$HOOK_LOG_DIR/commands.log"
+assert_contains "docker compose -f $BACKEND_COMPOSE exec -T api uv run ruff check . --fix" "$HOOK_LOG_DIR/commands.log"
+assert_contains "docker compose -f $BACKEND_COMPOSE exec -T api uv run ruff check ." "$HOOK_LOG_DIR/commands.log"
 
 rm -f "$HOOK_LOG_DIR/commands.log"
 printf '%s\n' "$PROJECT_ROOT/packages/backend/app/a.py" > "$(queue_file flush-fail)"
