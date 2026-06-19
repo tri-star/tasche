@@ -7,11 +7,16 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from ulid import ULID
 
+from tasche.core.exceptions import WeekNotFoundException
 from tasche.models.user import User
 from tasche.models.week import Week
-from tasche.services import record as record_service
-from tasche.services.record import calculate_current_week_start_date
-from tasche.services.week import DEFAULT_UNIT_DURATION_MINUTES, ensure_current_week
+from tasche.services import week as week_service
+from tasche.services.week import (
+    DEFAULT_UNIT_DURATION_MINUTES,
+    calculate_current_week_start_date,
+    ensure_current_week,
+    get_current_week,
+)
 
 
 def _make_user_id() -> str:
@@ -41,7 +46,7 @@ class TestEnsureCurrentWeek:
     def fixed_now(self, monkeypatch: pytest.MonkeyPatch):
         """current week 判定を固定する（2026-04-22 03:00 UTC = 2026-04-22 12:00 JST）."""
         now = datetime(2026, 4, 22, 3, 0, tzinfo=UTC)
-        monkeypatch.setattr(record_service, "get_current_time_utc", lambda: now)
+        monkeypatch.setattr(week_service, "get_current_time_utc", lambda: now)
         return now
 
     async def test_creates_week_when_missing(self, db_session: AsyncSession, fixed_now: datetime):
@@ -132,3 +137,74 @@ class TestEnsureCurrentWeek:
 
         assert week.start_date == expected_start_date
         assert week.user_id == user.id
+
+
+class TestGetCurrentWeek:
+    """get_current_week のテスト."""
+
+    @pytest.fixture
+    def fixed_now(self, monkeypatch: pytest.MonkeyPatch):
+        """current week 判定を固定する（2026-04-22 03:00 UTC = 2026-04-22 12:00 JST）."""
+        now = datetime(2026, 4, 22, 3, 0, tzinfo=UTC)
+        monkeypatch.setattr(week_service, "get_current_time_utc", lambda: now)
+        return now
+
+    async def test_returns_existing_week(self, db_session: AsyncSession, fixed_now: datetime):
+        """週レコードが既に存在する場合はそれを返す."""
+        user = await _create_test_user(db_session, email="get-week@example.com")
+        existing_week = Week(
+            id=f"wk_{ULID()}",
+            user_id=user.id,
+            start_date=date(2026, 4, 20),
+            end_date=date(2026, 4, 26),
+            unit_duration_minutes=60,
+            week_start_day="monday",
+            week_start_hour=4,
+        )
+        db_session.add(existing_week)
+        await db_session.commit()
+
+        week = await get_current_week(db_session, user)
+
+        assert week.id == existing_week.id
+
+    async def test_raises_when_week_is_missing(
+        self, db_session: AsyncSession, fixed_now: datetime
+    ):
+        """週レコードが存在しない場合は作成せず例外を返す."""
+        user = await _create_test_user(db_session, email="missing-week@example.com")
+
+        with pytest.raises(WeekNotFoundException):
+            await get_current_week(db_session, user)
+
+        result = await db_session.execute(select(Week).where(Week.user_id == user.id))
+        assert result.scalar_one_or_none() is None
+
+    async def test_uses_timezone_override(self, db_session: AsyncSession):
+        """指定されたタイムゾーンで current week を判定する."""
+        user = await _create_test_user(db_session, email="timezone-override@example.com")
+        now = datetime(2026, 4, 20, 9, 0, tzinfo=UTC)
+        expected_start_date = calculate_current_week_start_date(
+            timezone_name="US/Pacific",
+            now=now,
+        )
+        existing_week = Week(
+            id=f"wk_{ULID()}",
+            user_id=user.id,
+            start_date=expected_start_date,
+            end_date=date(2026, 4, 19),
+            unit_duration_minutes=30,
+            week_start_day="monday",
+            week_start_hour=4,
+        )
+        db_session.add(existing_week)
+        await db_session.commit()
+
+        week = await get_current_week(
+            db_session,
+            user,
+            now=now,
+            timezone_name="US/Pacific",
+        )
+
+        assert week.id == existing_week.id

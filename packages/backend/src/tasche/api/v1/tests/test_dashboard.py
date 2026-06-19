@@ -14,7 +14,7 @@ from tasche.models.record import Record
 from tasche.models.task import Task
 from tasche.models.user import User
 from tasche.models.week import Week
-from tasche.services import record as record_service
+from tasche.services import week as week_service
 
 
 @pytest_asyncio.fixture
@@ -103,7 +103,7 @@ async def test_tasks(db_session: AsyncSession, test_user: User) -> tuple[Task, T
 def fixed_now(monkeypatch: pytest.MonkeyPatch):
     """current week 判定を固定する."""
     now = datetime(2026, 4, 22, 3, 0, tzinfo=UTC)
-    monkeypatch.setattr(record_service, "get_current_time_utc", lambda: now)
+    monkeypatch.setattr(week_service, "get_current_time_utc", lambda: now)
     return now
 
 
@@ -433,7 +433,7 @@ class TestGetDashboard:
         db_session.add_all([tokyo_week, new_york_week])
         await db_session.commit()
         now = datetime(2026, 4, 26, 20, 0, tzinfo=UTC)
-        monkeypatch.setattr(record_service, "get_current_time_utc", lambda: now)
+        monkeypatch.setattr(week_service, "get_current_time_utc", lambda: now)
 
         response = await authenticated_client.get("/api/dashboard?timezone=America/New_York")
 

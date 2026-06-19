@@ -20,6 +20,7 @@ from tasche.schemas.dashboard import (
     WeeklyMatrixItem,
 )
 from tasche.services import record as record_service
+from tasche.services import week as week_service
 
 
 @dataclass
@@ -172,11 +173,11 @@ async def get_dashboard(
     timezone_name: str | None = None,
 ) -> DashboardResponse:
     """現在週の目標・実績からダッシュボード表示用データを集計する."""
-    now = record_service.get_current_time_utc()
+    now = week_service.get_current_time_utc()
     timezone = _get_zoneinfo(timezone_name or user.timezone)
     local_now = now.astimezone(timezone)
     current_day = _current_day_of_week(local_now)
-    week = await record_service.get_current_week(
+    week = await week_service.get_current_week(
         db,
         user,
         now=now,

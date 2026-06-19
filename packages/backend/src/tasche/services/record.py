@@ -1,24 +1,35 @@
 """実績サービス."""
 
 from collections.abc import Iterable
-from datetime import UTC, datetime, timedelta
-from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+from datetime import datetime
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from ulid import ULID
 
-from tasche.core.exceptions import TaskNotFoundException, WeekNotFoundException
+from tasche.core.exceptions import TaskNotFoundException
 from tasche.models.enums import DayOfWeek
 from tasche.models.record import Record
 from tasche.models.task import Task
 from tasche.models.user import User
-from tasche.models.week import Week
 from tasche.schemas.record import DailyActuals, RecordItem, RecordsResponse
+from tasche.services import week as week_service
+from tasche.services.week import (
+    DEFAULT_TIMEZONE,
+    DEFAULT_WEEK_START_DAY,
+    DEFAULT_WEEK_START_HOUR,
+    calculate_current_week_start_date,
+    get_current_time_utc,
+)
 
-DEFAULT_TIMEZONE = "Asia/Tokyo"
-DEFAULT_WEEK_START_DAY = "monday"
-DEFAULT_WEEK_START_HOUR = 4
+__all__ = [
+    "DEFAULT_TIMEZONE",
+    "DEFAULT_WEEK_START_DAY",
+    "DEFAULT_WEEK_START_HOUR",
+    "calculate_current_week_start_date",
+    "get_current_time_utc",
+]
+
 DAY_OF_WEEK_ORDER = [
     DayOfWeek.MONDAY,
     DayOfWeek.TUESDAY,
@@ -51,72 +62,6 @@ WEEKDAY_INDEX = {
 def _generate_record_id() -> str:
     """ULID形式の実績IDを生成する（rec_ プレフィックス付き）."""
     return f"rec_{ULID()}"
-
-
-def _get_zoneinfo(timezone_name: str | None) -> ZoneInfo:
-    """有効なタイムゾーンを返す."""
-    try:
-        return ZoneInfo(timezone_name or DEFAULT_TIMEZONE)
-    except ZoneInfoNotFoundError:
-        return ZoneInfo(DEFAULT_TIMEZONE)
-
-
-def get_current_time_utc() -> datetime:
-    """現在のUTC時刻を返す."""
-    return datetime.now(UTC)
-
-
-def calculate_current_week_start_date(
-    *,
-    timezone_name: str | None,
-    now: datetime,
-    week_start_day: str = DEFAULT_WEEK_START_DAY,
-    week_start_hour: int = DEFAULT_WEEK_START_HOUR,
-) -> datetime.date:
-    """指定時刻が属する週の開始日を返す."""
-    timezone = _get_zoneinfo(timezone_name)
-    local_now = now.astimezone(timezone)
-
-    start_weekday = WEEKDAY_INDEX.get(week_start_day, WEEKDAY_INDEX[DEFAULT_WEEK_START_DAY])
-    days_since_start = (local_now.weekday() - start_weekday) % 7
-    candidate_date = local_now.date() - timedelta(days=days_since_start)
-    candidate_start = datetime(
-        year=candidate_date.year,
-        month=candidate_date.month,
-        day=candidate_date.day,
-        hour=week_start_hour,
-        tzinfo=timezone,
-    )
-    if local_now < candidate_start:
-        candidate_start -= timedelta(days=7)
-
-    return candidate_start.date()
-
-
-async def get_current_week(
-    db: AsyncSession,
-    user: User,
-    *,
-    now: datetime | None = None,
-    timezone_name: str | None = None,
-) -> Week:
-    """現在のユーザーの current week を取得する."""
-    current_time = now or get_current_time_utc()
-    start_date = calculate_current_week_start_date(
-        timezone_name=timezone_name or user.timezone,
-        now=current_time,
-    )
-
-    result = await db.execute(
-        select(Week).where(
-            Week.user_id == user.id,
-            Week.start_date == start_date,
-        )
-    )
-    week = result.scalar_one_or_none()
-    if week is None:
-        raise WeekNotFoundException(user.id)
-    return week
 
 
 def _empty_daily_actuals() -> dict[str, float]:
@@ -156,7 +101,7 @@ async def list_current_records(
     now: datetime | None = None,
 ) -> RecordsResponse:
     """現在の週の実績一覧を取得する."""
-    week = await get_current_week(db, user, now=now)
+    week = await week_service.get_current_week(db, user, now=now)
     result = await db.execute(
         select(Record, Task)
         .join(Task, Task.id == Record.task_id)
@@ -197,7 +142,7 @@ async def upsert_current_record(
     if task is None:
         raise TaskNotFoundException(task_id)
 
-    week = await get_current_week(db, user, now=now)
+    week = await week_service.get_current_week(db, user, now=now)
     record_result = await db.execute(
         select(Record).where(
             Record.week_id == week.id,
