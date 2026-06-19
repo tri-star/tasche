@@ -168,9 +168,7 @@ class TestGetCurrentWeek:
 
         assert week.id == existing_week.id
 
-    async def test_raises_when_week_is_missing(
-        self, db_session: AsyncSession, fixed_now: datetime
-    ):
+    async def test_raises_when_week_is_missing(self, db_session: AsyncSession, fixed_now: datetime):
         """週レコードが存在しない場合は作成せず例外を返す."""
         user = await _create_test_user(db_session, email="missing-week@example.com")
 
