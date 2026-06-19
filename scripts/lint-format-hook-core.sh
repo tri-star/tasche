@@ -7,6 +7,7 @@ MODE="${1:-}"
 SESSION_ID="${2:-default}"
 shift $(( $# >= 2 ? 2 : $# ))
 
+BACKEND_COMPOSE_FILE="$PROJECT_ROOT/packages/backend/compose.yaml"
 STATE_DIR="${LINT_FORMAT_HOOK_TMPDIR:-${TMPDIR:-/tmp}}"
 QUEUE_FILE="${STATE_DIR}/tasche-lint-hook-${SESSION_ID}.queue"
 MAX_RETRIES=3
@@ -89,7 +90,7 @@ run_backend_check() {
   rel_path="$(relative_to "$PROJECT_ROOT/packages/backend" "$file_path")"
   (
     cd "$PROJECT_ROOT"
-    docker compose exec -T api uv run ruff check "$rel_path"
+    docker compose -f "$BACKEND_COMPOSE_FILE" exec -T api uv run ruff check "$rel_path"
   )
 }
 
@@ -99,9 +100,9 @@ run_backend_format_check() {
   rel_path="$(relative_to "$PROJECT_ROOT/packages/backend" "$file_path")"
   (
     cd "$PROJECT_ROOT"
-    docker compose exec -T api uv run ruff format "$rel_path"
-    docker compose exec -T api uv run ruff check "$rel_path" --fix
-    docker compose exec -T api uv run ruff check "$rel_path"
+    docker compose -f "$BACKEND_COMPOSE_FILE" exec -T api uv run ruff format "$rel_path"
+    docker compose -f "$BACKEND_COMPOSE_FILE" exec -T api uv run ruff check "$rel_path" --fix
+    docker compose -f "$BACKEND_COMPOSE_FILE" exec -T api uv run ruff check "$rel_path"
   )
 }
 
@@ -248,9 +249,9 @@ run_flush() {
       backend)
         if ! (
           cd "$PROJECT_ROOT"
-          docker compose exec -T api uv run ruff format .
-          docker compose exec -T api uv run ruff check . --fix
-          docker compose exec -T api uv run ruff check .
+          docker compose -f "$BACKEND_COMPOSE_FILE" exec -T api uv run ruff format .
+          docker compose -f "$BACKEND_COMPOSE_FILE" exec -T api uv run ruff check . --fix
+          docker compose -f "$BACKEND_COMPOSE_FILE" exec -T api uv run ruff check .
         ); then
           overall_status=1
         fi
