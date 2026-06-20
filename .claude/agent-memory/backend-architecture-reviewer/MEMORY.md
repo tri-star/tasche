@@ -1,2 +1,2 @@
-- [TCH-26/32 認証アーキテクチャの設計決定](project_tch26_auth_architecture.md) — BFF型Google OAuth実装の設計決定・既知問題（JWKSキャッシュ非スレッドセーフ、UniqueViolation未ハンドル、InvalidAuthorizationCodeError流用等）
-- [バックエンド アーキテクチャ規約](project_backend_conventions.md) — レイヤー構成・DI パターン・例外階層・ID命名規約・スタブ認証設計
+- [TCH-26/75 認証アーキテクチャの設計決定](project_tch26_auth_architecture.md) — TCH-75でサーバ側セッション方式に移行済み。設計決定・既知問題・未修正指摘事項（validate_session/revoke_sessionのdb.commit()規約違反など）を記録
+- [バックエンド アーキテクチャ規約](project_backend_conventions.md) — レイヤー構成・DI パターン・例外階層（TCH-75更新済み）・ID命名規約・スタブ認証設計
