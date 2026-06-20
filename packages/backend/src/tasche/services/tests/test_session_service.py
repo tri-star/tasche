@@ -2,7 +2,6 @@
 
 from datetime import datetime, timedelta, timezone
 
-import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 from ulid import ULID
 
@@ -34,7 +33,6 @@ async def _create_test_user(db_session: AsyncSession, email: str = "test@example
 class TestCreateSession:
     """create_session のテスト."""
 
-    @pytest.mark.asyncio
     async def test_create_session_returns_session_and_raw_token(self, db_session: AsyncSession):
         """正常系: セッションが作成され、セッションと生トークンが返ることを確認."""
         user = await _create_test_user(db_session)
@@ -54,7 +52,6 @@ class TestCreateSession:
         assert session.token_hash == token_hash
         assert session.token_hash != raw_token
 
-    @pytest.mark.asyncio
     async def test_create_session_expires_in_configured_seconds(self, db_session: AsyncSession):
         """有効期限が session_expires_seconds 後になっていることを確認."""
         user = await _create_test_user(db_session, email="expire_test@example.com")
@@ -72,7 +69,6 @@ class TestCreateSession:
 class TestValidateSession:
     """validate_session のテスト."""
 
-    @pytest.mark.asyncio
     async def test_valid_session_returns_session(self, db_session: AsyncSession):
         """正常系: 有効なセッショントークンで Session が返ることを確認."""
         user = await _create_test_user(db_session, email="valid@example.com")
@@ -85,7 +81,6 @@ class TestValidateSession:
         assert result_session.id == session.id
         assert result_session.user_id == user.id
 
-    @pytest.mark.asyncio
     async def test_invalid_token_returns_none(self, db_session: AsyncSession):
         """不正なトークンで None が返ることを確認."""
         result_session, extended = await validate_session(db_session, "invalid_token")
@@ -93,7 +88,6 @@ class TestValidateSession:
         assert result_session is None
         assert extended is False
 
-    @pytest.mark.asyncio
     async def test_expired_session_returns_none(self, db_session: AsyncSession):
         """期限切れセッションで None が返ることを確認."""
         user = await _create_test_user(db_session, email="expired@example.com")
@@ -116,7 +110,6 @@ class TestValidateSession:
         assert result_session is None
         assert extended is False
 
-    @pytest.mark.asyncio
     async def test_revoked_session_returns_none(self, db_session: AsyncSession):
         """revoke 済みセッションで None が返ることを確認."""
         user = await _create_test_user(db_session, email="revoked@example.com")
@@ -142,7 +135,6 @@ class TestValidateSession:
         assert result_session is None
         assert extended is False
 
-    @pytest.mark.asyncio
     async def test_sliding_extension_when_remaining_less_than_half(self, db_session: AsyncSession):
         """残存時間 < 有効期限の半分のとき延長されることを確認."""
         user = await _create_test_user(db_session, email="sliding@example.com")
@@ -167,7 +159,6 @@ class TestValidateSession:
         assert extended is True
         assert result_session.expires_at > original_expires_at
 
-    @pytest.mark.asyncio
     async def test_no_extension_when_remaining_more_than_half(self, db_session: AsyncSession):
         """残存時間 >= 有効期限の半分のとき延長されないことを確認."""
         user = await _create_test_user(db_session, email="no_slide@example.com")
@@ -196,7 +187,6 @@ class TestValidateSession:
 class TestRevokeSession:
     """revoke_session のテスト."""
 
-    @pytest.mark.asyncio
     async def test_revoke_valid_session(self, db_session: AsyncSession):
         """正常系: 有効なセッションを revoke できることを確認."""
         user = await _create_test_user(db_session, email="revoke_valid@example.com")
@@ -209,18 +199,15 @@ class TestRevokeSession:
         result_session, _ = await validate_session(db_session, raw_token)
         assert result_session is None
 
-    @pytest.mark.asyncio
     async def test_revoke_none_is_noop(self, db_session: AsyncSession):
         """None を渡しても何もしないことを確認（冪等性）."""
         # 例外が発生しないことを確認
         await revoke_session(db_session, None)
 
-    @pytest.mark.asyncio
     async def test_revoke_nonexistent_token_is_noop(self, db_session: AsyncSession):
         """存在しないトークンでも例外が発生しないことを確認."""
         await revoke_session(db_session, "nonexistent_token_value")
 
-    @pytest.mark.asyncio
     async def test_revoke_already_revoked_is_noop(self, db_session: AsyncSession):
         """既に revoke 済みのセッションへの revoke が冪等なことを確認."""
         user = await _create_test_user(db_session, email="double_revoke@example.com")

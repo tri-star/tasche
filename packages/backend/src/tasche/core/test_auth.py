@@ -13,10 +13,6 @@ class SessionAuthDisabledError(Exception):
     pass
 
 
-# 後方互換のエイリアス
-TestAuthDisabledError = SessionAuthDisabledError
-
-
 async def create_test_session(db: AsyncSession, user: User) -> str:
     """テスト用セッションを作成し、生のセッショントークンを返す.
 
@@ -28,7 +24,7 @@ async def create_test_session(db: AsyncSession, user: User) -> str:
         raw_session_token: Cookie の session に設定する生トークン
 
     Raises:
-        AuthTestDisabledError: ENABLE_TEST_AUTH=false の場合
+        SessionAuthDisabledError: ENABLE_TEST_AUTH=false の場合
     """
     if not settings.enable_test_auth:
         raise SessionAuthDisabledError("create_test_session requires ENABLE_TEST_AUTH=true")

@@ -124,6 +124,7 @@ async def logout(
         APIResponse[LogoutResponse]: ログアウト完了メッセージ
     """
     await revoke_session(db, session_token)
+    await db.commit()
     clear_session_cookie(response)
 
     return APIResponse(data=LogoutResponse(message="ログアウトしました"))

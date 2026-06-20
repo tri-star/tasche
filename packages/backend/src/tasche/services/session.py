@@ -82,6 +82,11 @@ async def validate_session(
 
     # revoked チェック
     if session.revoked_at is not None:
+        logger.warning(
+            "Revoked session access attempt: session_id=%s user_id=%s",
+            session.id,
+            session.user_id,
+        )
         return None, False
 
     # 期限切れチェック（PostgreSQL では timezone-aware だが念のため補正）
@@ -93,13 +98,13 @@ async def validate_session(
 
     # スライディング延長判定: 残存時間 < 有効期限の半分 なら延長
     remaining = expires_at - now
-    half_lifetime = timedelta(seconds=settings.session_expires_seconds / 2)
+    half_lifetime = timedelta(seconds=settings.session_expires_seconds // 2)
     extended = False
 
     if remaining < half_lifetime:
         new_expires_at = now + timedelta(seconds=settings.session_expires_seconds)
         session.expires_at = new_expires_at
-        await db.commit()
+        await db.flush()
         extended = True
         logger.debug("Session extended: session_id=%s", session.id)
 
@@ -125,5 +130,5 @@ async def revoke_session(
 
     if session and session.revoked_at is None:
         session.revoked_at = now
-        await db.commit()
+        await db.flush()
         logger.info("Session revoked: session_id=%s, user_id=%s", session.id, session.user_id)

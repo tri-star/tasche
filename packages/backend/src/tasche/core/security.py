@@ -28,7 +28,8 @@ async def get_current_user_sub(
         raise InvalidTokenError("Invalid or expired session")
 
     if extended:
-        # スライディング延長発生時は Max-Age を更新して Cookie を再送
+        # スライディング延長発生時は commit してから Max-Age を更新して Cookie を再送
+        await db.commit()
         set_session_cookie(response, session_token)
 
     return session.user_id

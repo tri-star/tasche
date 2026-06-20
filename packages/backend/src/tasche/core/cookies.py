@@ -24,8 +24,13 @@ def set_session_cookie(response: Response, raw_token: str) -> None:
 
 def clear_session_cookie(response: Response) -> None:
     """セッション Cookie を削除する."""
-    response.delete_cookie(
+    response.set_cookie(
         key=SESSION_COOKIE,
+        value="",
+        max_age=0,
+        expires=0,
+        httponly=True,
+        secure=settings.cookie_secure,
+        samesite="lax",
         path=SESSION_COOKIE_PATH,
-        domain=settings.cookie_domain or None,
     )

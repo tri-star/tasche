@@ -1,12 +1,16 @@
 """CSRF 対策ミドルウェア（Origin/Referer 検証）."""
 
+import logging
 from urllib.parse import urlparse
 
 from fastapi import Request
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import Response
 
 from tasche.core.config import settings
+
+logger = logging.getLogger(__name__)
 
 # 状態変更系メソッドのみ対象（GET/HEAD/OPTIONS は除外）
 _CSRF_CHECK_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
@@ -22,7 +26,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
     - 不一致は 403 + {"error": {"code": "CSRF_VALIDATION_FAILED"}}
     """
 
-    async def dispatch(self, request: Request, call_next):
+    async def dispatch(self, request: Request, call_next) -> Response:
         if request.method in _CSRF_CHECK_METHODS and request.url.path.startswith("/api/"):
             result = _check_csrf(request)
             if result is not None:
@@ -54,12 +58,18 @@ def _check_csrf(request: Request) -> JSONResponse | None:
 
     allowed_origins = settings.cors_allow_origin_list
     if check_origin not in allowed_origins:
+        logger.warning(
+            "CSRF validation failed: method=%s path=%s origin=%r",
+            request.method,
+            request.url.path,
+            check_origin,
+        )
         return JSONResponse(
             status_code=403,
             content={
                 "error": {
                     "code": "CSRF_VALIDATION_FAILED",
-                    "message": f"Origin '{check_origin}' is not allowed",
+                    "message": "CSRF validation failed",
                 }
             },
         )
