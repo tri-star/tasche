@@ -9,7 +9,6 @@ Lambda 上では AWS Parameters and Secrets Lambda Extension 経由で SecretsMa
 
     {
       "db_url": "postgresql+asyncpg://...",
-      "jwt_secret": "...",
       "google_oauth_client_id": "...",
       "google_oauth_client_secret": "..."
     }
@@ -90,11 +89,8 @@ class Settings(BaseSettings):
     google_oauth_client_secret: str = "dummy_client_secret"
     google_oauth_redirect_uris: str = "http://localhost:5173/auth/callback"
 
-    # 自前発行 JWT
-    jwt_secret: str = "change_me_in_production_0123456789abcdef"
-    jwt_algorithm: str = "HS256"
-    jwt_access_token_expires_seconds: int = 900
-    jwt_refresh_token_expires_seconds: int = 604800
+    # セッション設定
+    session_expires_seconds: int = 604800  # 7日
 
     # Cookie設定
     cookie_secure: bool = False
@@ -106,11 +102,9 @@ class Settings(BaseSettings):
 
     # スタブ認証（E2E・ローカル開発のみ）
     auth_stub_enabled: bool = False
-    auth_stub_jwt_secret: str = ""
 
     # テスト認証（pytest のみ）
     enable_test_auth: bool = False
-    test_jwt_secret: str = "test_jwt_secret_change_in_production_12345678"
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -144,16 +138,6 @@ class Settings(BaseSettings):
             )
         return self
 
-    @model_validator(mode="after")
-    def validate_stub_secret(self) -> Settings:
-        """スタブ有効時に auth_stub_jwt_secret が空の場合は起動を拒否する."""
-        from tasche.core.env import is_auth_stub_enabled
-
-        if is_auth_stub_enabled(self.app_env, self.auth_stub_enabled):
-            if not self.auth_stub_jwt_secret:
-                raise ValueError("AUTH_STUB_JWT_SECRET must be set when AUTH_STUB_ENABLED=true")
-        return self
-
     def ensure_secrets_resolved(self) -> None:
         """secrets_backend=extension の場合に Secret を取得して値を上書きする.
 
@@ -170,8 +154,6 @@ class Settings(BaseSettings):
             if "db_url" in payload:
                 # field_validator は env からの初期化時しか走らないので、ここで再正規化
                 self.database_url = _normalize_database_url(payload["db_url"])
-            if "jwt_secret" in payload:
-                self.jwt_secret = payload["jwt_secret"]
             if "google_oauth_client_id" in payload:
                 self.google_oauth_client_id = payload["google_oauth_client_id"]
             if "google_oauth_client_secret" in payload:

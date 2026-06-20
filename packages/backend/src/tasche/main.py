@@ -8,13 +8,12 @@ from fastapi.responses import JSONResponse
 
 from tasche.api.v1.router import api_router
 from tasche.core.config import settings
+from tasche.core.csrf import CSRFMiddleware
 from tasche.core.exceptions import (
     AuthenticationError,
     InvalidAuthorizationCodeError,
-    InvalidRefreshTokenError,
     InvalidTokenError,
     TaskNotFoundException,
-    TokenExpiredError,
     UserNotFoundException,
     ValidationError,
     WeekNotFoundException,
@@ -167,8 +166,11 @@ app.add_middleware(
     allow_origins=settings.cors_allow_origin_list,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["Authorization", "Content-Type"],
+    allow_headers=["Content-Type"],
 )
+
+# CSRF 対策ミドルウェア（CORS より内側に登録）
+app.add_middleware(CSRFMiddleware)
 
 
 # 例外ハンドラー（レスポンス形式: {"error": {"code": ..., "message": ...}}）
@@ -205,24 +207,6 @@ async def invalid_token_handler(request: Request, exc: InvalidTokenError):
     return JSONResponse(
         status_code=status.HTTP_401_UNAUTHORIZED,
         content={"error": {"code": "INVALID_TOKEN", "message": exc.detail}},
-    )
-
-
-@app.exception_handler(TokenExpiredError)
-async def token_expired_handler(request: Request, exc: TokenExpiredError):
-    """トークン期限切れ例外ハンドラー."""
-    return JSONResponse(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        content={"error": {"code": "TOKEN_EXPIRED", "message": exc.detail}},
-    )
-
-
-@app.exception_handler(InvalidRefreshTokenError)
-async def invalid_refresh_token_handler(request: Request, exc: InvalidRefreshTokenError):
-    """無効リフレッシュトークン例外ハンドラー."""
-    return JSONResponse(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        content={"error": {"code": "INVALID_REFRESH_TOKEN", "message": exc.detail}},
     )
 
 

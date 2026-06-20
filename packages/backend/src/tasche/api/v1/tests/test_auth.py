@@ -101,7 +101,7 @@ class TestGoogleCallback:
         rsa_private_key_pem: str,
         test_jwks: dict,
     ):
-        """正常系: 新規ユーザーが作成され、access_token と Cookie が返ることを確認."""
+        """正常系: 新規ユーザーが作成され、session Cookie とユーザー情報が返ることを確認."""
         id_token = make_google_id_token(
             rsa_private_key_pem,
             sub="google_sub_new_user",
@@ -137,9 +137,12 @@ class TestGoogleCallback:
         assert response.status_code == 200
         data = response.json()
         assert "data" in data
-        assert "access_token" in data["data"]
-        assert data["data"]["token_type"] == "Bearer"
-        assert "refresh_token" in response.cookies
+        # レスポンスがユーザー情報であることを確認
+        assert "id" in data["data"]
+        assert data["data"]["email"] == "newuser@example.com"
+        assert "access_token" not in data["data"]
+        # session Cookie が発行されていることを確認
+        assert "session" in response.cookies
 
     async def test_callback_links_existing_email_user(
         self,
@@ -480,124 +483,6 @@ class TestGoogleCallback:
 
 
 # ============================================================
-# POST /api/auth/refresh テスト
-# ============================================================
-
-
-class TestRefresh:
-    """POST /api/auth/refresh のテスト."""
-
-    async def _create_user_and_refresh_token(
-        self, client: AsyncClient, rsa_private_key_pem: str, test_jwks: dict
-    ):
-        """テスト用ユーザーとリフレッシュトークンを作成するヘルパ."""
-        id_token = make_google_id_token(
-            rsa_private_key_pem,
-            sub="google_sub_refresh_test",
-            email="refresh_test@example.com",
-            aud="test_client_id",
-        )
-
-        with (
-            patch.object(
-                settings, "google_oauth_redirect_uris", "http://localhost:5173/auth/callback"
-            ),
-            patch.object(settings, "google_oauth_client_id", "test_client_id"),
-            respx.mock as mock,
-        ):
-            mock.post("https://oauth2.googleapis.com/token").mock(
-                return_value=Response(200, json=_mock_google_token_success(id_token))
-            )
-            mock.get("https://www.googleapis.com/oauth2/v3/certs").mock(
-                return_value=Response(200, json=test_jwks)
-            )
-            response = await client.post(
-                "/api/auth/google/callback",
-                json={
-                    "code": "auth_code_dummy",
-                    "code_verifier": "code_verifier_dummy",
-                    "redirect_uri": "http://localhost:5173/auth/callback",
-                    "state": "state_dummy",
-                },
-            )
-        return response
-
-    async def test_refresh_returns_new_token(
-        self,
-        client: AsyncClient,
-        db_session,
-        rsa_private_key_pem: str,
-        test_jwks: dict,
-    ):
-        """正常系: リフレッシュで新しい access_token と Cookie が返ることを確認."""
-        callback_response = await self._create_user_and_refresh_token(
-            client, rsa_private_key_pem, test_jwks
-        )
-        assert callback_response.status_code == 200
-        old_refresh_cookie = callback_response.cookies.get("refresh_token")
-        assert old_refresh_cookie
-
-        response = await client.post(
-            "/api/auth/refresh",
-            cookies={"refresh_token": old_refresh_cookie},
-        )
-
-        assert response.status_code == 200
-        data = response.json()
-        assert "access_token" in data["data"]
-
-        # 新しい Cookie が発行されていること
-        new_refresh_cookie = response.cookies.get("refresh_token")
-        assert new_refresh_cookie
-        assert new_refresh_cookie != old_refresh_cookie
-
-    async def test_refresh_without_cookie_returns_401(self, client: AsyncClient):
-        """異常系: Cookie なしで 401 を返すことを確認."""
-        response = await client.post("/api/auth/refresh")
-        assert response.status_code == 401
-        data = response.json()
-        assert data["error"]["code"] == "INVALID_REFRESH_TOKEN"
-
-    async def test_refresh_reuse_detection(
-        self,
-        client: AsyncClient,
-        db_session,
-        rsa_private_key_pem: str,
-        test_jwks: dict,
-    ):
-        """再利用検知: revoke 済みトークンを再使用すると全 refresh が revoke されることを確認."""
-        callback_response = await self._create_user_and_refresh_token(
-            client, rsa_private_key_pem, test_jwks
-        )
-        old_refresh_cookie = callback_response.cookies["refresh_token"]
-
-        # 1回目のリフレッシュ（正常）
-        first_refresh = await client.post(
-            "/api/auth/refresh",
-            cookies={"refresh_token": old_refresh_cookie},
-        )
-        assert first_refresh.status_code == 200
-        new_refresh_cookie = first_refresh.cookies.get("refresh_token")
-
-        # 2回目: 既に revoke された古いトークンを再使用（再利用検知）
-        reuse_response = await client.post(
-            "/api/auth/refresh",
-            cookies={"refresh_token": old_refresh_cookie},
-        )
-        assert reuse_response.status_code == 401
-        data = reuse_response.json()
-        assert data["error"]["code"] == "INVALID_REFRESH_TOKEN"
-
-        # 新しいトークンも使えなくなっていることを確認（全 revoke）
-        if new_refresh_cookie:
-            third_response = await client.post(
-                "/api/auth/refresh",
-                cookies={"refresh_token": new_refresh_cookie},
-            )
-            assert third_response.status_code == 401
-
-
-# ============================================================
 # POST /api/auth/logout テスト
 # ============================================================
 
@@ -608,11 +493,11 @@ class TestLogout:
     async def test_logout_with_cookie_revokes_and_clears(
         self,
         client: AsyncClient,
-        db_session,
+        db_session: AsyncSession,
         rsa_private_key_pem: str,
         test_jwks: dict,
     ):
-        """正常系: Cookie あり -> revoke + Cookie 削除."""
+        """正常系: session Cookie あり -> revoke + Cookie 削除 + 同 Cookie で 401."""
         id_token = make_google_id_token(
             rsa_private_key_pem,
             sub="google_sub_logout_test",
@@ -643,16 +528,24 @@ class TestLogout:
                 },
             )
 
-        refresh_cookie = callback_response.cookies.get("refresh_token")
-        assert refresh_cookie
+        session_cookie = callback_response.cookies.get("session")
+        assert session_cookie, "callback 後 session Cookie が発行されていること"
 
+        # logout 実行
         logout_response = await client.post(
             "/api/auth/logout",
-            cookies={"refresh_token": refresh_cookie},
+            cookies={"session": session_cookie},
         )
         assert logout_response.status_code == 200
         data = logout_response.json()
         assert "message" in data["data"]
+
+        # logout 後に同じ session Cookie で /api/users/me が 401 になることを確認（即時 revoke）
+        me_response = await client.get(
+            "/api/users/me",
+            cookies={"session": session_cookie},
+        )
+        assert me_response.status_code == 401
 
     async def test_logout_without_cookie_returns_200(self, client: AsyncClient):
         """冪等性テスト: Cookie なしでも 200 を返すことを確認."""
@@ -668,38 +561,37 @@ class TestLogout:
 class TestStubLogin:
     """POST /api/auth/stub-login のテスト."""
 
-    async def test_stub_login_service_works(self, db_session):
-        """正常系: スタブログインサービスが動作することを確認."""
+    async def test_stub_login_service_works(self, db_session: AsyncSession):
+        """正常系: スタブログインサービスが session を発行することを確認."""
         with (
             patch.object(settings, "app_env", "local"),
             patch.object(settings, "auth_stub_enabled", True),
-            patch.object(settings, "auth_stub_jwt_secret", "test_stub_secret_12345678"),
         ):
             from tasche.services.auth import stub_login as _stub_login
 
-            user, access_token, raw_refresh_token = await _stub_login(
+            user, raw_session_token = await _stub_login(
                 db_session,
                 email="stubuser@example.com",
                 name="Stub User",
             )
 
         assert user.email == "stubuser@example.com"
-        assert isinstance(access_token, str)
-        assert isinstance(raw_refresh_token, str)
+        assert isinstance(raw_session_token, str)
+        assert len(raw_session_token) > 0
 
-        # スタブ JWT を検証
-        from joserfc import jwt
-        from joserfc.jwk import OctKey
+        # sessions テーブルに行があることを確認
+        from tasche.models.session import Session
+        from tasche.services.session import _hash_token
 
-        key = OctKey.import_key(b"test_stub_secret_12345678")
-        decoded = jwt.decode(access_token, key)
-        payload = decoded.claims
-        assert payload["stub"] is True
-        assert payload["sub"] == user.id
+        token_hash = _hash_token(raw_session_token)
+        session_result = await db_session.execute(
+            select(Session).where(Session.token_hash == token_hash)
+        )
+        session = session_result.scalar_one_or_none()
+        assert session is not None
+        assert session.user_id == user.id
 
         # current week が作成されていることを確認
-        from sqlalchemy import select
-
         from tasche.models.week import Week
 
         week_result = await db_session.execute(select(Week).where(Week.user_id == user.id))
@@ -708,34 +600,56 @@ class TestStubLogin:
         assert week.unit_duration_minutes == 30
 
     async def test_stub_login_endpoint_not_found_in_production(self):
-        """本番安全性: production 環境ではスタブログインが 404 になることを確認.
-
-        auth.py の `if is_auth_stub_enabled(...)` がモジュールロード時に評価されるため、
-        production 環境では endpoint が登録されない。
-        is_auth_stub_enabled("production", True) == False を確認する。
-        """
+        """本番安全性: production 環境ではスタブログインが 404 になることを確認."""
         from tasche.core.env import is_auth_stub_enabled
 
         # production + auth_stub_enabled=True でも False になることを確認
         assert is_auth_stub_enabled("production", True) is False
 
-
-# ============================================================
-# GET /api/users/me: 自前 JWT / スタブ JWT 双方のテスト
-# ============================================================
-
-
-class TestUsersMeWithJwt:
-    """GET /api/users/me が自前 JWT / スタブ JWT 両方で通ることを確認."""
-
-    async def test_users_me_with_app_jwt(
+    async def test_stub_login_endpoint_sets_session_cookie(
         self,
         client: AsyncClient,
-        db_session,
+        db_session: AsyncSession,
+    ):
+        """stub-login エンドポイントが session Cookie を発行し、その Cookie で /api/users/me が通ること."""
+        response = await client.post(
+            "/api/auth/stub-login",
+            json={"email": "stub_endpoint@example.com", "name": "Stub Endpoint User"},
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert "data" in data
+        assert data["data"]["email"] == "stub_endpoint@example.com"
+        assert "id" in data["data"]
+        # session Cookie が発行されていることを確認
+        assert "session" in response.cookies
+
+        session_cookie = response.cookies.get("session")
+        # session Cookie で /api/users/me が通ることを確認
+        me_response = await client.get(
+            "/api/users/me",
+            cookies={"session": session_cookie},
+        )
+        assert me_response.status_code == 200
+        assert me_response.json()["data"]["email"] == "stub_endpoint@example.com"
+
+
+# ============================================================
+# GET /api/users/me: セッション Cookie を使ったテスト
+# ============================================================
+
+
+class TestUsersMeWithSession:
+    """GET /api/users/me が session Cookie で通ることを確認."""
+
+    async def test_users_me_with_session_cookie_after_callback(
+        self,
+        client: AsyncClient,
+        db_session: AsyncSession,
         rsa_private_key_pem: str,
         test_jwks: dict,
     ):
-        """自前 JWT で /api/users/me にアクセスできることを確認."""
+        """Google callback 後の session Cookie で /api/users/me にアクセスできることを確認."""
         id_token = make_google_id_token(
             rsa_private_key_pem,
             sub="google_sub_me_test",
@@ -767,76 +681,24 @@ class TestUsersMeWithJwt:
             )
 
         assert callback_response.status_code == 200
-        access_token = callback_response.json()["data"]["access_token"]
+        session_cookie = callback_response.cookies.get("session")
+        assert session_cookie
 
         me_response = await client.get(
             "/api/users/me",
-            headers={"Authorization": f"Bearer {access_token}"},
+            cookies={"session": session_cookie},
         )
         assert me_response.status_code == 200
         assert me_response.json()["data"]["email"] == "me_test@example.com"
 
-    async def test_users_me_with_stub_jwt(
-        self,
-        client: AsyncClient,
-        db_session,
-    ):
-        """スタブ JWT で /api/users/me にアクセスできることを確認."""
-        from ulid import ULID
-
-        from tasche.core.security import issue_stub_access_token
-        from tasche.models.user import User
-
-        # テスト用ユーザーを作成
-        user = User(
-            id=f"usr_{ULID()}",
-            email="stub_me@example.com",
-            name="Stub Me",
-        )
-        db_session.add(user)
-        await db_session.commit()
-
-        with (
-            patch.object(settings, "app_env", "local"),
-            patch.object(settings, "auth_stub_enabled", True),
-            patch.object(settings, "auth_stub_jwt_secret", "test_stub_secret_12345678"),
-        ):
-            token, _ = issue_stub_access_token(user_id=user.id, email=user.email)
-
-            response = await client.get(
-                "/api/users/me",
-                headers={"Authorization": f"Bearer {token}"},
-            )
-        assert response.status_code == 200
-        assert response.json()["data"]["email"] == "stub_me@example.com"
-
-
-# ============================================================
-# TestTokenService を使った既存認証フロー確認
-# ============================================================
-
-
-class TestExistingAuthFlow:
-    """既存の認証フローが引き続き動作することを確認."""
-
-    async def test_test_auth_still_works(
+    async def test_users_me_with_test_session(
         self,
         client: AsyncClient,
         test_user,
-        token_service,
+        auth_cookies,
     ):
-        """テスト認証が引き続き動作すること."""
-        # テスト用JWTトークンを発行
-        token = token_service.create_token(test_user.id, test_user.email)
-
-        # トークンを使ってAPIにアクセス
-        response = await client.get(
-            "/api/users/me",
-            headers={"Authorization": f"Bearer {token}"},
-        )
-
-        # 正常に認証されることを確認
+        """テスト用セッションで /api/users/me にアクセスできることを確認."""
+        cookies = await auth_cookies(test_user)
+        response = await client.get("/api/users/me", cookies=cookies)
         assert response.status_code == 200
-        data = response.json()["data"]
-        assert data["id"] == test_user.id
-        assert data["email"] == test_user.email
+        assert response.json()["data"]["email"] == test_user.email

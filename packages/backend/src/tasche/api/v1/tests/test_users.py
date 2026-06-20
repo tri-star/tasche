@@ -3,7 +3,6 @@
 import pytest
 from httpx import AsyncClient
 
-from tasche.core.test_auth import TestTokenService
 from tasche.models.user import User
 
 
@@ -11,14 +10,14 @@ from tasche.models.user import User
 async def test_get_current_user_success(
     client: AsyncClient,
     test_user: User,
-    token_service: TestTokenService,
+    auth_cookies,
 ):
     """認証済みユーザーが自分の情報を取得できる."""
-    token = token_service.create_token(test_user.id, test_user.email)
+    cookies = await auth_cookies(test_user)
 
     response = await client.get(
         "/api/users/me",
-        headers={"Authorization": f"Bearer {token}"},
+        cookies=cookies,
     )
 
     assert response.status_code == 200
@@ -33,15 +32,15 @@ async def test_get_current_user_success(
 async def test_get_current_user_unauthorized(client: AsyncClient):
     """認証なしでアクセスすると401."""
     response = await client.get("/api/users/me")
-    assert response.status_code == 401  # HTTPBearer returns 401 without token
+    assert response.status_code == 401
 
 
 @pytest.mark.asyncio
 async def test_get_current_user_invalid_token(client: AsyncClient):
-    """無効なトークンで401."""
+    """無効なセッション Cookie で 401."""
     response = await client.get(
         "/api/users/me",
-        headers={"Authorization": "Bearer invalid_token"},
+        cookies={"session": "invalid_session_token"},
     )
     assert response.status_code == 401
 
@@ -49,13 +48,37 @@ async def test_get_current_user_invalid_token(client: AsyncClient):
 @pytest.mark.asyncio
 async def test_get_current_user_not_found(
     client: AsyncClient,
-    token_service: TestTokenService,
+    db_session,
 ):
-    """存在しないユーザーIDで404."""
-    token = token_service.create_token("usr_99NOTEXIST99999999999", "notfound@example.com")
+    """存在しないユーザーのセッションで 404."""
+    # 存在しないユーザー ID でセッションを直接作成（FK 制約があるためユーザーを作成してから削除）
+    # 実際には存在しないユーザーの session は外部キー制約で作れないため、
+    # 代わりに有効セッションを持つユーザーを作成し、後でユーザーを削除する
+    from sqlalchemy import delete
+    from ulid import ULID
 
+    from tasche.models.user import User
+    from tasche.services.session import create_session
+
+    user = User(
+        id=f"usr_{ULID()}",
+        email="todelete@example.com",
+        name="To Delete",
+        timezone="Asia/Tokyo",
+    )
+    db_session.add(user)
+    await db_session.commit()
+
+    _session, raw_token = await create_session(db_session, user_id=user.id)
+    await db_session.commit()
+
+    # ユーザーを削除（CASCADE で session も消える）
+    await db_session.execute(delete(User).where(User.id == user.id))
+    await db_session.commit()
+
+    # 削除済みユーザーのセッションで /api/users/me にアクセス → 401（セッション無効）
     response = await client.get(
         "/api/users/me",
-        headers={"Authorization": f"Bearer {token}"},
+        cookies={"session": raw_token},
     )
-    assert response.status_code == 404
+    assert response.status_code == 401

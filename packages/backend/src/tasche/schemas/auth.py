@@ -1,7 +1,5 @@
 """認証スキーマ."""
 
-from typing import Literal
-
 from pydantic import BaseModel, EmailStr
 
 
@@ -19,14 +17,6 @@ class GoogleCallbackRequest(BaseModel):
     code_verifier: str
     redirect_uri: str
     state: str  # 受け取るが backend は検証しない（frontend の責務）
-
-
-class TokenResponse(BaseModel):
-    """トークンレスポンス."""
-
-    access_token: str
-    token_type: Literal["Bearer"] = "Bearer"
-    expires_in: int
 
 
 class LogoutResponse(BaseModel):

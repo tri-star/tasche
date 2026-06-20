@@ -73,7 +73,7 @@
           "認証"
         ],
         "summary": "Google Callback",
-        "description": "Google コールバック処理.\n\ncode と code_verifier を受け取り、Google にトークン交換 → ID Token 検証\n→ ユーザー upsert → 自前 JWT 発行。\n\nArgs:\n    body: GoogleCallbackRequest（code, code_verifier, redirect_uri, state）\n    response: FastAPI Response（Cookie 設定用）\n    db: データベースセッション\n\nReturns:\n    APIResponse[TokenResponse]: アクセストークン",
+        "description": "Google コールバック処理.\n\ncode と code_verifier を受け取り、Google にトークン交換 → ID Token 検証\n→ ユーザー upsert → セッション発行 + Set-Cookie。\n\nArgs:\n    body: GoogleCallbackRequest（code, code_verifier, redirect_uri, state）\n    response: FastAPI Response（Cookie 設定用）\n    db: データベースセッション\n\nReturns:\n    APIResponse[UserResponse]: ユーザー情報",
         "operationId": "google_callback_api_auth_google_callback_post",
         "requestBody": {
           "content": {
@@ -91,57 +91,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse_TokenResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/auth/refresh": {
-      "post": {
-        "tags": [
-          "認証"
-        ],
-        "summary": "Refresh",
-        "description": "アクセストークンを再発行し、リフレッシュトークンをローテーションする.\n\nArgs:\n    response: FastAPI Response（Cookie 設定用）\n    db: データベースセッション\n    refresh_token: リフレッシュトークン（Cookie から取得）\n\nReturns:\n    APIResponse[TokenResponse]: 新しいアクセストークン",
-        "operationId": "refresh_api_auth_refresh_post",
-        "parameters": [
-          {
-            "name": "refresh_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Refresh Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/APIResponse_TokenResponse_"
+                  "$ref": "#/components/schemas/APIResponse_UserResponse_"
                 }
               }
             }
@@ -165,11 +115,11 @@
           "認証"
         ],
         "summary": "Logout",
-        "description": "ログアウト（Refresh Token を revoke し Cookie を削除する）.\n\nCookie が無くても 200 を返す（冪等）。\n\nArgs:\n    response: FastAPI Response（Cookie 削除用）\n    db: データベースセッション\n    refresh_token: リフレッシュトークン（Cookie から取得、無くても可）\n\nReturns:\n    APIResponse[LogoutResponse]: ログアウト完了メッセージ",
+        "description": "ログアウト（セッションを revoke し Cookie を削除する）.\n\nCookie が無くても 200 を返す（冪等）。認証 dependency は不要（未認証でも 200）。\n\nArgs:\n    response: FastAPI Response（Cookie 削除用）\n    db: データベースセッション\n    session_token: セッショントークン（Cookie から取得、無くても可）\n\nReturns:\n    APIResponse[LogoutResponse]: ログアウト完了メッセージ",
         "operationId": "logout_api_auth_logout_post",
         "parameters": [
           {
-            "name": "refresh_token",
+            "name": "session",
             "in": "cookie",
             "required": false,
             "schema": {
@@ -181,7 +131,7 @@
                   "type": "null"
                 }
               ],
-              "title": "Refresh Token"
+              "title": "Session"
             }
           }
         ],
@@ -215,7 +165,7 @@
           "認証"
         ],
         "summary": "Stub Login Endpoint",
-        "description": "スタブログイン（開発・テスト環境のみ）.\n\nGoogle 認証なしでログインし、スタブ JWT を発行する。\n\nArgs:\n    body: StubLoginRequest（email, name）\n    response: FastAPI Response（Cookie 設定用）\n    db: データベースセッション\n\nReturns:\n    APIResponse[TokenResponse]: スタブアクセストークン",
+        "description": "スタブログイン（開発・テスト環境のみ）.\n\nGoogle 認証なしでログインし、セッション Cookie を発行する。\n\nArgs:\n    body: StubLoginRequest（email, name）\n    response: FastAPI Response（Cookie 設定用）\n    db: データベースセッション\n\nReturns:\n    APIResponse[UserResponse]: ユーザー情報",
         "operationId": "stub_login_endpoint_api_auth_stub_login_post",
         "requestBody": {
           "content": {
@@ -233,7 +183,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse_TokenResponse_"
+                  "$ref": "#/components/schemas/APIResponse_UserResponse_"
                 }
               }
             }
@@ -259,6 +209,24 @@
         "summary": "Get Current User Info",
         "description": "現在のユーザー情報を取得.",
         "operationId": "get_current_user_info_api_users_me_get",
+        "parameters": [
+          {
+            "name": "session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Session"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -269,13 +237,18 @@
                 }
               }
             }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
+        }
       }
     },
     "/api/settings": {
@@ -286,6 +259,24 @@
         "summary": "Get current user settings",
         "description": "現在ユーザーの設定（timezone / theme）を取得.",
         "operationId": "get_current_settings",
+        "parameters": [
+          {
+            "name": "session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Session"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -296,13 +287,18 @@
                 }
               }
             }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
+        }
       },
       "patch": {
         "tags": [
@@ -311,15 +307,33 @@
         "summary": "Update current user settings",
         "description": "現在ユーザーの設定（timezone / theme）を部分更新.",
         "operationId": "update_current_settings",
+        "parameters": [
+          {
+            "name": "session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Session"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/SettingsUpdateRequest"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -342,12 +356,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
+        }
       }
     },
     "/api/tasks": {
@@ -358,11 +367,6 @@
         "summary": "Get Tasks",
         "description": "タスク一覧を取得する.",
         "operationId": "get_tasks_api_tasks_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "include_archived",
@@ -403,6 +407,22 @@
               "title": "Per Page"
             },
             "description": "1ページあたり件数（最大100）"
+          },
+          {
+            "name": "session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Session"
+            }
           }
         ],
         "responses": {
@@ -435,9 +455,22 @@
         "summary": "Bulk Archive Tasks",
         "description": "複数タスクをまとめてアーカイブする.",
         "operationId": "bulk_archive_tasks_api_tasks_delete",
-        "security": [
+        "parameters": [
           {
-            "HTTPBearer": []
+            "name": "session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Session"
+            }
           }
         ],
         "requestBody": {
@@ -480,9 +513,22 @@
         "summary": "Create Task",
         "description": "新規タスクを作成する.",
         "operationId": "create_task_api_tasks_post",
-        "security": [
+        "parameters": [
           {
-            "HTTPBearer": []
+            "name": "session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Session"
+            }
           }
         ],
         "requestBody": {
@@ -527,11 +573,6 @@
         "summary": "Update Task",
         "description": "既存タスクを更新する.",
         "operationId": "update_task_api_tasks__task_id__put",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "task_id",
@@ -540,6 +581,22 @@
             "schema": {
               "type": "string",
               "title": "Task Id"
+            }
+          },
+          {
+            "name": "session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Session"
             }
           }
         ],
@@ -583,11 +640,6 @@
         "summary": "Delete Task",
         "description": "タスクを削除（アーカイブ）する.",
         "operationId": "delete_task_api_tasks__task_id__delete",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "task_id",
@@ -596,6 +648,22 @@
             "schema": {
               "type": "string",
               "title": "Task Id"
+            }
+          },
+          {
+            "name": "session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Session"
             }
           }
         ],
@@ -631,11 +699,6 @@
         "summary": "Get Current Week",
         "description": "現在の週情報を取得する.",
         "operationId": "get_current_week_api_weeks_current_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "timezone",
@@ -654,6 +717,22 @@
               "title": "Timezone"
             },
             "description": "タイムゾーン（デフォルト: ユーザー設定値）"
+          },
+          {
+            "name": "session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Session"
+            }
           }
         ],
         "responses": {
@@ -686,9 +765,22 @@
         "summary": "Update Current Week",
         "description": "現在の週設定を更新する.",
         "operationId": "update_current_week_api_weeks_current_put",
-        "security": [
+        "parameters": [
           {
-            "HTTPBearer": []
+            "name": "session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Session"
+            }
           }
         ],
         "requestBody": {
@@ -733,6 +825,24 @@
         "summary": "Get Current Goals",
         "description": "今週の目標一覧を取得する.",
         "operationId": "get_current_goals_api_weeks_current_goals_get",
+        "parameters": [
+          {
+            "name": "session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Session"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -743,13 +853,18 @@
                 }
               }
             }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
+        }
       },
       "put": {
         "tags": [
@@ -758,15 +873,33 @@
         "summary": "Update Current Goals",
         "description": "今週の目標を一括更新する.",
         "operationId": "update_current_goals_api_weeks_current_goals_put",
+        "parameters": [
+          {
+            "name": "session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Session"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/GoalsUpdate"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -789,12 +922,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
+        }
       }
     },
     "/api/weeks/current/records": {
@@ -805,6 +933,24 @@
         "summary": "Get Current Records",
         "description": "今週の実績一覧を取得する.",
         "operationId": "get_current_records_api_weeks_current_records_get",
+        "parameters": [
+          {
+            "name": "session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Session"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -815,13 +961,18 @@
                 }
               }
             }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
+        }
       },
       "post": {
         "tags": [
@@ -830,15 +981,33 @@
         "summary": "Create Record",
         "description": "実績を記録する.",
         "operationId": "create_record_api_weeks_current_records_post",
+        "parameters": [
+          {
+            "name": "session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Session"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/RecordCreate"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "201": {
@@ -861,12 +1030,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
+        }
       }
     },
     "/api/weeks/current/records/{day_of_week}/{task_id}": {
@@ -877,11 +1041,6 @@
         "summary": "Upsert Record",
         "description": "今週の実績を作成または更新する.",
         "operationId": "upsert_record_api_weeks_current_records__day_of_week___task_id__put",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "day_of_week",
@@ -898,6 +1057,22 @@
             "schema": {
               "type": "string",
               "title": "Task Id"
+            }
+          },
+          {
+            "name": "session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Session"
             }
           }
         ],
@@ -943,11 +1118,6 @@
         "summary": "Get Dashboard",
         "description": "ダッシュボード表示用の集約データを取得する.",
         "operationId": "get_dashboard_api_dashboard_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "timezone",
@@ -967,6 +1137,22 @@
               "title": "Timezone"
             },
             "description": "タイムゾーン（デフォルト: ユーザー設定値）"
+          },
+          {
+            "name": "session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Session"
+            }
           }
         ],
         "responses": {
@@ -1161,18 +1347,6 @@
           "data"
         ],
         "title": "APIResponse[TaskResponse]"
-      },
-      "APIResponse_TokenResponse_": {
-        "properties": {
-          "data": {
-            "$ref": "#/components/schemas/TokenResponse"
-          }
-        },
-        "type": "object",
-        "required": [
-          "data"
-        ],
-        "title": "APIResponse[TokenResponse]"
       },
       "APIResponse_UserResponse_": {
         "properties": {
@@ -1973,13 +2147,7 @@
             "title": "Timezone"
           },
           "theme": {
-            "type": "string",
-            "enum": [
-              "light",
-              "dark",
-              "system"
-            ],
-            "title": "Theme"
+            "$ref": "#/components/schemas/Theme"
           }
         },
         "type": "object",
@@ -2008,18 +2176,12 @@
           "theme": {
             "anyOf": [
               {
-                "type": "string",
-                "enum": [
-                  "light",
-                  "dark",
-                  "system"
-                ]
+                "$ref": "#/components/schemas/Theme"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Theme"
+            ]
           }
         },
         "type": "object",
@@ -2222,6 +2384,16 @@
         "title": "TaskUpdate",
         "description": "タスク更新リクエスト."
       },
+      "Theme": {
+        "type": "string",
+        "enum": [
+          "light",
+          "dark",
+          "system"
+        ],
+        "title": "Theme",
+        "description": "UIテーマの列挙型."
+      },
       "TodayGoal": {
         "properties": {
           "task_id": {
@@ -2268,31 +2440,6 @@
         ],
         "title": "TodayGoal",
         "description": "今日の目標."
-      },
-      "TokenResponse": {
-        "properties": {
-          "access_token": {
-            "type": "string",
-            "title": "Access Token"
-          },
-          "token_type": {
-            "type": "string",
-            "const": "Bearer",
-            "title": "Token Type",
-            "default": "Bearer"
-          },
-          "expires_in": {
-            "type": "integer",
-            "title": "Expires In"
-          }
-        },
-        "type": "object",
-        "required": [
-          "access_token",
-          "expires_in"
-        ],
-        "title": "TokenResponse",
-        "description": "トークンレスポンス."
       },
       "UserResponse": {
         "properties": {
@@ -2549,12 +2696,6 @@
         ],
         "title": "WeeklyMatrixItem",
         "description": "週次マトリックスアイテム."
-      }
-    },
-    "securitySchemes": {
-      "HTTPBearer": {
-        "type": "http",
-        "scheme": "bearer"
       }
     }
   }

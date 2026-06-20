@@ -49,24 +49,6 @@ class InvalidTokenError(AuthenticationError):
         super().__init__(detail)
 
 
-class TokenExpiredError(AuthenticationError):
-    """トークンの期限切れ."""
-
-    def __init__(self, detail: str = "Token has expired"):
-        """初期化."""
-        self.detail = detail
-        super().__init__(detail)
-
-
-class InvalidRefreshTokenError(AuthenticationError):
-    """リフレッシュトークンが無効."""
-
-    def __init__(self, detail: str = "Invalid refresh token"):
-        """初期化."""
-        self.detail = detail
-        super().__init__(detail)
-
-
 class InvalidAuthorizationCodeError(AuthenticationError):
     """認可コードが無効（Google OAuth エラー、ID Token 検証失敗など）.
 
