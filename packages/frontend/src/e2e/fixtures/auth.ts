@@ -1,20 +1,10 @@
-import { test as base, type Page, type Route } from "@playwright/test"
+import { test as base, type Page } from "@playwright/test"
 import { MOCK_AUTH_USER_STORAGE_KEY } from "@/mocks/handlers/authSession"
 import { getApiBaseUrl } from "../utils/api-base-url"
 import { E2E_STUB_USER_EMAIL } from "../utils/test-auth"
 
 export type AuthFixture = {
   loginAs: (email?: string) => Promise<void>
-}
-
-type ApiAuthFixture = {
-  setToken: (token: string | null) => Promise<void>
-}
-
-type StubLoginResponse = {
-  data: {
-    access_token: string
-  }
 }
 
 async function loginWithMswStub(page: Page, email: string): Promise<void> {
@@ -34,6 +24,8 @@ async function loginWithMswStub(page: Page, email: string): Promise<void> {
         throw new Error(`stub-login failed: ${response.status} ${response.statusText}`)
       }
 
+      // MSW セッションを sessionStorage に保存することで、
+      // リロード後も getMockAuthUser() が復元されログイン状態を維持できる
       sessionStorage.setItem(storageKey, JSON.stringify(user))
     },
     { stubEmail: email, storageKey: MOCK_AUTH_USER_STORAGE_KEY },
@@ -43,16 +35,16 @@ async function loginWithMswStub(page: Page, email: string): Promise<void> {
 }
 
 async function gotoAuthenticatedRoot(page: Page): Promise<void> {
-  const refreshResponse = page.waitForResponse(
-    (response) =>
-      response.url().includes("/api/auth/refresh") && response.request().method() === "POST",
+  // /api/users/me の応答を待って認証状態の復元を確認する
+  const meResponse = page.waitForResponse(
+    (response) => response.url().includes("/api/users/me") && response.request().method() === "GET",
   )
 
   await page.goto("/")
-  const response = await refreshResponse
+  const response = await meResponse
 
   if (!response.ok()) {
-    throw new Error(`auth refresh failed: ${response.status()} ${response.statusText()}`)
+    throw new Error(`auth me failed: ${response.status()} ${response.statusText()}`)
   }
 
   await page.waitForURL("**/")
@@ -61,38 +53,16 @@ async function gotoAuthenticatedRoot(page: Page): Promise<void> {
 export const test = base.extend<{
   authenticatedPage: Page
   auth: AuthFixture
-  apiAuth: ApiAuthFixture
 }>({
-  apiAuth: async ({ page }, use) => {
-    let currentToken: string | null = null
-    const routeHandler = (route: Route) => {
-      const request = route.request()
-      const headers = {
-        ...request.headers(),
-        ...(currentToken ? { authorization: `Bearer ${currentToken}` } : {}),
-      }
-
-      void route.continue({ headers })
-    }
-
-    await page.route("**/api/**", routeHandler)
-
-    await use({
-      setToken: async (token) => {
-        currentToken = token
-      },
-    })
-
-    await page.unroute("**/api/**", routeHandler)
-  },
-
   /**
    * 認証済みページを提供するフィクスチャ
    *
-   * page.request でブラウザコンテキストから stub-login を呼ぶことで、
-   * refresh token cookie がブラウザのクッキージャーに設定される。
-   * その後 page.goto("/") した際に useBootstrapAuth が /api/auth/refresh を呼ぶと
-   * cookie が Vite proxy 経由でバックエンドに届き、認証状態が復元される。
+   * MSW モード: loginWithMswStub で stub-login を呼び、getMockAuthUser を設定する。
+   *             リロード後も sessionStorage から復元されてログイン状態が維持される。
+   *
+   * 実 API モード: page.request（= browserContext.request）で stub-login を呼ぶことで、
+   *               backend が Set-Cookie したセッション Cookie がブラウザの cookie jar に保存される。
+   *               その後 page.goto("/") したとき Cookie が /api/* へ自動送信され、認証状態が復元される。
    */
   authenticatedPage: async ({ page }, use) => {
     const useMsw = process.env.E2E_USE_MSW === "true"
@@ -117,7 +87,7 @@ export const test = base.extend<{
     await use(page)
   },
 
-  auth: async ({ page, apiAuth }, use) => {
+  auth: async ({ page }, use) => {
     const useMsw = process.env.E2E_USE_MSW === "true"
 
     const loginAs: AuthFixture["loginAs"] = async (email) => {
@@ -126,12 +96,16 @@ export const test = base.extend<{
         return
       }
 
+      // 実 API モード: page.request でログインし、Cookie を context に載せる
+      // レスポンスの ok のみ確認すれば十分（token は不要）
       const res = await page.request.post(
         new URL("/api/auth/stub-login", getApiBaseUrl()).toString(),
         { data: { email: email ?? E2E_STUB_USER_EMAIL } },
       )
-      const json = (await res.json()) as StubLoginResponse
-      await apiAuth.setToken(json.data.access_token)
+
+      if (!res.ok()) {
+        throw new Error(`stub-login failed: ${res.status()} ${res.statusText()}`)
+      }
     }
 
     await use({ loginAs })

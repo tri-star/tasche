@@ -3,7 +3,7 @@ import { getDefaultStore, Provider as JotaiProvider } from "jotai"
 import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
 import App from "./App"
-import { accessTokenAtom, authStatusAtom, currentUserAtom } from "./auth/atoms"
+import { authStatusAtom, currentUserAtom } from "./auth/atoms"
 import { createAuthClient } from "./auth/authClient"
 import { setAuthClient } from "./auth/authClientSingleton"
 import { ThemeProvider } from "./theme/ThemeProvider"
@@ -24,11 +24,8 @@ const queryClient = new QueryClient({
 
 const authClient = createAuthClient({
   baseUrl: "",
-  getAccessToken: () => jotaiStore.get(accessTokenAtom),
-  setAccessToken: (token) => jotaiStore.set(accessTokenAtom, token),
   onUnauthorized: () => {
     queryClient.clear()
-    jotaiStore.set(accessTokenAtom, null)
     jotaiStore.set(currentUserAtom, null)
     jotaiStore.set(authStatusAtom, "anonymous")
   },

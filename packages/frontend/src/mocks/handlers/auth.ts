@@ -1,16 +1,5 @@
 import { HttpResponse, http } from "msw"
-import { getMockAuthUser, setMockAuthUser } from "./authSession"
-
-function toBase64(value: string): string {
-  const bytes = new TextEncoder().encode(value)
-  const binary = Array.from(bytes, (byte) => String.fromCharCode(byte)).join("")
-  return btoa(binary)
-}
-
-function fakeJwt(user: { email: string; name: string }): string {
-  // 見た目だけ JWT っぽい文字列（frontend では検証しない）
-  return `stub.${toBase64(JSON.stringify(user))}.sig`
-}
+import { setMockAuthUser } from "./authSession"
 
 export const authHandlers = [
   // 認可URL発行（MSW モードでは Google に飛ばさず /auth/callback に直帰する URL を返す）
@@ -23,33 +12,21 @@ export const authHandlers = [
     return HttpResponse.json({ data: { authorization_url: fakeAuthUrl, state } })
   }),
 
-  // code を受け取って JWT 発行
+  // code を受け取ってセッションを確立し、UserResponse を返す
+  // MSW では HttpOnly Cookie のラウンドトリップを再現できないため、
+  // setMockAuthUser でセッション保持を代用する
   http.post("*/api/auth/google/callback", async () => {
     const user = { email: "test-user@example.com", name: "テストユーザー" }
     setMockAuthUser(user)
     return HttpResponse.json({
       data: {
-        access_token: fakeJwt(user),
-        token_type: "Bearer",
-        expires_in: 900,
-      },
-    })
-  }),
-
-  // refresh: 保存済みの MSW セッションがあればリロード後も成功する
-  http.post("*/api/auth/refresh", () => {
-    const currentUser = getMockAuthUser()
-    if (!currentUser) {
-      return HttpResponse.json(
-        { error: { code: "INVALID_REFRESH_TOKEN", message: "リフレッシュトークンが無効です" } },
-        { status: 401 },
-      )
-    }
-    return HttpResponse.json({
-      data: {
-        access_token: fakeJwt(currentUser),
-        token_type: "Bearer",
-        expires_in: 900,
+        id: "usr_01HXYZ1234567890ABCDEF",
+        email: user.email,
+        name: user.name,
+        picture: null,
+        timezone: "Asia/Tokyo",
+        created_at: "2026-01-01T00:00:00Z",
+        updated_at: "2026-01-01T00:00:00Z",
       },
     })
   }),
@@ -60,6 +37,7 @@ export const authHandlers = [
   }),
 
   // スタブログイン（開発・テスト用）
+  // セッションを確立し、UserResponse を返す（access_token は返さない）
   http.post("*/api/auth/stub-login", async ({ request }) => {
     const body = (await request.json()) as { email?: string; name?: string }
     const currentUser = {
@@ -69,9 +47,13 @@ export const authHandlers = [
     setMockAuthUser(currentUser)
     return HttpResponse.json({
       data: {
-        access_token: fakeJwt(currentUser),
-        token_type: "Bearer",
-        expires_in: 900,
+        id: "usr_01HXYZ1234567890ABCDEF",
+        email: currentUser.email,
+        name: currentUser.name,
+        picture: null,
+        timezone: "Asia/Tokyo",
+        created_at: "2026-01-01T00:00:00Z",
+        updated_at: "2026-01-01T00:00:00Z",
       },
     })
   }),

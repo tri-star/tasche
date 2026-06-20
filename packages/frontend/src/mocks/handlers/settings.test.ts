@@ -20,19 +20,15 @@ describe("MSW settings handlers", () => {
     expect(response.status).toBe(401)
   })
 
-  it("GET /api/settings - 認証ありは 200 と初期値を返すこと", async () => {
-    // まずスタブログインして認証トークンを取得
-    const loginResponse = await fetch("http://localhost/api/auth/stub-login", {
+  it("GET /api/settings - スタブログイン後は 200 と初期値を返すこと", async () => {
+    // stub-login で setMockAuthUser を設定（Cookie 認証の擬似）
+    await fetch("http://localhost/api/auth/stub-login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: "test@example.com", name: "テスト" }),
     })
-    const loginJson = (await loginResponse.json()) as { data: { access_token: string } }
-    const token = loginJson.data.access_token
 
-    const response = await fetch("http://localhost/api/settings", {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+    const response = await fetch("http://localhost/api/settings")
 
     expect(response.status).toBe(200)
     const json = (await response.json()) as { data: { timezone: string; theme: string } }
@@ -41,18 +37,15 @@ describe("MSW settings handlers", () => {
   })
 
   it("PATCH /api/settings - theme: 'dark' で更新されること", async () => {
-    const loginResponse = await fetch("http://localhost/api/auth/stub-login", {
+    await fetch("http://localhost/api/auth/stub-login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: "test@example.com", name: "テスト" }),
     })
-    const loginJson = (await loginResponse.json()) as { data: { access_token: string } }
-    const token = loginJson.data.access_token
 
     const patchResponse = await fetch("http://localhost/api/settings", {
       method: "PATCH",
       headers: {
-        Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ theme: "dark" }),
@@ -64,43 +57,35 @@ describe("MSW settings handlers", () => {
   })
 
   it("PATCH /api/settings 後に GET /api/settings で更新値が反映されること", async () => {
-    const loginResponse = await fetch("http://localhost/api/auth/stub-login", {
+    await fetch("http://localhost/api/auth/stub-login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: "test@example.com", name: "テスト" }),
     })
-    const loginJson = (await loginResponse.json()) as { data: { access_token: string } }
-    const token = loginJson.data.access_token
 
     await fetch("http://localhost/api/settings", {
       method: "PATCH",
       headers: {
-        Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ theme: "dark" }),
     })
 
-    const getResponse = await fetch("http://localhost/api/settings", {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+    const getResponse = await fetch("http://localhost/api/settings")
     const json = (await getResponse.json()) as { data: { timezone: string; theme: string } }
     expect(json.data.theme).toBe("dark")
   })
 
   it("PATCH /api/settings - 不正な timezone は 400 を返すこと", async () => {
-    const loginResponse = await fetch("http://localhost/api/auth/stub-login", {
+    await fetch("http://localhost/api/auth/stub-login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: "test@example.com", name: "テスト" }),
     })
-    const loginJson = (await loginResponse.json()) as { data: { access_token: string } }
-    const token = loginJson.data.access_token
 
     const response = await fetch("http://localhost/api/settings", {
       method: "PATCH",
       headers: {
-        Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ timezone: "Invalid/Zone" }),
@@ -110,19 +95,16 @@ describe("MSW settings handlers", () => {
   })
 
   it("resetMockSettings 後は初期値に戻ること", async () => {
-    const loginResponse = await fetch("http://localhost/api/auth/stub-login", {
+    await fetch("http://localhost/api/auth/stub-login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: "test@example.com", name: "テスト" }),
     })
-    const loginJson = (await loginResponse.json()) as { data: { access_token: string } }
-    const token = loginJson.data.access_token
 
     // 変更
     await fetch("http://localhost/api/settings", {
       method: "PATCH",
       headers: {
-        Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ theme: "dark" }),
@@ -132,9 +114,7 @@ describe("MSW settings handlers", () => {
     resetMockSettings()
 
     // GET で初期値確認
-    const getResponse = await fetch("http://localhost/api/settings", {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+    const getResponse = await fetch("http://localhost/api/settings")
     const json = (await getResponse.json()) as { data: { timezone: string; theme: string } }
     expect(json.data.theme).toBe("light")
     expect(json.data.timezone).toBe("Asia/Tokyo")

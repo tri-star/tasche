@@ -11,7 +11,6 @@ vi.mock("@/auth/useAuth", () => ({
   useAuth: () => ({
     status: "authenticated",
     user: null,
-    accessToken: null,
     startGoogleLogin: vi.fn(),
     handleCallback: vi.fn(),
     stubLogin: vi.fn(),

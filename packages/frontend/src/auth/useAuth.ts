@@ -4,10 +4,10 @@ import { useNavigate } from "react-router-dom"
 import { logger } from "@/lib/logger"
 import { currentSettingsAtom } from "@/settings/atoms"
 import type { Settings } from "@/settings/types"
-import { accessTokenAtom, authStatusAtom, currentUserAtom } from "./atoms"
+import { authStatusAtom, currentUserAtom } from "./atoms"
 import { createPkcePair } from "./pkce"
 import { clearPendingOAuth, readPendingOAuth, savePendingOAuth } from "./storage"
-import type { AuthUser, TokenResponse } from "./types"
+import type { AuthUser } from "./types"
 
 const BASE_URL = ""
 
@@ -28,24 +28,9 @@ async function parseJsonResponse<T>(res: Response, context: string): Promise<T> 
   return res.json() as Promise<T>
 }
 
-async function fetchUserMe(token: string): Promise<AuthUser> {
-  logger.debug("[fetchUserMe] start")
-  const res = await fetch(`${BASE_URL}/api/users/me`, {
-    headers: { Authorization: `Bearer ${token}` },
-    credentials: "include",
-  })
-  if (!res.ok) {
-    logger.error(`[fetchUserMe] failed: status=${res.status}`)
-    throw new Error("Failed to fetch user info")
-  }
-  const json = await parseJsonResponse<{ data: AuthUser }>(res, "fetchUserMe")
-  return json.data
-}
-
-async function fetchSettings(token: string): Promise<Settings | null> {
+async function fetchSettings(): Promise<Settings | null> {
   logger.debug("[fetchSettings] start")
   const res = await fetch(`${BASE_URL}/api/settings`, {
-    headers: { Authorization: `Bearer ${token}` },
     credentials: "include",
   })
   if (!res.ok) {
@@ -58,8 +43,6 @@ async function fetchSettings(token: string): Promise<Settings | null> {
 
 export function useAuth() {
   const [status, setStatus] = useAtom(authStatusAtom)
-  const [, setAccessToken] = useAtom(accessTokenAtom)
-  const accessToken = useAtomValue(accessTokenAtom)
   const setCurrentUser = useSetAtom(currentUserAtom)
   const setCurrentSettings = useSetAtom(currentSettingsAtom)
   const user = useAtomValue(currentUserAtom)
@@ -108,7 +91,7 @@ export function useAuth() {
 
   /**
    * /auth/callback から呼ばれるコールバック処理
-   * state の検証、トークン交換、ユーザー情報取得を行う
+   * state の検証、セッション確立、ユーザー情報取得を行う
    */
   async function handleCallback(searchParams: URLSearchParams): Promise<void> {
     const error = searchParams.get("error")
@@ -142,16 +125,11 @@ export function useAuth() {
       throw new Error("ログインに失敗しました")
     }
 
-    const json = await parseJsonResponse<{ data: TokenResponse }>(res, "handleCallback")
-    const tokenData = json.data
-    const { access_token } = tokenData
+    // backend が Set-Cookie でセッションを確立し、{ data: UserResponse } を返す
+    const json = await parseJsonResponse<{ data: AuthUser }>(res, "handleCallback")
+    const userInfo = json.data
 
-    setAccessToken(access_token)
-
-    const [userInfo, settings] = await Promise.all([
-      fetchUserMe(access_token),
-      fetchSettings(access_token),
-    ])
+    const settings = await fetchSettings()
     setCurrentUser(userInfo)
     if (settings) setCurrentSettings(settings)
     setStatus("authenticated")
@@ -177,16 +155,11 @@ export function useAuth() {
       throw new Error("スタブログインに失敗しました")
     }
 
-    const json = await parseJsonResponse<{ data: TokenResponse }>(res, "stubLogin")
-    const tokenData = json.data
-    const { access_token } = tokenData
+    // backend が Set-Cookie でセッションを確立し、{ data: UserResponse } を返す
+    const json = await parseJsonResponse<{ data: AuthUser }>(res, "stubLogin")
+    const userInfo = json.data
 
-    setAccessToken(access_token)
-
-    const [userInfo, settings] = await Promise.all([
-      fetchUserMe(access_token),
-      fetchSettings(access_token),
-    ])
+    const settings = await fetchSettings()
     setCurrentUser(userInfo)
     if (settings) setCurrentSettings(settings)
     setStatus("authenticated")
@@ -202,13 +175,9 @@ export function useAuth() {
       await fetch(`${BASE_URL}/api/auth/logout`, {
         method: "POST",
         credentials: "include",
-        headers: {
-          Authorization: `Bearer ${accessToken ?? ""}`,
-        },
       })
     } finally {
       queryClient.clear()
-      setAccessToken(null)
       setCurrentUser(null)
       setStatus("anonymous")
       navigate("/login", { replace: true })
@@ -218,7 +187,6 @@ export function useAuth() {
   return {
     status,
     user,
-    accessToken,
     startGoogleLogin,
     handleCallback,
     stubLogin,

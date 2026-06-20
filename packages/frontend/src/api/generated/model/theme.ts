@@ -5,11 +5,14 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type SettingsResponseTheme = typeof SettingsResponseTheme[keyof typeof SettingsResponseTheme];
+/**
+ * UIテーマの列挙型.
+ */
+export type Theme = typeof Theme[keyof typeof Theme];
 
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export const SettingsResponseTheme = {
+export const Theme = {
   light: 'light',
   dark: 'dark',
   system: 'system',
