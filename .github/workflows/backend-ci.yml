@@ -86,11 +86,10 @@ jobs:
     env:
       DATABASE_URL: postgresql+asyncpg://tasche:tasche_dev_password@localhost:5432/tasche_test
       TEST_DATABASE_URL: postgresql+asyncpg://tasche:tasche_dev_password@localhost:5432/tasche_test
+      # TCH-75: JWT 方式廃止に伴い JWT_SECRET/TEST_JWT_SECRET を削除。
+      # stub-login エンドポイントを有効化するために AUTH_STUB_ENABLED を設定。
+      AUTH_STUB_ENABLED: "true"
       ENABLE_TEST_AUTH: "true"
-      # TestTokenService は jwt_secret で署名するため、CI でも jwt_secret == test_jwt_secret を揃える
-      # compose.yaml の api サービスでは TEST_JWT_SECRET: ${JWT_SECRET} で同様に統一している
-      JWT_SECRET: "change_me_in_production_0123456789abcdef"
-      TEST_JWT_SECRET: "change_me_in_production_0123456789abcdef"
 
     steps:
       - name: Checkout
