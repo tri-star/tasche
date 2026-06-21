@@ -88,4 +88,15 @@ DBに保存済みの設定を上書きしてしまう。
 
 **Why:** データ損失リスク。Asia/Tokyo 以外のタイムゾーンを設定しているユーザーが設定画面を開いて保存すると Asia/Tokyo に戻る。
 
-**How to apply:** settings === null のときに保存ボタンを disabled にするか、フォームコンポーネント自体を表示しないガードを設ける。TCH-15 で Critical として指摘済み。
+**How to apply:** settings === null のときに保存ボタンを disabled にするか、フォームコンポーネント自体を表示しないガードを設ける。TCH-15 で Critical として指摘済み。TCH-75 の useBootstrapAuth でも同パターンが残存（Warning として指摘）。
+
+---
+
+## MSW E2E フィクスチャで sessionStorage を手動 setItem する重複書き込み
+
+`e2e/fixtures/auth.ts` の `loginWithMswStub` で stub-login fetch 後に `sessionStorage.setItem` を手動で呼んでいるが、
+stub-login ハンドラ内の `setMockAuthUser` がすでに sessionStorage.setItem を実行しているため二重書き込みになる。
+
+**Why:** 現状は値が同一なので実害ないが、`authSession.ts` の `MockAuthUser` 型が変化したときにフィクスチャ側の手動 setItem が古いスキーマのまま残るリスクがある。
+
+**How to apply:** `fixtures/auth.ts` の手動 sessionStorage.setItem 行を削除する。`setMockAuthUser` への一元化で十分。TCH-75 で Warning として指摘済み。
