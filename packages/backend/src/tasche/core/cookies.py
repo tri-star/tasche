@@ -31,6 +31,7 @@ def clear_session_cookie(response: Response) -> None:
         expires=0,
         httponly=True,
         secure=settings.cookie_secure,
-        samesite="lax",
+        samesite=settings.cookie_samesite,
         path=SESSION_COOKIE_PATH,
+        domain=settings.cookie_domain or None,
     )

@@ -104,6 +104,7 @@ async def google_callback(
         code_verifier=body.code_verifier,
         redirect_uri=body.redirect_uri,
     )
+    await db.commit()
 
     set_session_cookie(response, raw_session_token)
 
@@ -161,6 +162,7 @@ if is_auth_stub_enabled(settings.app_env, settings.auth_stub_enabled):
             email=str(body.email),
             name=body.name,
         )
+        await db.commit()
 
         set_session_cookie(response, raw_session_token)
 

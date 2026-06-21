@@ -106,7 +106,6 @@ async def handle_google_callback(
 
     # セッション発行
     _session, raw_session_token = await create_session(db, user_id=user.id)
-    await db.commit()
     logger.info("Google OAuth login succeeded: user_id=%s", user.id)
 
     return user, raw_session_token
@@ -130,6 +129,5 @@ async def stub_login(
 
     # セッション発行
     _session, raw_session_token = await create_session(db, user_id=user.id)
-    await db.commit()
 
     return user, raw_session_token
