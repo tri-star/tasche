@@ -33,13 +33,17 @@ router = APIRouter()
 async def google_authorize(
     code_challenge: str,
     redirect_uri: str,
+    state: str,
     code_challenge_method: str = "S256",
 ):
     """Google 認可 URL を組み立てて返す.
 
+    state はフロントエンドが生成した値を受け取る（RFC 6819 推奨: クライアントが state を生成・保持）。
+
     Args:
         code_challenge: frontend が生成した PKCE challenge（S256）
         redirect_uri: frontend のコールバック URL（許可リストで検証）
+        state: frontend が生成した CSRF 対策用 state（そのまま Google 認可 URL に埋め込む）
         code_challenge_method: S256 のみ受理（省略時も S256）
 
     Returns:
@@ -58,6 +62,7 @@ async def google_authorize(
         redirect_uri=redirect_uri,
         code_challenge=code_challenge,
         code_challenge_method=code_challenge_method,
+        state=state,
     )
 
     return APIResponse(

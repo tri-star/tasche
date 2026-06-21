@@ -25,7 +25,8 @@ function renderAccountPage(options?: { picture?: string }) {
     id: "user-1",
     email: "test@example.com",
     name: "テストユーザー",
-    picture: options?.picture,
+    picture: options?.picture ?? null,
+    timezone: "Asia/Tokyo",
   })
 
   const router = createMemoryRouter([{ path: "/account", element: <AccountPage /> }], {

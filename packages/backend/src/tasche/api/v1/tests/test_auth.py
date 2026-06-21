@@ -34,7 +34,7 @@ class TestGoogleAuthorize:
     """GET /api/auth/google/authorize のテスト."""
 
     async def test_authorize_returns_url_and_state(self, client: AsyncClient):
-        """正常系: authorization_url と state が返ることを確認."""
+        """正常系: authorization_url と state が返ることを確認（state はフロントから受け取りそのまま返す）."""
         # settings.google_oauth_redirect_uris でプロパティを制御
         with patch.object(
             settings, "google_oauth_redirect_uris", "http://localhost:5173/auth/callback"
@@ -44,6 +44,7 @@ class TestGoogleAuthorize:
                 params={
                     "code_challenge": "test_challenge_value",
                     "redirect_uri": "http://localhost:5173/auth/callback",
+                    "state": "test_state_value",
                 },
             )
         assert response.status_code == 200
@@ -51,6 +52,8 @@ class TestGoogleAuthorize:
         assert "data" in data
         assert "authorization_url" in data["data"]
         assert "state" in data["data"]
+        # フロントが渡した state がそのまま返ること（RFC 6819: クライアント生成の state を往復）
+        assert data["data"]["state"] == "test_state_value"
         assert "accounts.google.com" in data["data"]["authorization_url"]
 
     async def test_authorize_rejects_invalid_redirect_uri(self, client: AsyncClient):
@@ -63,6 +66,7 @@ class TestGoogleAuthorize:
                 params={
                     "code_challenge": "test_challenge_value",
                     "redirect_uri": "http://evil.example.com/callback",
+                    "state": "test_state_value",
                 },
             )
         assert response.status_code == 400
@@ -80,6 +84,7 @@ class TestGoogleAuthorize:
                     "code_challenge": "test_challenge_value",
                     "redirect_uri": "http://localhost:5173/auth/callback",
                     "code_challenge_method": "plain",
+                    "state": "test_state_value",
                 },
             )
         assert response.status_code == 400

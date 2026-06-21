@@ -9,7 +9,6 @@ from tasche.core.exceptions import InvalidAuthorizationCodeError
 from tasche.core.oauth import (
     build_google_authorize_url,
     exchange_code_for_token,
-    generate_state,
     verify_google_id_token,
 )
 from tasche.models.user import User
@@ -25,13 +24,15 @@ async def build_authorize_url(
     redirect_uri: str,
     code_challenge: str,
     code_challenge_method: str,
+    state: str,
 ) -> tuple[str, str]:
     """Google 認可 URL を組み立てる.
+
+    state はフロントエンドが生成した値を受け取り、そのまま Google 認可 URL に埋め込む（RFC 6819 推奨）。
 
     Returns:
         (authorization_url, state)
     """
-    state = generate_state()
     authorization_url = build_google_authorize_url(
         redirect_uri=redirect_uri,
         state=state,

@@ -5,10 +5,11 @@ import { logger } from "@/lib/logger"
 import { currentSettingsAtom } from "@/settings/atoms"
 import type { Settings } from "@/settings/types"
 import { authStatusAtom, currentUserAtom } from "./atoms"
-import { createPkcePair } from "./pkce"
+import { createPkcePair, createState } from "./pkce"
 import { clearPendingOAuth, readPendingOAuth, savePendingOAuth } from "./storage"
 import type { AuthUser } from "./types"
 
+// TCH-75: backend API は同一オリジンから呼び出す構造に変更したため、ベースURLは空文字（相対パス）でよい
 const BASE_URL = ""
 
 /**
@@ -51,16 +52,20 @@ export function useAuth() {
 
   /**
    * Google OAuth ログインを開始する
-   * PKCE ペアと state を生成し、sessionStorage に保存してから認可 URL へ遷移
+   * PKCE ペアと state をフロント側で生成し、sessionStorage に保存してから認可 URL へ遷移
+   * state はフロントが生成してバックエンドに渡す（RFC 6819 推奨）
    */
   async function startGoogleLogin(): Promise<void> {
     const { codeVerifier, codeChallenge, codeChallengeMethod } = await createPkcePair()
+    // state はフロントエンド側で生成する（RFC 6819: クライアントが state を生成・保持）
+    const state = createState()
     const redirectUri = `${window.location.origin}/auth/callback`
 
     const params = new URLSearchParams({
       code_challenge: codeChallenge,
       code_challenge_method: codeChallengeMethod,
       redirect_uri: redirectUri,
+      state,
     })
 
     logger.debug("[startGoogleLogin] requesting authorize URL")
@@ -77,7 +82,7 @@ export function useAuth() {
       res,
       "startGoogleLogin",
     )
-    const { authorization_url: authorizationUrl, state } = json.data
+    const { authorization_url: authorizationUrl } = json.data
 
     savePendingOAuth({
       state,
@@ -85,6 +90,12 @@ export function useAuth() {
       redirectUri,
       createdAt: Date.now(),
     })
+
+    // I-3: 認可 URL のオリジンが Google のものであることを検証する
+    const allowedOrigin = "https://accounts.google.com"
+    if (new URL(authorizationUrl).origin !== allowedOrigin) {
+      throw new Error("Invalid authorization URL")
+    }
 
     window.location.assign(authorizationUrl)
   }
@@ -176,6 +187,8 @@ export function useAuth() {
         method: "POST",
         credentials: "include",
       })
+    } catch (e) {
+      logger.error("[logout] fetch failed:", e)
     } finally {
       queryClient.clear()
       setCurrentUser(null)

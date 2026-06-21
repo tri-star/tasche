@@ -35,9 +35,13 @@ export function useBootstrapAuth(): void {
           const user = (userJson as { data: AuthUser }).data
           setCurrentUser(user)
           setAuthStatus("authenticated")
-        } else {
-          // 401 または他のエラー → 未認証
+        } else if (userRes.status === 401) {
+          // 未認証（セッションなし）
           setAuthStatus("anonymous")
+          return
+        } else {
+          // 5xx 等の予期しないエラー
+          setAuthStatus("error")
           return
         }
 

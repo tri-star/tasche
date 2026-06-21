@@ -53,6 +53,8 @@ function renderSettingsPage() {
     id: "user-1",
     email: "test@example.com",
     name: "テストユーザー",
+    picture: null,
+    timezone: "Asia/Tokyo",
   })
   store.set(currentSettingsAtom, { timezone: "Asia/Tokyo", theme: "light" })
 

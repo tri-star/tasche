@@ -1,5 +1,4 @@
 import { test as base, type Page } from "@playwright/test"
-import { MOCK_AUTH_USER_STORAGE_KEY } from "@/mocks/handlers/authSession"
 import { getApiBaseUrl } from "../utils/api-base-url"
 import { E2E_STUB_USER_EMAIL } from "../utils/test-auth"
 
@@ -11,7 +10,7 @@ async function loginWithMswStub(page: Page, email: string): Promise<void> {
   await page.goto("/login")
 
   await page.evaluate(
-    async ({ stubEmail, storageKey }) => {
+    async ({ stubEmail }) => {
       const user = { email: stubEmail, name: "テストユーザー" }
       const response = await fetch("/api/auth/stub-login", {
         method: "POST",
@@ -23,12 +22,9 @@ async function loginWithMswStub(page: Page, email: string): Promise<void> {
       if (!response.ok) {
         throw new Error(`stub-login failed: ${response.status} ${response.statusText}`)
       }
-
-      // MSW セッションを sessionStorage に保存することで、
-      // リロード後も getMockAuthUser() が復元されログイン状態を維持できる
-      sessionStorage.setItem(storageKey, JSON.stringify(user))
+      // setMockAuthUser ハンドラが sessionStorage への書き込みを行うため、ここでの手動書き込みは不要
     },
-    { stubEmail: email, storageKey: MOCK_AUTH_USER_STORAGE_KEY },
+    { stubEmail: email },
   )
 
   await gotoAuthenticatedRoot(page)

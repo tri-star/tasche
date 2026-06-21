@@ -93,7 +93,7 @@ import { testUsers } from "@/e2e/fixtures/test-data"
 test("ユーザー切り替え", async ({ authenticatedPage, auth }) => {
   await authenticatedPage.goto("/")
 
-  await auth.loginAs({ email: testUsers.secondary.email })
+  await auth.loginAs(testUsers.secondary.email)
   await authenticatedPage.reload()
 
   await expect(authenticatedPage).toHaveURL("/")

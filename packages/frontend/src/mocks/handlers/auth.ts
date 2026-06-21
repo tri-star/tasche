@@ -37,7 +37,8 @@ export const authHandlers = [
   }),
 
   // スタブログイン（開発・テスト用）
-  // セッションを確立し、UserResponse を返す（access_token は返さない）
+  // session Cookie 方式でセッションを確立し、UserResponse を返す
+  // MSW では HttpOnly Cookie のラウンドトリップを再現できないため setMockAuthUser で代用する
   http.post("*/api/auth/stub-login", async ({ request }) => {
     const body = (await request.json()) as { email?: string; name?: string }
     const currentUser = {

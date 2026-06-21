@@ -63,7 +63,8 @@ describe("AuthCallbackPage", () => {
 
     await waitFor(() => {
       expect(screen.getByRole("alert")).toBeInTheDocument()
-      expect(screen.getByText(/セキュリティ検証に失敗しました/)).toBeInTheDocument()
+      // I-2: エラーメッセージは固定文言（Error.message はそのまま表示しない）
+      expect(screen.getByText("認証に失敗しました。再度ログインしてください。")).toBeInTheDocument()
     })
   })
 

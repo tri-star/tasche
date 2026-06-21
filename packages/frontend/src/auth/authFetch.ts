@@ -3,7 +3,7 @@ import { getAuthClient } from "./authClientSingleton"
 /**
  * orval の mutator 関数（fetch クライアント向け）。
  * orval は authFetch(url, init) の形式で呼び出す。
- * AuthClient 経由で Authorization ヘッダ付与と 401 自動リトライを適用し、
+ * credentials:"include" による Cookie 認証を適用。401 受信時は onUnauthorized でリセット。リトライは行わない。
  * { data, status, headers } の形で返す。
  */
 export async function authFetch<T>(url: string, options?: RequestInit): Promise<T> {
