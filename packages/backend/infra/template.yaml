@@ -29,6 +29,14 @@ Parameters:
     Type: String
     Default: ""
     Description: Google OAuth 許可リダイレクトURI (カンマ区切り). 空の場合はアプリのデフォルト (localhost) が使われるため AWS 環境では必ず CloudFront 配下の callback URL を指定する
+  SecretsLayerUrl:
+    Type: String
+    Default: ""
+    Description: Parameters and Secrets Lambda Extension の署名付きダウンロード URL
+  AdotLayerUrl:
+    Type: String
+    Default: ""
+    Description: ADOT Python Lambda layer の署名付きダウンロード URL
 
 Resources:
   # ----------------------------------------------------------------------------
@@ -40,6 +48,9 @@ Resources:
       DockerContext: ..
       Dockerfile: Dockerfile
       DockerTag: backend-latest
+      DockerBuildArgs:
+        SECRETS_LAYER_URL: !Ref SecretsLayerUrl
+        ADOT_LAYER_URL: !Ref AdotLayerUrl
     Properties:
       FunctionName: !Sub "${Env}-tasche-backend"
       PackageType: Image

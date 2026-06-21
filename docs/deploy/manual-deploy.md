@@ -56,11 +56,13 @@ git checkout <commit-or-tag>
 cd packages/backend
 ```
 
-### 2. Lambda Extension Layer の取得 (コンテナイメージ焼き込み用)
+### 2. Lambda Extension Layer の署名 URL 解決
+
+AWS 認証が必要なのは Layer zip の署名 URL 解決までで、download / unzip 自体は Dockerfile の中間ステージで実施する。
 
 ```bash
-bash scripts/fetch-lambda-extensions.sh
-# build/lambda-extensions/ に layer の中身が展開される
+eval "$(bash scripts/fetch-lambda-extensions.sh)"
+# SECRETS_LAYER_URL / ADOT_LAYER_URL が shell に export される
 ```
 
 ### 3. SAM ビルド
@@ -69,7 +71,10 @@ bash scripts/fetch-lambda-extensions.sh
 cd infra
 
 sam build \
-  --config-env "$ENV_NAME"
+  --config-env "$ENV_NAME" \
+  --parameter-overrides \
+    "SecretsLayerUrl=${SECRETS_LAYER_URL}" \
+    "AdotLayerUrl=${ADOT_LAYER_URL}"
 ```
 
 ### 4. SAM デプロイ
@@ -104,14 +109,18 @@ curl -i "${FUNCTION_URL}health"
 
 ### 6. ロールバック手順
 
-過去に deploy したいコミット / タグを checkout し、同じ `sam build` / `sam deploy` を再実行する。
+過去に deploy したいコミット / タグを checkout し、同じ URL 解決 → `sam build` → `sam deploy` を再実行する。
 
 ```bash
 git checkout <ロールバック先のコミットまたはタグ>
 cd packages/backend
-bash scripts/fetch-lambda-extensions.sh
+eval "$(bash scripts/fetch-lambda-extensions.sh)"
 cd infra
-sam build --config-env "$ENV_NAME"
+sam build \
+  --config-env "$ENV_NAME" \
+  --parameter-overrides \
+    "SecretsLayerUrl=${SECRETS_LAYER_URL}" \
+    "AdotLayerUrl=${ADOT_LAYER_URL}"
 sam deploy \
   --config-env "$ENV_NAME" \
   --no-confirm-changeset

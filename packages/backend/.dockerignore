@@ -8,10 +8,6 @@ __pycache__
 *.egg-info
 dist
 build
-# Lambda Extension Layer は fetch-lambda-extensions.sh で build/ 配下に展開し
-# Dockerfile からイメージへ焼き込むため、この一部だけは context に含める。
-!build/lambda-extensions
-!build/lambda-extensions/**
 .env
 .venv
 venv/
