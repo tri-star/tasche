@@ -69,12 +69,17 @@ jobs:
         with:
           use-installer: true
 
-      - name: Fetch Lambda Extension layer (Parameters and Secrets)
+      - name: Resolve Lambda Extension layer URLs
         working-directory: packages/backend
-        run: bash scripts/fetch-lambda-extensions.sh
+        run: bash scripts/fetch-lambda-extensions.sh >> "$GITHUB_ENV"
 
       - name: Build backend image
-        run: sam build --config-env dev
+        run: |
+          sam build \
+            --config-env dev \
+            --parameter-overrides \
+              "SecretsLayerUrl=${SECRETS_LAYER_URL}" \
+              "AdotLayerUrl=${ADOT_LAYER_URL}"
 
       - name: Deploy backend stack
         run: |

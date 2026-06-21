@@ -81,8 +81,8 @@ git push origin "$TAG"
 
 push 後、`.github/workflows/deploy-backend-dev.yml` が起動する。workflow は tag のコミットを checkout し、OIDC で AWS ロールを AssumeRole した後、`packages/backend/infra` で次を実行する。
 
-1. Lambda Extension layer を取得する
-2. `sam build --config-env dev` で Lambda コンテナイメージをビルドする
+1. Lambda Extension layer の署名 URL を解決する
+2. `sam build --config-env dev --parameter-overrides ...` で Lambda コンテナイメージをビルドする
 3. `sam deploy --config-env dev` で backend stack を更新する
 
 backend の dev stack 名は `packages/backend/infra/samconfig.toml` の `dev.deploy.parameters.stack_name` に従う。

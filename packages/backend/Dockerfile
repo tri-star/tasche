@@ -3,10 +3,10 @@
 # 構成:
 #   - Lambda Web Adapter (LWA): /opt/extensions に配置 → Lambda 起動時に
 #     uvicorn を HTTP サーバとして起動し、Lambda Runtime API ↔ HTTP をプロキシ
-#   - AWS Parameters and Secrets Lambda Extension / ADOT Lambda layer: Layer zip を事前に
-#     `build/lambda-extensions/` に展開しておき、ここから /opt にコピー
-#     (コンテナ Lambda は Layer の中身をビルド時に焼き込む)
-#     展開は scripts/fetch-lambda-extensions.sh を CI/事前ステップで実行する
+#   - AWS Parameters and Secrets Lambda Extension / ADOT Lambda layer:
+#     Layer zip の署名 URL を build arg で受け取り、中間ステージで /opt に展開する
+#     (コンテナ Lambda は Layer の中身をビルド時にイメージへ焼き込む)
+#     署名 URL の解決は scripts/fetch-lambda-extensions.sh を CI/事前ステップで実行する
 #   - 本番では `uv pip install --system .` で dev 依存を含めない
 #
 # 参考:
@@ -33,6 +33,25 @@ RUN uv pip install --system --no-cache-dir .
 
 FROM --platform=linux/amd64 public.ecr.aws/awsguru/aws-lambda-adapter:0.9.0 AS lambda-adapter
 
+FROM --platform=linux/amd64 python:3.12-slim AS extensions
+
+ARG SECRETS_LAYER_URL
+ARG ADOT_LAYER_URL
+
+RUN test -n "${SECRETS_LAYER_URL}" \
+    && test -n "${ADOT_LAYER_URL}"
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates curl unzip \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p /opt \
+    && curl -fsSL "${SECRETS_LAYER_URL}" -o /tmp/parameters-secrets.zip \
+    && unzip -q /tmp/parameters-secrets.zip -d /opt \
+    && curl -fsSL "${ADOT_LAYER_URL}" -o /tmp/adot-python.zip \
+    && unzip -q /tmp/adot-python.zip -d /opt \
+    && rm -f /tmp/parameters-secrets.zip /tmp/adot-python.zip
+
 FROM --platform=linux/amd64 python:3.12-slim
 
 # Lambda Web Adapter を取り込む
@@ -40,8 +59,7 @@ FROM --platform=linux/amd64 python:3.12-slim
 COPY --from=lambda-adapter /lambda-adapter /opt/extensions/lambda-adapter
 
 # AWS Parameters and Secrets Lambda Extension と ADOT Lambda layer を /opt 直下へ展開
-# build/lambda-extensions/ 下には Layer zip 展開後の extensions/ ディレクトリ等が含まれる前提
-COPY build/lambda-extensions/ /opt/
+COPY --from=extensions /opt/ /opt/
 
 # Python 依存とアプリケーションコードを builder ステージから複製
 COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
