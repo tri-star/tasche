@@ -72,11 +72,7 @@ jobs:
       - name: Resolve Lambda Extension layer URLs
         working-directory: packages/backend
         run: |
-          eval "$(bash scripts/fetch-lambda-extensions.sh)"
-          {
-            echo "SECRETS_LAYER_URL=${SECRETS_LAYER_URL}"
-            echo "ADOT_LAYER_URL=${ADOT_LAYER_URL}"
-          } >> "$GITHUB_ENV"
+          bash scripts/fetch-lambda-extensions.sh | sed 's/^export //' >> "$GITHUB_ENV"
 
       - name: Build backend image
         run: |
