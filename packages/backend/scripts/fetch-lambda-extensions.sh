@@ -44,7 +44,7 @@ fetch_layer() {
     exit 1
   fi
 
-  printf '%s=%q\n' "${output_name}" "${location}"
+  printf 'export %s=%q\n' "${output_name}" "${location}"
 }
 
 fetch_layer "SECRETS_LAYER_URL" "${SECRETS_LAYER_ARN}"

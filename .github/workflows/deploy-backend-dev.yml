@@ -71,7 +71,8 @@ jobs:
 
       - name: Resolve Lambda Extension layer URLs
         working-directory: packages/backend
-        run: bash scripts/fetch-lambda-extensions.sh >> "$GITHUB_ENV"
+        run: |
+          bash scripts/fetch-lambda-extensions.sh | sed 's/^export //' >> "$GITHUB_ENV"
 
       - name: Build backend image
         run: |

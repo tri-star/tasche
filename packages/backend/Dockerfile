@@ -35,15 +35,15 @@ FROM --platform=linux/amd64 public.ecr.aws/awsguru/aws-lambda-adapter:0.9.0 AS l
 
 FROM --platform=linux/amd64 python:3.12-slim AS extensions
 
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates curl unzip \
+    && rm -rf /var/lib/apt/lists/*
+
 ARG SECRETS_LAYER_URL
 ARG ADOT_LAYER_URL
 
 RUN test -n "${SECRETS_LAYER_URL}" \
     && test -n "${ADOT_LAYER_URL}"
-
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates curl unzip \
-    && rm -rf /var/lib/apt/lists/*
 
 RUN mkdir -p /opt \
     && curl -fsSL "${SECRETS_LAYER_URL}" -o /tmp/parameters-secrets.zip \
