@@ -55,6 +55,8 @@ function renderSettingsPage() {
     name: "テストユーザー",
     picture: null,
     timezone: "Asia/Tokyo",
+    created_at: "2026-01-01T00:00:00Z",
+    updated_at: "2026-01-01T00:00:00Z",
   })
   store.set(currentSettingsAtom, { timezone: "Asia/Tokyo", theme: "light" })
 

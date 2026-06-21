@@ -52,7 +52,7 @@ export function useBootstrapAuth(): void {
         }
         // settings 取得失敗は致命的ではない: theme は light フォールバック、authStatus は authenticated 継続
       } catch {
-        setAuthStatus("anonymous")
+        setAuthStatus("error")
       }
     }
 

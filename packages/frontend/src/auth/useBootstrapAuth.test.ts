@@ -123,6 +123,28 @@ describe("useBootstrapAuth", () => {
     })
   })
 
+  describe("ネットワークエラーが発生した場合", () => {
+    it("authStatus が 'error' になること", async () => {
+      server.use(
+        http.get("*/api/users/me", () => {
+          throw new Error("Network Error")
+        }),
+      )
+
+      const store = createStore()
+      renderHook(() => useBootstrapAuth(), {
+        wrapper: createWrapper(store),
+      })
+
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 0))
+      })
+
+      expect(store.get(authStatusAtom)).toBe("error")
+      expect(store.get(currentUserAtom)).toBeNull()
+    })
+  })
+
   describe("StrictMode 二重呼び出し抑制（started ref）", () => {
     it("useEffect が2回呼ばれても fetch は1回のみであること", async () => {
       const fetchSpy = vi.spyOn(globalThis, "fetch")
