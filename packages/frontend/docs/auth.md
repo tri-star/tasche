@@ -8,11 +8,10 @@
 
 ## 状態管理（Jotai Atom）
 
-`src/auth/atoms.ts` で 3 つの atom を定義しています。
+`src/auth/atoms.ts` で 2 つの atom を定義しています。
 
 | atom | 型 | 説明 |
 |------|----|------|
-| `accessTokenAtom` | `string \| null` | アクセストークン（インメモリのみ、永続化しない） |
 | `authStatusAtom` | `AuthStatus` | 認証状態（`"loading"` / `"authenticated"` / `"anonymous"` / `"error"`） |
 | `currentUserAtom` | `AuthUser \| null` | ログイン中のユーザー情報 |
 
@@ -21,14 +20,13 @@
 ```
 起動時
   └─ "loading"
-       ├─ POST /api/auth/refresh 成功 → "authenticated"
-       └─ 失敗 → "anonymous"
+       ├─ GET /api/users/me 成功 → "authenticated"
+       ├─ GET /api/users/me が 401 → "anonymous"
+       └─ GET /api/users/me が 5xx 等 → "error"
 
 ログイン成功 → "authenticated"
-ログアウト / refresh 失敗 → "anonymous"
+ログアウト / 401 受信 → "anonymous"
 ```
-
-> `accessTokenAtom` は `localStorage` / `sessionStorage` に書かず、XSS による漏洩リスクを最小化しています。
 
 ---
 
@@ -55,18 +53,16 @@ createState()    → string（ランダム）
 
 ---
 
-## 自動リフレッシュ fetch ラッパ
+## Cookie 認証専用 fetch ラッパ
 
 ### `src/auth/authClient.ts`
 
 標準 `fetch` を薄くラップした `AuthClient` を提供します。
 
 **主な機能**:
-- すべてのリクエストに `Authorization: Bearer <token>` を付与
-- すべての `/api/auth/*` リクエストに `credentials: "include"` を付与（Cookie 送受信に必須）
-- 401 応答時に `/api/auth/refresh` を 1 回呼び出してリトライ
-- 並行して複数の 401 が発生した場合、`/api/auth/refresh` は **1 回のみ**呼び出す（Promise キャッシュによる直列化）
-- refresh も失敗した場合、`onUnauthorized` を呼び出してログアウト処理を行う
+- `credentials: "include"` を全リクエストに付与し、HttpOnly Cookie（`session`）をブラウザに自動送信させる
+- Authorization ヘッダは付与しない（Cookie が認証の唯一の手段）
+- 401 を受けたら `onUnauthorized` を呼び出してセッション失効を通知し、例外を throw する（リトライは行わない）
 
 ### `src/auth/authClientSingleton.ts`
 
@@ -97,13 +93,19 @@ export async function authFetch<T>(config, options?): Promise<T>
 | 関数 | 説明 |
 |------|------|
 | `startGoogleLogin()` | PKCE ペア生成 → storage 保存 → `/api/auth/google/authorize` → `window.location.assign` |
-| `handleCallback(params)` | state 検証 → `/api/auth/google/callback` → atom 更新 → `/api/users/me` → `/` へ遷移 |
-| `stubLogin(email, name?)` | `/api/auth/stub-login` → atom 更新 → `/` へ遷移 |
+| `handleCallback(params)` | state 検証 → `/api/auth/google/callback` → レスポンスの `data`（UserResponse）を `setCurrentUser` に使用 → `/api/settings` 取得 → atom 更新 → `/` へ遷移 |
+| `stubLogin(email, name?)` | `/api/auth/stub-login` → レスポンスの `data`（UserResponse）を `setCurrentUser` に使用 → atom 更新 → `/` へ遷移 |
 | `logout()` | `/api/auth/logout` → atom リセット → `/login` へ遷移 |
+
+**`handleCallback` のポイント**: バックエンドが `Set-Cookie` でセッションを確立し、レスポンスボディに `{ data: UserResponse }` を返す。フロントエンドはレスポンスの `data` を直接 `setCurrentUser` に渡す（`/api/users/me` の再呼び出しは不要）。
 
 ### `src/auth/useBootstrapAuth.ts`
 
-アプリ起動時（`App.tsx`）に 1 度だけ `POST /api/auth/refresh` を呼び出し、既存のリフレッシュ Cookie からセッションを復元します。
+アプリ起動時（`App.tsx`）に 1 度だけ実行される。`/api/users/me` と `/api/settings` を **並列** で取得し、`me` の結果で `authStatus` を決定します。
+
+- `me` が 200: `currentUserAtom` を更新 → `authStatus = "authenticated"`
+- `me` が 401: 未認証 → `authStatus = "anonymous"`（settings の結果は無視）
+- `me` が 5xx 等: `authStatus = "error"`
 
 React 19 StrictMode の二重実行に対して `useRef` で `started` フラグを管理し、重複実行を防止しています。
 
@@ -125,10 +127,12 @@ React 19 StrictMode の二重実行に対して `useRef` で `started` フラグ
 
 ## MSW ハンドラ
 
-`src/mocks/handlers/auth.ts` はモジュールスコープの `currentUser` 変数でセッションを模擬します。
+`src/mocks/handlers/auth.ts` はモジュールスコープの `getMockAuthUser()` でセッションを模擬します。
 
-- 初回ロード時は `currentUser = null` → `POST /api/auth/refresh` が 401 を返す → `authStatus = "anonymous"` → `/login` にリダイレクト
-- スタブログイン後は `currentUser` が設定される → 以降の `refresh` は 200 を返す
+- `currentUser` が null の場合、`GET /api/users/me` は 401 を返す → `authStatus = "anonymous"` → `/login` にリダイレクト
+- スタブログイン後は `currentUser` が設定される → 以降の `GET /api/users/me` は 200 を返す
+
+HttpOnly Cookie の擬似として `getMockAuthUser()` ベースで認証ガードを実装しています（MSW モードではブラウザの Cookie 機能に依存しない）。
 
 `src/mocks/handlers/index.ts` では `authHandlers` を **先頭** に配置しており、orval 生成ハンドラの重複を上書きします。
 
@@ -138,7 +142,7 @@ React 19 StrictMode の二重実行に対して `useRef` で `started` フラグ
 
 | 項目 | 方針 |
 |------|------|
-| アクセストークン | インメモリ atom のみ。`localStorage` / `sessionStorage` に書かない |
+| セッション Cookie | HttpOnly のためJavaScript からアクセス不可。ブラウザが自動管理 |
+| Cookie 送信 | `credentials: "include"` で送受信（SameSite=Lax + Path=/api） |
 | code_verifier / state | `sessionStorage`（XSS 面最小化 + ページ遷移対応） |
-| Cookie | `credentials: "include"` で送受信（HttpOnly Cookie はブラウザが自動管理） |
-| refresh 直列化 | 並行 401 で `/api/auth/refresh` を複数回呼ばないよう Promise をキャッシュ |
+| アクセストークン | 廃止（セッション Cookie に一本化） |

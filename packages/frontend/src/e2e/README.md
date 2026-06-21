@@ -74,8 +74,8 @@ test("ダッシュボードが表示される", async ({ authenticatedPage }) =>
 
 `authenticatedPage` フィクスチャを使用すると、認証済みの状態でテストを開始できます。
 
-実APIモードでは `/api/test-auth` からトークンを取得し、APIリクエストに
-`Authorization: Bearer {token}` を付与します。
+実APIモードでは `POST /api/auth/stub-login` を呼び出してセッション Cookie を取得します。
+ブラウザはその Cookie を以降のリクエストに自動付与し、`/api/users/me` でセッション復元を確認します。
 
 ```typescript
 test("テスト名", async ({ authenticatedPage }) => {
@@ -129,7 +129,7 @@ GitHub Actionsで自動的にE2Eテストが実行されます。
    - ページオブジェクトのセレクタが正しいか確認
 
 2. **実APIモードでの失敗**
-   - バックエンドが `ENABLE_TEST_AUTH=true` で起動しているか確認
+   - バックエンドが `AUTH_STUB_ENABLED=true` で起動しているか確認
    - APIエンドポイントが正しいか確認
 
 ### デバッグ方法

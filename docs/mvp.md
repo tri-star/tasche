@@ -129,8 +129,7 @@ Tasche MVP（Minimum Viable Product）は、習慣化支援の核となる機能
 | 対応プロバイダ | Google                                           |
 | Backend ライブラリ | Authlib                                       |
 | Frontend ライブラリ | oauth4webapi                                 |
-| アクセストークン | 自前発行の JWT (frontend はインメモリ保管)     |
-| リフレッシュトークン | 不透明トークン (HttpOnly Cookie + ローテーション) |
+| セッション | サーバ側セッション（不透明トークンを HttpOnly Cookie `session` に保存、DB 管理）。スライディング延長により残存時間が有効期限の半分を下回ったとき自動延長 |
 
 ### インフラ
 
