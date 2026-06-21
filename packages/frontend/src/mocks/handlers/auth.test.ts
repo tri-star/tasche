@@ -15,11 +15,8 @@ describe("MSW auth handlers", () => {
   })
 
   it("スタブログイン前は users/me が 401 を返す", async () => {
-    const response = await fetch("http://localhost/api/users/me", {
-      headers: {
-        Authorization: "Bearer stub.unauth.sig",
-      },
-    })
+    // 認証なし（Cookie なし）で叩く → getMockAuthUser が null → 401
+    const response = await fetch("http://localhost/api/users/me")
 
     expect(response.status).toBe(401)
   })
@@ -38,13 +35,8 @@ describe("MSW auth handlers", () => {
 
     expect(loginResponse.ok).toBe(true)
 
-    const loginJson = (await loginResponse.json()) as { data: { access_token: string } }
-
-    const meResponse = await fetch("http://localhost/api/users/me", {
-      headers: {
-        Authorization: `Bearer ${loginJson.data.access_token}`,
-      },
-    })
+    // stub-login が setMockAuthUser した後は Cookie 不要で users/me が成功する
+    const meResponse = await fetch("http://localhost/api/users/me")
 
     expect(meResponse.ok).toBe(true)
 
@@ -53,57 +45,27 @@ describe("MSW auth handlers", () => {
     expect(meJson.data.name).toBe(name)
   })
 
-  it("スタブログイン後は refresh が access token を返す", async () => {
-    const loginResponse = await fetch("http://localhost/api/auth/stub-login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email: "refresh@example.com", name: "リフレッシュユーザー" }),
-    })
-    expect(loginResponse.ok).toBe(true)
-
-    const refreshResponse = await fetch("http://localhost/api/auth/refresh", {
-      method: "POST",
-    })
-
-    expect(refreshResponse.ok).toBe(true)
-    const refreshJson = (await refreshResponse.json()) as { data: { access_token: string } }
-    expect(refreshJson.data.access_token).toMatch(/^stub\..+\.sig$/)
-  })
-
-  it("スタブログイン後の refresh と users/me は同じユーザーを参照する", async () => {
-    const email = "custom@example.com"
-    const name = "カスタムユーザー"
+  it("stub-login のレスポンスにユーザー情報が含まれること", async () => {
+    const email = "info@example.com"
+    const name = "インフォユーザー"
 
     const loginResponse = await fetch("http://localhost/api/auth/stub-login", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, name }),
     })
+
     expect(loginResponse.ok).toBe(true)
 
-    const refreshResponse = await fetch("http://localhost/api/auth/refresh", {
-      method: "POST",
-    })
-    expect(refreshResponse.ok).toBe(true)
-
-    const refreshJson = (await refreshResponse.json()) as { data: { access_token: string } }
-    const meResponse = await fetch("http://localhost/api/users/me", {
-      headers: {
-        Authorization: `Bearer ${refreshJson.data.access_token}`,
-      },
-    })
-
-    expect(meResponse.ok).toBe(true)
-    const meJson = (await meResponse.json()) as { data: { email: string; name: string } }
-    expect(meJson.data.email).toBe(email)
-    expect(meJson.data.name).toBe(name)
+    const loginJson = (await loginResponse.json()) as {
+      data: { email: string; name: string; id: string }
+    }
+    expect(loginJson.data.email).toBe(email)
+    expect(loginJson.data.name).toBe(name)
+    expect(loginJson.data.id).toBeTruthy()
   })
 
-  it("logout 後は refresh と users/me が 401 を返す", async () => {
+  it("logout 後は users/me が 401 を返す", async () => {
     const loginResponse = await fetch("http://localhost/api/auth/stub-login", {
       method: "POST",
       headers: {
@@ -118,16 +80,7 @@ describe("MSW auth handlers", () => {
     })
     expect(logoutResponse.ok).toBe(true)
 
-    const refreshResponse = await fetch("http://localhost/api/auth/refresh", {
-      method: "POST",
-    })
-    expect(refreshResponse.status).toBe(401)
-
-    const meResponse = await fetch("http://localhost/api/users/me", {
-      headers: {
-        Authorization: "Bearer stub.logout.sig",
-      },
-    })
+    const meResponse = await fetch("http://localhost/api/users/me")
     expect(meResponse.status).toBe(401)
   })
 })

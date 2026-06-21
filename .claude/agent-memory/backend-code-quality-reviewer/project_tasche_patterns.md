@@ -146,11 +146,26 @@ type: project
 
 ## ライブラリ移行の既知状況（TCH-29 で確認）
 
-- `joserfc` への移行は `core/oauth.py` + `services/auth.py` のみ完了。`core/security.py`・`core/test_auth.py`・`tests/helpers/google_oauth.py`・`core/tests/test_security.py` は依然 `from jose import ...`（python-jose）を使用している。
+- `joserfc` への移行は `core/oauth.py` + `services/auth.py` のみ完了。TCH-75 でセッション方式へ移行したため `core/security.py` と `core/test_auth.py` は JWT 検証ロジックが削除済み。`tests/helpers/google_oauth.py`・`core/tests/test_security.py` は依然 python-jose を使用している可能性がある。
 - `pyproject.toml` の `joserfc` バージョン制約が `>=1.0.0` だが `uv.lock` では `>=1.7.1` に固定されており乖離がある。
 - `core/oauth.py` にモジュールレベルのロガーがない（他の core モジュールと異なる）。
 - `oauth.py` の `verify_google_id_token` が `JoseError("email_not_verified")` というライブラリ内部例外を直接 raise している（アプリ例外に変換すべき）。
 - `asyncio.Lock` によるキャッシュ競合防止は TCH-29 で実装済み（既存の JWKS キャッシュ競合問題が解消）。
 
+## セッション方式の実装パターン（TCH-75 で確認）
+
+- `models/session.py`: `sessions` テーブル。`token_hash` (SHA-256 hex, String(64), unique+index)、`expires_at`、`revoked_at` の構成。ID は `ses_` + ULID (30文字、String(30) ぴったり）。
+- `services/session.py`: `create_session` は `flush()` のみ（コミットは呼び出し元へ委ねる）。`validate_session` は現状 `commit()` を直接呼んでおり、設計の不一致がある（Critical 指摘、修正推奨）。
+- `core/csrf.py`: Origin/Referer 検証ミドルウェア。Origin/Referer ともに欠落の場合は pass-through（非ブラウザ呼び出しを考慮）。**ロガーが未追加（Important 指摘）**。
+- `core/security.py`: セッション Cookie → DB 照合に全面刷新。JWT 検証ロジックは削除。
+- `core/test_auth.py`: `create_test_session` 関数が JWT 発行に代わりセッション作成を担当。`SessionAuthDisabledError`（旧名 `TestAuthDisabledError` がエイリアスとして残存）。
+
+## `validate_session` 内コミットの既知問題（TCH-75 で確認）
+
+- `services/session.py` の `validate_session` がスライディング延長時に `await db.commit()` を直接呼ぶ。
+- 認証 dependency（`get_current_user_sub`）から毎リクエスト呼ばれるため、読み取り系リクエストでも暗黙のコミットが発生する。
+- `create_session` が `flush()` のみを使う設計と一貫性がなく、トランザクション境界が乱れる。
+- 修正方向: `validate_session` は `flush()` に留め、コミットを `get_current_user_sub` 側へ移動する。
+
 **Why:** TCH-26 の Google OAuth 実装時に発見。今後のレビューでも同様のトランザクション管理・ログ欠落パターンを注意して見るべき。
-**How to apply:** services 層の新しい関数をレビューするときはコミット境界を必ず確認。セキュリティ関連の分岐には INFO/WARNING ログが入っているか確認する。セキュリティ拒否分岐には必ず WARNING ログ（user_id, email, 試行元情報）を追加するよう指摘する。プライベート関数 (`_` 接頭辞) の API 層からの直接呼び出しパターンはレビュー時に毎回指摘する。新しい services 関数には必ず `logger = logging.getLogger(__name__)` と DEBUG ログ（更新成功時）があるか確認する。goal.py はロガーが欠落している既知の状態（TCH-9 時点未修正）なので、goal.py を触る実装では毎回ロガー追加を促す。`core/oauth.py` にもロガーが欠落しているため、この周辺を触る実装ではロガー追加を促す。
+**How to apply:** services 層の新しい関数をレビューするときはコミット境界を必ず確認。セキュリティ関連の分岐には INFO/WARNING ログが入っているか確認する。セキュリティ拒否分岐には必ず WARNING ログ（user_id, email, 試行元情報）を追加するよう指摘する。プライベート関数 (`_` 接頭辞) の API 層からの直接呼び出しパターンはレビュー時に毎回指摘する。新しい services 関数には必ず `logger = logging.getLogger(__name__)` と DEBUG ログ（更新成功時）があるか確認する。goal.py はロガーが欠落している既知の状態（TCH-9 時点未修正）なので、goal.py を触る実装では毎回ロガー追加を促す。`core/oauth.py` にもロガーが欠落しているため、この周辺を触る実装ではロガー追加を促す。新しい middleware（`core/` 配下）にはロガーを追加するよう確認する（csrf.py でも欠落していた）。

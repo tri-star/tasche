@@ -1,42 +1,34 @@
-"""テスト用認証サービス（enable_test_auth==True の時のみ使用可能）."""
+"""テスト用認証ヘルパー（enable_test_auth==True の時のみ使用可能）."""
 
-from datetime import datetime, timedelta, timezone
-
-from joserfc import jwt
-from joserfc.jwk import OctKey
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from tasche.core.config import settings
+from tasche.models.user import User
+from tasche.services.session import create_session
 
 
-class TestAuthDisabledError(Exception):
+class SessionAuthDisabledError(Exception):
     """テスト認証が無効な場合のエラー."""
 
     pass
 
 
-class TestTokenService:
-    """テスト用JWTトークン発行サービス."""
+async def create_test_session(db: AsyncSession, user: User) -> str:
+    """テスト用セッションを作成し、生のセッショントークンを返す.
 
-    def __init__(self):
-        if not settings.enable_test_auth:
-            raise TestAuthDisabledError("TestTokenService requires ENABLE_TEST_AUTH=true")
+    Args:
+        db: DBセッション
+        user: テスト対象ユーザー
 
-    def create_token(
-        self,
-        user_id: str,
-        email: str = "test@example.com",
-        expires_delta: timedelta = timedelta(hours=1),
-    ) -> str:
-        """テスト用JWTトークンを発行."""
-        payload = {
-            "sub": user_id,
-            "email": email,
-            "exp": int((datetime.now(timezone.utc) + expires_delta).timestamp()),
-        }
-        secret_bytes = (
-            settings.test_jwt_secret.encode()
-            if isinstance(settings.test_jwt_secret, str)
-            else settings.test_jwt_secret
-        )
-        key = OctKey.import_key(secret_bytes)
-        return jwt.encode({"alg": "HS256"}, payload, key)
+    Returns:
+        raw_session_token: Cookie の session に設定する生トークン
+
+    Raises:
+        SessionAuthDisabledError: ENABLE_TEST_AUTH=false の場合
+    """
+    if not settings.enable_test_auth:
+        raise SessionAuthDisabledError("create_test_session requires ENABLE_TEST_AUTH=true")
+
+    _session, raw_token = await create_session(db, user_id=user.id)
+    await db.commit()
+    return raw_token

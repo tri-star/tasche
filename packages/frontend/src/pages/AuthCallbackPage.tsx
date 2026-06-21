@@ -25,9 +25,9 @@ export function AuthCallbackPage() {
     ;(async () => {
       try {
         await handleCallback(searchParams)
-      } catch (e) {
+      } catch {
         if (!canceled) {
-          setError(String((e as Error).message ?? e))
+          setError("認証に失敗しました。再度ログインしてください。")
         }
       }
     })()
@@ -41,7 +41,7 @@ export function AuthCallbackPage() {
     return (
       <LoginLayout>
         <p role="alert" className="text-destructive mb-4">
-          ログインに失敗しました: {error}
+          {error}
         </p>
         <Link to="/login" className="text-primary underline">
           ログイン画面に戻る

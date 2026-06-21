@@ -4,12 +4,12 @@
  * Tasche API
  * OpenAPI spec version: 0.1.0
  */
-import type { SettingsResponseTheme } from './settingsResponseTheme';
+import type { Theme } from './theme';
 
 /**
  * ユーザー設定のレスポンス.
  */
 export interface SettingsResponse {
   timezone: string;
-  theme: SettingsResponseTheme;
+  theme: Theme;
 }

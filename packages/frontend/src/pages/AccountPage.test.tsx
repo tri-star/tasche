@@ -12,7 +12,6 @@ vi.mock("@/auth/useAuth", () => ({
   useAuth: () => ({
     status: "authenticated",
     user: null,
-    accessToken: null,
     startGoogleLogin: vi.fn(),
     handleCallback: vi.fn(),
     stubLogin: vi.fn(),
@@ -26,7 +25,10 @@ function renderAccountPage(options?: { picture?: string }) {
     id: "user-1",
     email: "test@example.com",
     name: "テストユーザー",
-    picture: options?.picture,
+    picture: options?.picture ?? null,
+    timezone: "Asia/Tokyo",
+    created_at: "2026-01-01T00:00:00Z",
+    updated_at: "2026-01-01T00:00:00Z",
   })
 
   const router = createMemoryRouter([{ path: "/account", element: <AccountPage /> }], {

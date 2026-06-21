@@ -1,166 +1,254 @@
-"""core/security.py のユニットテスト."""
+"""core/security.py のユニットテスト（セッション Cookie 認証）."""
 
-import time
-from unittest.mock import patch
+from datetime import datetime, timedelta, timezone
 
 import pytest
-from fastapi.security import HTTPAuthorizationCredentials
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from tasche.core.config import settings
 from tasche.core.exceptions import InvalidTokenError
-from tasche.core.security import (
-    _decode_app_jwt,
-    _decode_stub_jwt,
-    get_current_user_sub,
-    issue_access_token,
-    issue_stub_access_token,
-)
-
-
-class TestIssueAccessToken:
-    """issue_access_token のテスト."""
-
-    def test_issue_and_decode_app_jwt(self):
-        """自前 JWT を発行し、デコードで sub が取れることを確認."""
-        token, expires_in = issue_access_token(user_id="usr_test123", email="test@example.com")
-        assert isinstance(token, str)
-        assert expires_in == settings.jwt_access_token_expires_seconds
-
-        payload = _decode_app_jwt(token)
-        assert payload["sub"] == "usr_test123"
-        assert payload["email"] == "test@example.com"
-        assert "iat" in payload
-        assert "exp" in payload
-
-    def test_issued_token_expires_in_future(self):
-        """発行した JWT の exp が現在時刻より後であることを確認."""
-        token, _ = issue_access_token(user_id="usr_test", email="test@example.com")
-        payload = _decode_app_jwt(token)
-        assert payload["exp"] > time.time()
-
-
-class TestIssueStubAccessToken:
-    """issue_stub_access_token のテスト."""
-
-    def test_issue_stub_token_has_stub_claim(self):
-        """スタブ JWT に stub=True クレームが含まれることを確認."""
-        with patch.object(settings, "auth_stub_jwt_secret", "test_stub_secret"):
-            token, _ = issue_stub_access_token(user_id="usr_stub", email="stub@example.com")
-            payload = _decode_stub_jwt(token)
-            assert payload["stub"] is True
-            assert payload["sub"] == "usr_stub"
-
-    def test_stub_token_rejected_without_stub_claim(self):
-        """stub クレームなしのトークンをスタブ JWT として検証するとエラーになることを確認."""
-        from joserfc import jwt
-        from joserfc.errors import JoseError
-        from joserfc.jwk import OctKey
-
-        # stub クレームを含まないトークン
-        with patch.object(settings, "auth_stub_jwt_secret", "test_stub_secret"):
-            key = OctKey.import_key(b"test_stub_secret")
-            payload = {"sub": "usr_test", "email": "test@example.com"}
-            token = jwt.encode({"alg": "HS256"}, payload, key)
-
-            with pytest.raises(JoseError):
-                _decode_stub_jwt(token)
+from tasche.core.security import get_current_user_sub
+from tasche.models.session import Session
+from tasche.models.user import User
+from tasche.services.session import _generate_raw_token, _generate_session_id, _hash_token
 
 
 class TestGetCurrentUserSub:
     """get_current_user_sub 依存関数のテスト."""
 
     @pytest.mark.asyncio
-    async def test_valid_app_jwt_returns_sub(self):
-        """有効な自前 JWT で sub が返ることを確認."""
-        token, _ = issue_access_token(user_id="usr_test123", email="test@example.com")
-        credentials = HTTPAuthorizationCredentials(scheme="Bearer", credentials=token)
-        sub = await get_current_user_sub(credentials)
-        assert sub == "usr_test123"
+    async def test_valid_session_returns_user_id(self, db_session: AsyncSession):
+        """有効な session Cookie で user_id が返ることを確認."""
+        from fastapi import Response
+        from ulid import ULID
 
-    @pytest.mark.asyncio
-    async def test_stub_jwt_works_when_stub_enabled(self):
-        """スタブ有効時にスタブ JWT で sub が返ることを確認."""
-        with (
-            patch.object(settings, "app_env", "local"),
-            patch.object(settings, "auth_stub_enabled", True),
-            patch.object(settings, "auth_stub_jwt_secret", "test_stub_secret"),
-        ):
-            token, _ = issue_stub_access_token(user_id="usr_stub", email="stub@example.com")
-            credentials = HTTPAuthorizationCredentials(scheme="Bearer", credentials=token)
-            sub = await get_current_user_sub(credentials)
-            assert sub == "usr_stub"
+        from tasche.core.config import settings
 
-    @pytest.mark.asyncio
-    async def test_stub_jwt_rejected_when_stub_disabled(self):
-        """スタブ無効時にスタブ JWT が 401 を返すことを確認."""
-        with (
-            patch.object(settings, "app_env", "production"),
-            patch.object(settings, "auth_stub_enabled", True),
-            patch.object(settings, "auth_stub_jwt_secret", "test_stub_secret"),
-        ):
-            # スタブ JWT を作成（スタブ無効環境で使用しようとする）
-            token, _ = issue_stub_access_token(user_id="usr_stub", email="stub@example.com")
-            credentials = HTTPAuthorizationCredentials(scheme="Bearer", credentials=token)
-
-            with pytest.raises(InvalidTokenError):
-                await get_current_user_sub(credentials)
-
-    @pytest.mark.asyncio
-    async def test_stub_jwt_without_stub_claim_rejected(self):
-        """stub クレームなしのトークンがスタブ JWT として拒否されることを確認."""
-        from joserfc import jwt
-        from joserfc.jwk import OctKey
-
-        with (
-            patch.object(settings, "app_env", "local"),
-            patch.object(settings, "auth_stub_enabled", True),
-            patch.object(settings, "auth_stub_jwt_secret", "test_stub_secret"),
-        ):
-            # stub クレームなし
-            key = OctKey.import_key(b"test_stub_secret")
-            payload = {"sub": "usr_test", "email": "test@example.com"}
-            token = jwt.encode({"alg": "HS256"}, payload, key)
-            credentials = HTTPAuthorizationCredentials(scheme="Bearer", credentials=token)
-
-            with pytest.raises(InvalidTokenError):
-                await get_current_user_sub(credentials)
-
-    @pytest.mark.asyncio
-    async def test_expired_token_raises_invalid_token(self):
-        """期限切れトークンで InvalidTokenError が raise されることを確認."""
-        from joserfc import jwt
-        from joserfc.jwk import OctKey
-
-        # exp を過去に設定したトークン
-        payload = {
-            "sub": "usr_test",
-            "email": "test@example.com",
-            "exp": int(time.time()) - 3600,  # 1時間前
-        }
-        secret_bytes = (
-            settings.jwt_secret.encode()
-            if isinstance(settings.jwt_secret, str)
-            else settings.jwt_secret
+        # テスト用ユーザーを作成
+        user = User(
+            id=f"usr_{ULID()}",
+            email="session_test@example.com",
+            name="Session Test",
         )
-        key = OctKey.import_key(secret_bytes)
-        token = jwt.encode({"alg": settings.jwt_algorithm}, payload, key)
-        credentials = HTTPAuthorizationCredentials(scheme="Bearer", credentials=token)
+        db_session.add(user)
+        await db_session.commit()
 
-        with (
-            patch.object(settings, "app_env", "production"),
-            patch.object(settings, "auth_stub_enabled", False),
-        ):
-            with pytest.raises(InvalidTokenError):
-                await get_current_user_sub(credentials)
+        # 有効なセッションを直接作成
+        raw_token = _generate_raw_token()
+        token_hash = _hash_token(raw_token)
+        expires_at = datetime.now(tz=timezone.utc) + timedelta(
+            seconds=settings.session_expires_seconds
+        )
+        session = Session(
+            id=_generate_session_id(),
+            user_id=user.id,
+            token_hash=token_hash,
+            expires_at=expires_at,
+        )
+        db_session.add(session)
+        await db_session.commit()
+
+        # get_current_user_sub を呼び出す
+        response = Response()
+        result = await get_current_user_sub(
+            response=response,
+            db=db_session,
+            session_token=raw_token,
+        )
+        assert result == user.id
 
     @pytest.mark.asyncio
-    async def test_invalid_token_raises_invalid_token(self):
-        """無効なトークンで InvalidTokenError が raise されることを確認."""
-        credentials = HTTPAuthorizationCredentials(scheme="Bearer", credentials="not_a_valid_jwt")
+    async def test_no_session_cookie_raises_invalid_token(self, db_session: AsyncSession):
+        """Cookie 無しで InvalidTokenError が raise されることを確認."""
+        from fastapi import Response
 
-        with (
-            patch.object(settings, "app_env", "production"),
-            patch.object(settings, "auth_stub_enabled", False),
-        ):
-            with pytest.raises(InvalidTokenError):
-                await get_current_user_sub(credentials)
+        response = Response()
+        with pytest.raises(InvalidTokenError):
+            await get_current_user_sub(
+                response=response,
+                db=db_session,
+                session_token=None,
+            )
+
+    @pytest.mark.asyncio
+    async def test_invalid_token_raises_invalid_token(self, db_session: AsyncSession):
+        """不正な session トークンで InvalidTokenError が raise されることを確認."""
+        from fastapi import Response
+
+        response = Response()
+        with pytest.raises(InvalidTokenError):
+            await get_current_user_sub(
+                response=response,
+                db=db_session,
+                session_token="invalid_token_value",
+            )
+
+    @pytest.mark.asyncio
+    async def test_expired_session_raises_invalid_token(self, db_session: AsyncSession):
+        """期限切れセッションで InvalidTokenError が raise されることを確認."""
+        from fastapi import Response
+        from ulid import ULID
+
+        # テスト用ユーザーを作成
+        user = User(
+            id=f"usr_{ULID()}",
+            email="expired_test@example.com",
+            name="Expired Test",
+        )
+        db_session.add(user)
+        await db_session.commit()
+
+        # 期限切れセッションを作成
+        raw_token = _generate_raw_token()
+        token_hash = _hash_token(raw_token)
+        expired_at = datetime.now(tz=timezone.utc) - timedelta(hours=1)
+        session = Session(
+            id=_generate_session_id(),
+            user_id=user.id,
+            token_hash=token_hash,
+            expires_at=expired_at,
+        )
+        db_session.add(session)
+        await db_session.commit()
+
+        response = Response()
+        with pytest.raises(InvalidTokenError):
+            await get_current_user_sub(
+                response=response,
+                db=db_session,
+                session_token=raw_token,
+            )
+
+    @pytest.mark.asyncio
+    async def test_revoked_session_raises_invalid_token(self, db_session: AsyncSession):
+        """revoke 済みセッションで InvalidTokenError が raise されることを確認."""
+        from fastapi import Response
+        from ulid import ULID
+
+        from tasche.core.config import settings
+
+        # テスト用ユーザーを作成
+        user = User(
+            id=f"usr_{ULID()}",
+            email="revoked_test@example.com",
+            name="Revoked Test",
+        )
+        db_session.add(user)
+        await db_session.commit()
+
+        # revoke 済みセッションを作成
+        raw_token = _generate_raw_token()
+        token_hash = _hash_token(raw_token)
+        expires_at = datetime.now(tz=timezone.utc) + timedelta(
+            seconds=settings.session_expires_seconds
+        )
+        session = Session(
+            id=_generate_session_id(),
+            user_id=user.id,
+            token_hash=token_hash,
+            expires_at=expires_at,
+            revoked_at=datetime.now(tz=timezone.utc),
+        )
+        db_session.add(session)
+        await db_session.commit()
+
+        response = Response()
+        with pytest.raises(InvalidTokenError):
+            await get_current_user_sub(
+                response=response,
+                db=db_session,
+                session_token=raw_token,
+            )
+
+
+class TestSlidingExtension:
+    """スライディング延長のテスト（services/session.py の validate_session）."""
+
+    @pytest.mark.asyncio
+    async def test_session_extended_when_remaining_less_than_half(self, db_session: AsyncSession):
+        """残存時間 < 有効期限の半分のセッションが延長されることを確認."""
+        from ulid import ULID
+
+        from tasche.core.config import settings
+        from tasche.services.session import validate_session
+
+        # テスト用ユーザーを作成
+        user = User(
+            id=f"usr_{ULID()}",
+            email="extend_test@example.com",
+            name="Extend Test",
+        )
+        db_session.add(user)
+        await db_session.commit()
+
+        # 残存時間が半分未満のセッションを作成
+        # 有効期限 7 日（604800 秒）の半分 = 3.5 日 = 302400 秒
+        # 残存 1 日（86400 秒）< 半分 → 延長される
+        expires_at = datetime.now(tz=timezone.utc) + timedelta(days=1)
+        raw_token = _generate_raw_token()
+        token_hash = _hash_token(raw_token)
+        session = Session(
+            id=_generate_session_id(),
+            user_id=user.id,
+            token_hash=token_hash,
+            expires_at=expires_at,
+        )
+        db_session.add(session)
+        await db_session.commit()
+
+        original_expires_at = session.expires_at
+
+        # validate_session を呼び出す
+        result_session, extended = await validate_session(db_session, raw_token)
+
+        assert result_session is not None
+        assert extended is True
+        # expires_at が延長されていることを確認
+        assert result_session.expires_at > original_expires_at
+        # 延長後の expires_at が session_expires_seconds 後になっていること
+        expected_expires = datetime.now(tz=timezone.utc) + timedelta(
+            seconds=settings.session_expires_seconds - 60  # 1分の誤差を許容
+        )
+        assert result_session.expires_at >= expected_expires
+
+    @pytest.mark.asyncio
+    async def test_session_not_extended_when_remaining_more_than_half(
+        self, db_session: AsyncSession
+    ):
+        """残存時間 >= 有効期限の半分のセッションが延長されないことを確認."""
+        from ulid import ULID
+
+        from tasche.services.session import validate_session
+
+        # テスト用ユーザーを作成
+        user = User(
+            id=f"usr_{ULID()}",
+            email="no_extend_test@example.com",
+            name="No Extend Test",
+        )
+        db_session.add(user)
+        await db_session.commit()
+
+        # 残存時間が半分以上のセッションを作成
+        # 有効期限 7 日（604800 秒）の半分 = 3.5 日
+        # 残存 5 日（432000 秒）> 半分 → 延長されない
+        expires_at = datetime.now(tz=timezone.utc) + timedelta(days=5)
+        raw_token = _generate_raw_token()
+        token_hash = _hash_token(raw_token)
+        session = Session(
+            id=_generate_session_id(),
+            user_id=user.id,
+            token_hash=token_hash,
+            expires_at=expires_at,
+        )
+        db_session.add(session)
+        await db_session.commit()
+
+        original_expires_at = session.expires_at
+
+        # validate_session を呼び出す
+        result_session, extended = await validate_session(db_session, raw_token)
+
+        assert result_session is not None
+        assert extended is False
+        # expires_at が変わっていないことを確認（秒単位で同じ）
+        assert result_session.expires_at == original_expires_at

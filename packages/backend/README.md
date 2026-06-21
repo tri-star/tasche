@@ -9,7 +9,7 @@ Tasche MVP のバックエンド API（FastAPI + PostgreSQL）
 - **Linter/Formatter**: ruff
 - **ORM**: SQLAlchemy (async)
 - **Database**: PostgreSQL (Neon for production, Docker for local)
-- **Authentication**: Google OAuth 2.0 (BFF型 + PKCE) / 自前発行 JWT (Authlib)
+- **Authentication**: Google OAuth 2.0 (BFF型 + PKCE) / サーバ側セッション（HttpOnly Cookie `session`、DB管理）
 - **Migration**: Alembic
 - **Local Development**: Docker Compose
 
@@ -181,8 +181,8 @@ packages/backend/
 
 1. **Phase 1**: Docker起動、ヘルスチェック
 2. **Phase 2**: DB接続、User モデル
-3. **Phase 3**: テスト用JWT認証、`/api/users/me`
-4. **Phase 4**: Google OAuth 2.0 認証（`/api/auth/google/authorize`, `/api/auth/google/callback`, `/api/auth/refresh`, `/api/auth/logout`, `/api/auth/stub-login`）、Refresh Token Rotation
+3. **Phase 3**: テスト用セッション認証、`/api/users/me`
+4. **Phase 4**: Google OAuth 2.0 認証（`/api/auth/google/authorize`, `/api/auth/google/callback`, `/api/auth/logout`, `/api/auth/stub-login`）、サーバ側セッション（HttpOnly Cookie `session`、スライディング延長）
 
 将来実装予定：
 

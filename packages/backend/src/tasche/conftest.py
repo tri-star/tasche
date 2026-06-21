@@ -20,7 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 import tasche.models  # noqa: F401  モデルをすべてインポートして autogenerate に含める
 from tasche.api.deps import get_db
 from tasche.core.config import settings
-from tasche.core.test_auth import TestTokenService
+from tasche.core.test_auth import create_test_session
 from tasche.main import app
 from tasche.models.user import User
 
@@ -121,14 +121,8 @@ async def client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
 
 
 # ============================================================
-# 認証 fixtures（TestTokenService 系）
+# 認証 fixtures（セッション Cookie ベース）
 # ============================================================
-
-
-@pytest.fixture
-def token_service():
-    """テスト用トークン発行サービス（TestTokenService ベース）."""
-    return TestTokenService()
 
 
 @pytest_asyncio.fixture
@@ -147,15 +141,15 @@ async def test_user(db_session: AsyncSession) -> User:
     return user
 
 
-@pytest.fixture
-def auth_headers(token_service: TestTokenService):
-    """認証ヘッダーを生成する（TestTokenService ベース）."""
+@pytest_asyncio.fixture
+async def auth_cookies(db_session: AsyncSession):
+    """認証 Cookie を生成する（セッション Cookie ベース）."""
 
-    def _auth_headers(user: User) -> dict[str, str]:
-        token = token_service.create_token(user.id, user.email)
-        return {"Authorization": f"Bearer {token}"}
+    async def _auth_cookies(user: User) -> dict[str, str]:
+        raw_token = await create_test_session(db_session, user)
+        return {"session": raw_token}
 
-    return _auth_headers
+    return _auth_cookies
 
 
 # ============================================================
@@ -230,7 +224,6 @@ def stub_settings():
     with (
         patch.object(settings, "app_env", "local"),
         patch.object(settings, "auth_stub_enabled", True),
-        patch.object(settings, "auth_stub_jwt_secret", "test_stub_secret_12345678"),
     ):
         yield settings
 

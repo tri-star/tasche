@@ -37,9 +37,6 @@ describe("useAuth", () => {
     expect(mockFetch).toHaveBeenCalledWith("/api/auth/logout", {
       method: "POST",
       credentials: "include",
-      headers: {
-        Authorization: "Bearer ",
-      },
     })
   })
 })

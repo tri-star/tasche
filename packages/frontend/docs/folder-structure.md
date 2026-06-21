@@ -5,15 +5,15 @@
     - `images/login/` - ログイン画面用 SVG（`bg-blobs.svg`, `deco-bl.svg`, `deco-br.svg`, `deco-tl.svg`, `deco-tr.svg`, `logo-bag.svg`, `google-mark.svg`）
   - `src/`
     - `auth/` - 認証基盤モジュール
-      - `types.ts` - `AuthUser` / `TokenResponse` 型定義
-      - `atoms.ts` - Jotai atom（`accessTokenAtom`, `authStatusAtom`, `currentUserAtom`）
+      - `types.ts` - `AuthUser` 型定義
+      - `atoms.ts` - Jotai atom（`authStatusAtom`, `currentUserAtom`）
       - `pkce.ts` - PKCE ペア / state 生成（oauth4webapi）
       - `storage.ts` - `sessionStorage` へ OAuth pending 情報を保管（10 分 TTL）
-      - `authClient.ts` - 401 → refresh 自動リトライ + 並行直列化付き fetch ラッパ
+      - `authClient.ts` - Cookie 認証専用 fetch ラッパ（`credentials:"include"`）、401 で `onUnauthorized` を呼び出し throw（リトライなし）
       - `authClientSingleton.ts` - orval mutator 用シングルトン
       - `authFetch.ts` - orval mutator 関数（全 API コールが authFetch 経由になる）
       - `useAuth.ts` - ログイン / ログアウト / コールバック処理フック
-      - `useBootstrapAuth.ts` - 起動時に `/api/auth/refresh` を 1 回試みるフック（StrictMode 対応）
+      - `useBootstrapAuth.ts` - 起動時に `/api/users/me` を叩いてセッション有無で認証状態を復元するフック（StrictMode 対応）
     - `components/` - UIコンポーネント
       - `ui/` - shadcn/uiベースコンポーネント
       - `common/` - アプリ共通コンポーネント

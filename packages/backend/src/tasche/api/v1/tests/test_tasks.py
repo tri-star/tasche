@@ -7,38 +7,12 @@ from httpx import AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from tasche.core.security import issue_access_token
 from tasche.models.enums import DayOfWeek
 from tasche.models.record import Record
 from tasche.models.task import Task
 from tasche.models.user import User
 from tasche.models.week import Week
 from tasche.services.record import calculate_current_week_start_date
-
-
-class _LocalTokenService:
-    """テスト用トークン発行サービス."""
-
-    def create_token(self, user_id: str, email: str) -> str:
-        token, _ = issue_access_token(user_id=user_id, email=email)
-        return token
-
-
-@pytest.fixture
-def token_service() -> _LocalTokenService:
-    """タスク API 用のローカルトークン発行サービス."""
-    return _LocalTokenService()
-
-
-@pytest.fixture
-def auth_headers(token_service: _LocalTokenService):
-    """認証ヘッダーを生成する."""
-
-    def _auth_headers(user: User) -> dict[str, str]:
-        token = token_service.create_token(user.id, user.email)
-        return {"Authorization": f"Bearer {token}"}
-
-    return _auth_headers
 
 
 async def _create_user(
@@ -176,10 +150,10 @@ async def test_get_tasks_success(
     client: AsyncClient,
     test_user: User,
     test_tasks: list[Task],
-    auth_headers,
+    auth_cookies,
 ):
     """認証済みユーザーがタスク一覧を取得できる."""
-    response = await client.get("/api/tasks", headers=auth_headers(test_user))
+    response = await client.get("/api/tasks", cookies=await auth_cookies(test_user))
 
     assert response.status_code == 200
     data = response.json()["data"]
@@ -202,12 +176,12 @@ async def test_get_tasks_include_archived(
     client: AsyncClient,
     test_user: User,
     test_tasks: list[Task],
-    auth_headers,
+    auth_cookies,
 ):
     """include_archived=trueでアーカイブ済みタスクも取得できる."""
     response = await client.get(
         "/api/tasks?include_archived=true",
-        headers=auth_headers(test_user),
+        cookies=await auth_cookies(test_user),
     )
 
     assert response.status_code == 200
@@ -227,10 +201,10 @@ async def test_get_tasks_include_archived(
 async def test_get_tasks_empty(
     client: AsyncClient,
     test_user: User,
-    auth_headers,
+    auth_cookies,
 ):
     """タスクが存在しない場合は空配列を返す."""
-    response = await client.get("/api/tasks", headers=auth_headers(test_user))
+    response = await client.get("/api/tasks", cookies=await auth_cookies(test_user))
 
     assert response.status_code == 200
     data = response.json()["data"]
@@ -249,10 +223,10 @@ async def test_get_tasks_unauthorized(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_get_tasks_invalid_token(client: AsyncClient):
-    """無効なトークンで401."""
+    """無効なセッション Cookie で 401."""
     response = await client.get(
         "/api/tasks",
-        headers={"Authorization": "Bearer invalid_token"},
+        cookies={"session": "invalid_session_token"},
     )
     assert response.status_code == 401
 
@@ -263,7 +237,7 @@ async def test_get_tasks_only_own_tasks(
     db_session: AsyncSession,
     test_user: User,
     test_tasks: list[Task],
-    auth_headers,
+    auth_cookies,
 ):
     """他ユーザーのタスクは取得できない."""
     other_user = await _create_user(
@@ -280,7 +254,7 @@ async def test_get_tasks_only_own_tasks(
 
     response = await client.get(
         "/api/tasks?include_archived=true",
-        headers=auth_headers(test_user),
+        cookies=await auth_cookies(test_user),
     )
 
     assert response.status_code == 200
@@ -300,10 +274,10 @@ async def test_get_tasks_response_format(
     client: AsyncClient,
     test_user: User,
     test_tasks: list[Task],
-    auth_headers,
+    auth_cookies,
 ):
     """レスポンス形式が正しい."""
-    response = await client.get("/api/tasks", headers=auth_headers(test_user))
+    response = await client.get("/api/tasks", cookies=await auth_cookies(test_user))
 
     assert response.status_code == 200
     json_data = response.json()
@@ -335,7 +309,7 @@ async def test_get_tasks_returns_zero_units_when_no_records(
     client: AsyncClient,
     db_session: AsyncSession,
     test_user: User,
-    auth_headers,
+    auth_cookies,
 ):
     """recordが無い場合、両方0.0を返す."""
     await _create_task(
@@ -345,7 +319,7 @@ async def test_get_tasks_returns_zero_units_when_no_records(
         name="recordなし",
     )
 
-    response = await client.get("/api/tasks", headers=auth_headers(test_user))
+    response = await client.get("/api/tasks", cookies=await auth_cookies(test_user))
 
     assert response.status_code == 200
     items = response.json()["data"]["items"]
@@ -359,7 +333,7 @@ async def test_get_tasks_aggregates_last_week_units(
     client: AsyncClient,
     db_session: AsyncSession,
     test_user: User,
-    auth_headers,
+    auth_cookies,
 ):
     """先週Weekのレコードが consumed_units_last_week に集計される."""
     task = await _create_task(
@@ -392,7 +366,7 @@ async def test_get_tasks_aggregates_last_week_units(
         actual_units=3.0,
     )
 
-    response = await client.get("/api/tasks", headers=auth_headers(test_user))
+    response = await client.get("/api/tasks", cookies=await auth_cookies(test_user))
 
     assert response.status_code == 200
     items = response.json()["data"]["items"]
@@ -406,7 +380,7 @@ async def test_get_tasks_aggregates_total_units(
     client: AsyncClient,
     db_session: AsyncSession,
     test_user: User,
-    auth_headers,
+    auth_cookies,
 ):
     """複数週のレコードを consumed_units_total に集計し、先週分のみ consumed_units_last_week に集計する."""
     task = await _create_task(
@@ -450,7 +424,7 @@ async def test_get_tasks_aggregates_total_units(
         actual_units=2.5,
     )
 
-    response = await client.get("/api/tasks", headers=auth_headers(test_user))
+    response = await client.get("/api/tasks", cookies=await auth_cookies(test_user))
 
     assert response.status_code == 200
     items = response.json()["data"]["items"]
@@ -464,7 +438,7 @@ async def test_get_tasks_excludes_other_user_records(
     client: AsyncClient,
     db_session: AsyncSession,
     test_user: User,
-    auth_headers,
+    auth_cookies,
 ):
     """他ユーザーのレコードが集計に混入しない."""
     task = await _create_task(
@@ -500,7 +474,7 @@ async def test_get_tasks_excludes_other_user_records(
         actual_units=10.0,
     )
 
-    response = await client.get("/api/tasks", headers=auth_headers(test_user))
+    response = await client.get("/api/tasks", cookies=await auth_cookies(test_user))
 
     assert response.status_code == 200
     items = response.json()["data"]["items"]
@@ -515,7 +489,7 @@ async def test_get_tasks_no_last_week_record_returns_zero(
     client: AsyncClient,
     db_session: AsyncSession,
     test_user: User,
-    auth_headers,
+    auth_cookies,
 ):
     """先週Weekが存在しない場合、consumed_units_last_week は 0.0。"""
     task = await _create_task(
@@ -541,7 +515,7 @@ async def test_get_tasks_no_last_week_record_returns_zero(
         actual_units=4.0,
     )
 
-    response = await client.get("/api/tasks", headers=auth_headers(test_user))
+    response = await client.get("/api/tasks", cookies=await auth_cookies(test_user))
 
     assert response.status_code == 200
     items = response.json()["data"]["items"]
@@ -558,7 +532,7 @@ async def test_get_tasks_pagination_first_page(
     client: AsyncClient,
     db_session: AsyncSession,
     test_user: User,
-    auth_headers,
+    auth_cookies,
 ):
     """25件のタスクを作成し、page=1, per_page=20 で20件を返す."""
     for i in range(25):
@@ -574,7 +548,7 @@ async def test_get_tasks_pagination_first_page(
 
     response = await client.get(
         "/api/tasks?page=1&per_page=20",
-        headers=auth_headers(test_user),
+        cookies=await auth_cookies(test_user),
     )
 
     assert response.status_code == 200
@@ -590,7 +564,7 @@ async def test_get_tasks_pagination_second_page(
     client: AsyncClient,
     db_session: AsyncSession,
     test_user: User,
-    auth_headers,
+    auth_cookies,
 ):
     """25件作成し、page=2 で残り5件を返す."""
     for i in range(25):
@@ -606,7 +580,7 @@ async def test_get_tasks_pagination_second_page(
 
     response = await client.get(
         "/api/tasks?page=2&per_page=20",
-        headers=auth_headers(test_user),
+        cookies=await auth_cookies(test_user),
     )
 
     assert response.status_code == 200
@@ -620,10 +594,10 @@ async def test_get_tasks_pagination_second_page(
 async def test_get_tasks_pagination_default_values(
     client: AsyncClient,
     test_user: User,
-    auth_headers,
+    auth_cookies,
 ):
     """クエリ未指定で page=1, per_page=20 がデフォルト."""
-    response = await client.get("/api/tasks", headers=auth_headers(test_user))
+    response = await client.get("/api/tasks", cookies=await auth_cookies(test_user))
 
     assert response.status_code == 200
     data = response.json()["data"]
@@ -635,12 +609,12 @@ async def test_get_tasks_pagination_default_values(
 async def test_get_tasks_pagination_invalid_values_returns_422(
     client: AsyncClient,
     test_user: User,
-    auth_headers,
+    auth_cookies,
 ):
     """異常値（page=0, per_page=999）は Query 制約で 422 を返す."""
     response = await client.get(
         "/api/tasks?page=0&per_page=999",
-        headers=auth_headers(test_user),
+        cookies=await auth_cookies(test_user),
     )
 
     assert response.status_code == 422
@@ -651,7 +625,7 @@ async def test_get_tasks_pagination_order_by_created_at(
     client: AsyncClient,
     db_session: AsyncSession,
     test_user: User,
-    auth_headers,
+    auth_cookies,
 ):
     """作成順で並んでいることを確認する."""
     names = ["タスクC", "タスクA", "タスクB"]
@@ -666,7 +640,7 @@ async def test_get_tasks_pagination_order_by_created_at(
         )
         await db_session.commit()
 
-    response = await client.get("/api/tasks", headers=auth_headers(test_user))
+    response = await client.get("/api/tasks", cookies=await auth_cookies(test_user))
 
     assert response.status_code == 200
     items = response.json()["data"]["items"]
@@ -685,7 +659,7 @@ class TestBulkDeleteTasks:
         client: AsyncClient,
         db_session: AsyncSession,
         test_user: User,
-        auth_headers,
+        auth_cookies,
     ):
         """3件指定 → 全件 archived_ids に、DB で is_archived=True."""
         task1 = await _create_task(
@@ -702,7 +676,7 @@ class TestBulkDeleteTasks:
             "DELETE",
             "/api/tasks",
             json={"ids": [task1.id, task2.id, task3.id]},
-            headers=auth_headers(test_user),
+            cookies=await auth_cookies(test_user),
         )
 
         assert response.status_code == 200
@@ -721,7 +695,7 @@ class TestBulkDeleteTasks:
         client: AsyncClient,
         db_session: AsyncSession,
         test_user: User,
-        auth_headers,
+        auth_cookies,
     ):
         """他ユーザーのIDは not_found_ids に入る。他ユーザーのタスクは変更されない."""
         other_user = await _create_user(
@@ -740,7 +714,7 @@ class TestBulkDeleteTasks:
             "DELETE",
             "/api/tasks",
             json={"ids": [other_task.id]},
-            headers=auth_headers(test_user),
+            cookies=await auth_cookies(test_user),
         )
 
         assert response.status_code == 200
@@ -758,14 +732,14 @@ class TestBulkDeleteTasks:
         client: AsyncClient,
         db_session: AsyncSession,
         test_user: User,
-        auth_headers,
+        auth_cookies,
     ):
         """存在しないIDは not_found_ids に入る."""
         response = await client.request(
             "DELETE",
             "/api/tasks",
             json={"ids": ["tsk_NONEXISTENT1234567890"]},
-            headers=auth_headers(test_user),
+            cookies=await auth_cookies(test_user),
         )
 
         assert response.status_code == 200
@@ -779,7 +753,7 @@ class TestBulkDeleteTasks:
         client: AsyncClient,
         db_session: AsyncSession,
         test_user: User,
-        auth_headers,
+        auth_cookies,
     ):
         """既にアーカイブ済みのIDは not_found_ids に入る."""
         archived_task = await _create_task(
@@ -794,7 +768,7 @@ class TestBulkDeleteTasks:
             "DELETE",
             "/api/tasks",
             json={"ids": [archived_task.id]},
-            headers=auth_headers(test_user),
+            cookies=await auth_cookies(test_user),
         )
 
         assert response.status_code == 200
@@ -808,7 +782,7 @@ class TestBulkDeleteTasks:
         client: AsyncClient,
         db_session: AsyncSession,
         test_user: User,
-        auth_headers,
+        auth_cookies,
     ):
         """同一ID重複 → archived_ids も not_found_ids も重複なし."""
         task = await _create_task(
@@ -822,7 +796,7 @@ class TestBulkDeleteTasks:
             "DELETE",
             "/api/tasks",
             json={"ids": [task.id, task.id, task.id]},
-            headers=auth_headers(test_user),
+            cookies=await auth_cookies(test_user),
         )
 
         assert response.status_code == 200
@@ -835,14 +809,14 @@ class TestBulkDeleteTasks:
         self,
         client: AsyncClient,
         test_user: User,
-        auth_headers,
+        auth_cookies,
     ):
         """ids=[] → 422（Pydantic の min_length=1 で弾く）."""
         response = await client.request(
             "DELETE",
             "/api/tasks",
             json={"ids": []},
-            headers=auth_headers(test_user),
+            cookies=await auth_cookies(test_user),
         )
 
         assert response.status_code == 422
@@ -852,14 +826,14 @@ class TestBulkDeleteTasks:
         self,
         client: AsyncClient,
         test_user: User,
-        auth_headers,
+        auth_cookies,
     ):
         """ids が 101 件 → 422."""
         response = await client.request(
             "DELETE",
             "/api/tasks",
             json={"ids": [f"tsk_{i:030d}" for i in range(101)]},
-            headers=auth_headers(test_user),
+            cookies=await auth_cookies(test_user),
         )
 
         assert response.status_code == 422
@@ -881,7 +855,7 @@ class TestBulkDeleteTasks:
             "DELETE",
             "/api/tasks",
             json={"ids": ["tsk_SOMEVALIDID1234567890"]},
-            headers={"Authorization": "Bearer invalid_token"},
+            cookies={"session": "invalid_session_token"},
         )
         assert response.status_code == 401
 
@@ -891,7 +865,7 @@ class TestBulkDeleteTasks:
         client: AsyncClient,
         db_session: AsyncSession,
         test_user: User,
-        auth_headers,
+        auth_cookies,
     ):
         """有効分は確実にアーカイブされ、not_found は混在可能。"""
         valid_task = await _create_task(
@@ -905,7 +879,7 @@ class TestBulkDeleteTasks:
             "DELETE",
             "/api/tasks",
             json={"ids": [valid_task.id, "tsk_NONEXISTENT0000000001"]},
-            headers=auth_headers(test_user),
+            cookies=await auth_cookies(test_user),
         )
 
         assert response.status_code == 200
@@ -927,13 +901,13 @@ class TestCreateTask:
         client: AsyncClient,
         db_session: AsyncSession,
         test_user: User,
-        auth_headers,
+        auth_cookies,
     ):
         """認証済みユーザーがタスクを作成できる."""
         response = await client.post(
             "/api/tasks",
             json={"name": "  新規タスク  "},
-            headers=auth_headers(test_user),
+            cookies=await auth_cookies(test_user),
         )
 
         assert response.status_code == 201
@@ -961,14 +935,14 @@ class TestCreateTask:
         self,
         client: AsyncClient,
         test_user: User,
-        auth_headers,
+        auth_cookies,
         name: str,
     ):
         """空白のみのタスク名はサービス層で 400 になる."""
         response = await client.post(
             "/api/tasks",
             json={"name": name},
-            headers=auth_headers(test_user),
+            cookies=await auth_cookies(test_user),
         )
 
         assert response.status_code == 400
@@ -980,14 +954,14 @@ class TestCreateTask:
         self,
         client: AsyncClient,
         test_user: User,
-        auth_headers,
+        auth_cookies,
         name: str,
     ):
         """空文字・101文字超えはスキーマレベルで 422 になる."""
         response = await client.post(
             "/api/tasks",
             json={"name": name},
-            headers=auth_headers(test_user),
+            cookies=await auth_cookies(test_user),
         )
 
         assert response.status_code == 422
@@ -1008,7 +982,7 @@ class TestUpdateTask:
         client: AsyncClient,
         db_session: AsyncSession,
         test_user: User,
-        auth_headers,
+        auth_cookies,
     ):
         """所有する active タスクを更新できる."""
         task = await _create_task(
@@ -1021,7 +995,7 @@ class TestUpdateTask:
         response = await client.put(
             f"/api/tasks/{task.id}",
             json={"name": "  更新後  "},
-            headers=auth_headers(test_user),
+            cookies=await auth_cookies(test_user),
         )
 
         assert response.status_code == 200
@@ -1046,7 +1020,7 @@ class TestUpdateTask:
         response = await client.put(
             "/api/tasks/tsk_auth_check",
             json={"name": "更新後"},
-            headers={"Authorization": "Bearer invalid_token"},
+            cookies={"session": "invalid_session_token"},
         )
         assert response.status_code == 401
 
@@ -1056,7 +1030,7 @@ class TestUpdateTask:
         client: AsyncClient,
         db_session: AsyncSession,
         test_user: User,
-        auth_headers,
+        auth_cookies,
     ):
         """他ユーザーのタスクは 404 になる."""
         other_user = await _create_user(
@@ -1074,7 +1048,7 @@ class TestUpdateTask:
         response = await client.put(
             f"/api/tasks/{other_task.id}",
             json={"name": "更新後"},
-            headers=auth_headers(test_user),
+            cookies=await auth_cookies(test_user),
         )
 
         assert response.status_code == 404
@@ -1086,7 +1060,7 @@ class TestUpdateTask:
         client: AsyncClient,
         db_session: AsyncSession,
         test_user: User,
-        auth_headers,
+        auth_cookies,
     ):
         """アーカイブ済みタスクは 404 になる."""
         archived_task = await _create_task(
@@ -1100,7 +1074,7 @@ class TestUpdateTask:
         response = await client.put(
             f"/api/tasks/{archived_task.id}",
             json={"name": "更新後"},
-            headers=auth_headers(test_user),
+            cookies=await auth_cookies(test_user),
         )
 
         assert response.status_code == 404
@@ -1118,7 +1092,7 @@ class TestUpdateTask:
         client: AsyncClient,
         db_session: AsyncSession,
         test_user: User,
-        auth_headers,
+        auth_cookies,
         name: str,
     ):
         """空白のみのタスク名はサービス層で 400 になる."""
@@ -1132,7 +1106,7 @@ class TestUpdateTask:
         response = await client.put(
             f"/api/tasks/{task.id}",
             json={"name": name},
-            headers=auth_headers(test_user),
+            cookies=await auth_cookies(test_user),
         )
 
         assert response.status_code == 400
@@ -1145,7 +1119,7 @@ class TestUpdateTask:
         client: AsyncClient,
         db_session: AsyncSession,
         test_user: User,
-        auth_headers,
+        auth_cookies,
         name: str,
     ):
         """空文字・101文字超えはスキーマレベルで 422 になる."""
@@ -1159,7 +1133,7 @@ class TestUpdateTask:
         response = await client.put(
             f"/api/tasks/{task.id}",
             json={"name": name},
-            headers=auth_headers(test_user),
+            cookies=await auth_cookies(test_user),
         )
 
         assert response.status_code == 422
@@ -1174,7 +1148,7 @@ class TestDeleteTask:
         client: AsyncClient,
         db_session: AsyncSession,
         test_user: User,
-        auth_headers,
+        auth_cookies,
     ):
         """所有する active タスクをアーカイブできる."""
         task = await _create_task(
@@ -1186,7 +1160,7 @@ class TestDeleteTask:
 
         response = await client.delete(
             f"/api/tasks/{task.id}",
-            headers=auth_headers(test_user),
+            cookies=await auth_cookies(test_user),
         )
 
         assert response.status_code == 200
@@ -1200,7 +1174,7 @@ class TestDeleteTask:
 
         list_response = await client.get(
             "/api/tasks",
-            headers=auth_headers(test_user),
+            cookies=await auth_cookies(test_user),
         )
         assert task.id not in [item["id"] for item in list_response.json()["data"]["items"]]
 
@@ -1215,7 +1189,7 @@ class TestDeleteTask:
         """無効なトークンでは 401 になる."""
         response = await client.delete(
             "/api/tasks/tsk_auth_check",
-            headers={"Authorization": "Bearer invalid_token"},
+            cookies={"session": "invalid_session_token"},
         )
         assert response.status_code == 401
 
@@ -1225,7 +1199,7 @@ class TestDeleteTask:
         client: AsyncClient,
         db_session: AsyncSession,
         test_user: User,
-        auth_headers,
+        auth_cookies,
     ):
         """他ユーザーのタスクは 404 になる."""
         other_user = await _create_user(
@@ -1242,7 +1216,7 @@ class TestDeleteTask:
 
         response = await client.delete(
             f"/api/tasks/{other_task.id}",
-            headers=auth_headers(test_user),
+            cookies=await auth_cookies(test_user),
         )
 
         assert response.status_code == 404
@@ -1254,7 +1228,7 @@ class TestDeleteTask:
         client: AsyncClient,
         db_session: AsyncSession,
         test_user: User,
-        auth_headers,
+        auth_cookies,
     ):
         """アーカイブ済みタスクの再削除は 404 になる."""
         archived_task = await _create_task(
@@ -1267,7 +1241,7 @@ class TestDeleteTask:
 
         response = await client.delete(
             f"/api/tasks/{archived_task.id}",
-            headers=auth_headers(test_user),
+            cookies=await auth_cookies(test_user),
         )
 
         assert response.status_code == 404

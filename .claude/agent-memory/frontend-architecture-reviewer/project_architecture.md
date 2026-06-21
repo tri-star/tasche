@@ -65,3 +65,28 @@ metadata:
 
 - `VITE_USE_MSW=true` かつ `import.meta.env.DEV` の場合のみ起動
 - `import("./mocks/browser")` の動的インポートでツリーシェイク可能
+
+## 認証方式（TCH-75 以降: Cookie セッション方式）
+
+- Bearer トークンは廃止。HttpOnly Cookie によるサーバ側セッション管理に移行済み
+- `auth/atoms.ts`: `accessTokenAtom` なし。`authStatusAtom`（4値）と `currentUserAtom` のみ
+- `authClient.ts`: `credentials: "include"` で fetch し、401 で `onUnauthorized` を呼ぶだけ。Authorization ヘッダ付与・refresh・リトライは持たない
+- `onUnauthorized` は `main.tsx` で定義: `queryClient.clear()` → `currentUserAtom(null)` → `authStatusAtom("anonymous")` の順で実行
+- `useBootstrapAuth`: 起動時に `/api/users/me` と `/api/settings` を並列 fetch してセッション復元。me 401 → anonymous（settings 結果は無視）
+- `useAuth`: startGoogleLogin / handleCallback / stubLogin / logout を提供。TokenResponse 処理は不要（Cookie で完結）
+
+## MSW での Cookie 認証代用パターン（TCH-75）
+
+- HttpOnly Cookie はブラウザの Service Worker から読み書きできないため、MSW では `getMockAuthUser()` で認証状態を代用
+- `authSession.ts`: メモリ変数 + sessionStorage の二段構えで Mock ユーザーを永続化（HMR リロード後も復元）
+- `auth.ts` ハンドラ: stub-login / google/callback で `setMockAuthUser()` を呼ぶ
+- `users.ts` / `settings.ts` ハンドラ: `getMockAuthUser()` が null なら 401 を返す（Cookie ガードの代用）
+- `authSession.test.ts` で保存・復元・リセット・破損JSON の4パターンを単体テスト
+
+## E2E 認証フィクスチャパターン（TCH-75）
+
+- `e2e/fixtures/auth.ts` が `E2E_USE_MSW` フラグで MSW モード / 実 API モードを分岐
+- MSW モード: `page.evaluate` 内から `/api/auth/stub-login` を fetch → `setMockAuthUser` が sessionStorage まで永続化（フィクスチャ側の手動 setItem は不要）
+- 実 API モード: `page.request.post(stub-login URL)` で backend が Set-Cookie → cookie jar に保存 → 以後の fetch で自動送信
+- `gotoAuthenticatedRoot`: `/api/users/me` レスポンスを waitForResponse してから `use(page)` に進み race condition を防ぐ
+- Bearer 注入用 `apiAuth` フィクスチャは削除済み

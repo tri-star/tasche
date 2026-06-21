@@ -18,9 +18,9 @@ function unauthorized(): Response {
   )
 }
 
-function ensureAuthenticated(request: Request): "ok" | Response {
-  const auth = request.headers.get("authorization")
-  if (!auth?.startsWith("Bearer ")) return unauthorized()
+// MSW では HttpOnly Cookie のラウンドトリップを再現できないため、
+// getMockAuthUser() の有無で認証状態を代用する（Cookie 認証の擬似）
+function ensureAuthenticated(): "ok" | Response {
   const currentUser = getMockAuthUser()
   if (!currentUser) return unauthorized()
   return "ok"
@@ -49,14 +49,14 @@ const KNOWN_TZ = new Set([
 ])
 
 export const settingsHandlers = [
-  http.get("*/api/settings", ({ request }) => {
-    const auth = ensureAuthenticated(request)
+  http.get("*/api/settings", () => {
+    const auth = ensureAuthenticated()
     if (auth !== "ok") return auth
     return HttpResponse.json({ data: mockSettings })
   }),
 
   http.patch("*/api/settings", async ({ request }) => {
-    const auth = ensureAuthenticated(request)
+    const auth = ensureAuthenticated()
     if (auth !== "ok") return auth
     const body = (await request.json()) as { timezone?: string; theme?: "light" | "dark" }
 

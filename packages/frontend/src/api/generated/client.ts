@@ -36,7 +36,8 @@ import type {
 } from 'msw';
 
 import {
-  DayOfWeek
+  DayOfWeek,
+  Theme
 } from './model';
 import type {
   APIResponseAuthorizeResponse,
@@ -50,7 +51,6 @@ import type {
   APIResponseTaskBulkArchiveResponse,
   APIResponseTaskListResponse,
   APIResponseTaskResponse,
-  APIResponseTokenResponse,
   APIResponseUserResponse,
   APIResponseWeekResponse
 } from './model';
@@ -119,7 +119,7 @@ export const googleAuthorizeApiAuthGoogleAuthorizeGet = async (params: GoogleAut
  * Google コールバック処理.
 
 code と code_verifier を受け取り、Google にトークン交換 → ID Token 検証
-→ ユーザー upsert → 自前 JWT 発行。
+→ ユーザー upsert → セッション発行 + Set-Cookie。
 
 Args:
     body: GoogleCallbackRequest（code, code_verifier, redirect_uri, state）
@@ -127,11 +127,11 @@ Args:
     db: データベースセッション
 
 Returns:
-    APIResponse[TokenResponse]: アクセストークン
+    APIResponse[UserResponse]: ユーザー情報
  * @summary Google Callback
  */
 export type googleCallbackApiAuthGoogleCallbackPostResponse200 = {
-  data: APIResponseTokenResponse
+  data: APIResponseUserResponse
   status: 200
 }
 
@@ -172,66 +172,14 @@ export const googleCallbackApiAuthGoogleCallbackPost = async (googleCallbackRequ
 
 
 /**
- * アクセストークンを再発行し、リフレッシュトークンをローテーションする.
+ * ログアウト（セッションを revoke し Cookie を削除する）.
 
-Args:
-    response: FastAPI Response（Cookie 設定用）
-    db: データベースセッション
-    refresh_token: リフレッシュトークン（Cookie から取得）
-
-Returns:
-    APIResponse[TokenResponse]: 新しいアクセストークン
- * @summary Refresh
- */
-export type refreshApiAuthRefreshPostResponse200 = {
-  data: APIResponseTokenResponse
-  status: 200
-}
-
-export type refreshApiAuthRefreshPostResponse422 = {
-  data: HTTPValidationError
-  status: 422
-}
-    
-export type refreshApiAuthRefreshPostResponseSuccess = (refreshApiAuthRefreshPostResponse200) & {
-  headers: Headers;
-};
-export type refreshApiAuthRefreshPostResponseError = (refreshApiAuthRefreshPostResponse422) & {
-  headers: Headers;
-};
-
-export type refreshApiAuthRefreshPostResponse = (refreshApiAuthRefreshPostResponseSuccess | refreshApiAuthRefreshPostResponseError)
-
-export const getRefreshApiAuthRefreshPostUrl = () => {
-
-
-  
-
-  return `/api/auth/refresh`
-}
-
-export const refreshApiAuthRefreshPost = async ( options?: RequestInit): Promise<refreshApiAuthRefreshPostResponse> => {
-  
-  return authFetch<refreshApiAuthRefreshPostResponse>(getRefreshApiAuthRefreshPostUrl(),
-  {      
-    ...options,
-    method: 'POST'
-    
-    
-  }
-);}
-
-
-
-/**
- * ログアウト（Refresh Token を revoke し Cookie を削除する）.
-
-Cookie が無くても 200 を返す（冪等）。
+Cookie が無くても 200 を返す（冪等）。認証 dependency は不要（未認証でも 200）。
 
 Args:
     response: FastAPI Response（Cookie 削除用）
     db: データベースセッション
-    refresh_token: リフレッシュトークン（Cookie から取得、無くても可）
+    session_token: セッショントークン（Cookie から取得、無くても可）
 
 Returns:
     APIResponse[LogoutResponse]: ログアウト完了メッセージ
@@ -280,7 +228,7 @@ export const logoutApiAuthLogoutPost = async ( options?: RequestInit): Promise<l
 /**
  * スタブログイン（開発・テスト環境のみ）.
 
-Google 認証なしでログインし、スタブ JWT を発行する。
+Google 認証なしでログインし、セッション Cookie を発行する。
 
 Args:
     body: StubLoginRequest（email, name）
@@ -288,11 +236,11 @@ Args:
     db: データベースセッション
 
 Returns:
-    APIResponse[TokenResponse]: スタブアクセストークン
+    APIResponse[UserResponse]: ユーザー情報
  * @summary Stub Login Endpoint
  */
 export type stubLoginEndpointApiAuthStubLoginPostResponse200 = {
-  data: APIResponseTokenResponse
+  data: APIResponseUserResponse
   status: 200
 }
 
@@ -340,13 +288,20 @@ export type getCurrentUserInfoApiUsersMeGetResponse200 = {
   data: APIResponseUserResponse
   status: 200
 }
+
+export type getCurrentUserInfoApiUsersMeGetResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
     
 export type getCurrentUserInfoApiUsersMeGetResponseSuccess = (getCurrentUserInfoApiUsersMeGetResponse200) & {
   headers: Headers;
 };
-;
+export type getCurrentUserInfoApiUsersMeGetResponseError = (getCurrentUserInfoApiUsersMeGetResponse422) & {
+  headers: Headers;
+};
 
-export type getCurrentUserInfoApiUsersMeGetResponse = (getCurrentUserInfoApiUsersMeGetResponseSuccess)
+export type getCurrentUserInfoApiUsersMeGetResponse = (getCurrentUserInfoApiUsersMeGetResponseSuccess | getCurrentUserInfoApiUsersMeGetResponseError)
 
 export const getGetCurrentUserInfoApiUsersMeGetUrl = () => {
 
@@ -377,13 +332,20 @@ export type getCurrentSettingsResponse200 = {
   data: APIResponseSettingsResponse
   status: 200
 }
+
+export type getCurrentSettingsResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
     
 export type getCurrentSettingsResponseSuccess = (getCurrentSettingsResponse200) & {
   headers: Headers;
 };
-;
+export type getCurrentSettingsResponseError = (getCurrentSettingsResponse422) & {
+  headers: Headers;
+};
 
-export type getCurrentSettingsResponse = (getCurrentSettingsResponseSuccess)
+export type getCurrentSettingsResponse = (getCurrentSettingsResponseSuccess | getCurrentSettingsResponseError)
 
 export const getGetCurrentSettingsUrl = () => {
 
@@ -786,13 +748,20 @@ export type getCurrentGoalsApiWeeksCurrentGoalsGetResponse200 = {
   data: APIResponseGoalsResponse
   status: 200
 }
+
+export type getCurrentGoalsApiWeeksCurrentGoalsGetResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
     
 export type getCurrentGoalsApiWeeksCurrentGoalsGetResponseSuccess = (getCurrentGoalsApiWeeksCurrentGoalsGetResponse200) & {
   headers: Headers;
 };
-;
+export type getCurrentGoalsApiWeeksCurrentGoalsGetResponseError = (getCurrentGoalsApiWeeksCurrentGoalsGetResponse422) & {
+  headers: Headers;
+};
 
-export type getCurrentGoalsApiWeeksCurrentGoalsGetResponse = (getCurrentGoalsApiWeeksCurrentGoalsGetResponseSuccess)
+export type getCurrentGoalsApiWeeksCurrentGoalsGetResponse = (getCurrentGoalsApiWeeksCurrentGoalsGetResponseSuccess | getCurrentGoalsApiWeeksCurrentGoalsGetResponseError)
 
 export const getGetCurrentGoalsApiWeeksCurrentGoalsGetUrl = () => {
 
@@ -868,13 +837,20 @@ export type getCurrentRecordsApiWeeksCurrentRecordsGetResponse200 = {
   data: APIResponseRecordsResponse
   status: 200
 }
+
+export type getCurrentRecordsApiWeeksCurrentRecordsGetResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
     
 export type getCurrentRecordsApiWeeksCurrentRecordsGetResponseSuccess = (getCurrentRecordsApiWeeksCurrentRecordsGetResponse200) & {
   headers: Headers;
 };
-;
+export type getCurrentRecordsApiWeeksCurrentRecordsGetResponseError = (getCurrentRecordsApiWeeksCurrentRecordsGetResponse422) & {
+  headers: Headers;
+};
 
-export type getCurrentRecordsApiWeeksCurrentRecordsGetResponse = (getCurrentRecordsApiWeeksCurrentRecordsGetResponseSuccess)
+export type getCurrentRecordsApiWeeksCurrentRecordsGetResponse = (getCurrentRecordsApiWeeksCurrentRecordsGetResponseSuccess | getCurrentRecordsApiWeeksCurrentRecordsGetResponseError)
 
 export const getGetCurrentRecordsApiWeeksCurrentRecordsGetUrl = () => {
 
@@ -1116,19 +1092,17 @@ export const healthHealthGet = async ( options?: RequestInit): Promise<healthHea
 
 export const getGoogleAuthorizeApiAuthGoogleAuthorizeGetResponseMock = (overrideResponse: Partial< APIResponseAuthorizeResponse > = {}): APIResponseAuthorizeResponse => ({data: {authorization_url: faker.string.alpha({length: {min: 10, max: 20}}), state: faker.string.alpha({length: {min: 10, max: 20}})}, ...overrideResponse})
 
-export const getGoogleCallbackApiAuthGoogleCallbackPostResponseMock = (overrideResponse: Partial< APIResponseTokenResponse > = {}): APIResponseTokenResponse => ({data: {access_token: faker.string.alpha({length: {min: 10, max: 20}}), token_type: faker.helpers.arrayElement(['Bearer', undefined]), expires_in: faker.number.int({min: undefined, max: undefined})}, ...overrideResponse})
-
-export const getRefreshApiAuthRefreshPostResponseMock = (overrideResponse: Partial< APIResponseTokenResponse > = {}): APIResponseTokenResponse => ({data: {access_token: faker.string.alpha({length: {min: 10, max: 20}}), token_type: faker.helpers.arrayElement(['Bearer', undefined]), expires_in: faker.number.int({min: undefined, max: undefined})}, ...overrideResponse})
+export const getGoogleCallbackApiAuthGoogleCallbackPostResponseMock = (overrideResponse: Partial< APIResponseUserResponse > = {}): APIResponseUserResponse => ({data: {id: faker.string.alpha({length: {min: 10, max: 20}}), email: faker.internet.email(), name: faker.string.alpha({length: {min: 10, max: 20}}), picture: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}),null,]), timezone: faker.string.alpha({length: {min: 10, max: 20}}), created_at: `${faker.date.past().toISOString().split('.')[0]}Z`, updated_at: `${faker.date.past().toISOString().split('.')[0]}Z`}, ...overrideResponse})
 
 export const getLogoutApiAuthLogoutPostResponseMock = (overrideResponse: Partial< APIResponseLogoutResponse > = {}): APIResponseLogoutResponse => ({data: {message: faker.string.alpha({length: {min: 10, max: 20}})}, ...overrideResponse})
 
-export const getStubLoginEndpointApiAuthStubLoginPostResponseMock = (overrideResponse: Partial< APIResponseTokenResponse > = {}): APIResponseTokenResponse => ({data: {access_token: faker.string.alpha({length: {min: 10, max: 20}}), token_type: faker.helpers.arrayElement(['Bearer', undefined]), expires_in: faker.number.int({min: undefined, max: undefined})}, ...overrideResponse})
+export const getStubLoginEndpointApiAuthStubLoginPostResponseMock = (overrideResponse: Partial< APIResponseUserResponse > = {}): APIResponseUserResponse => ({data: {id: faker.string.alpha({length: {min: 10, max: 20}}), email: faker.internet.email(), name: faker.string.alpha({length: {min: 10, max: 20}}), picture: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}),null,]), timezone: faker.string.alpha({length: {min: 10, max: 20}}), created_at: `${faker.date.past().toISOString().split('.')[0]}Z`, updated_at: `${faker.date.past().toISOString().split('.')[0]}Z`}, ...overrideResponse})
 
 export const getGetCurrentUserInfoApiUsersMeGetResponseMock = (overrideResponse: Partial< APIResponseUserResponse > = {}): APIResponseUserResponse => ({data: {id: faker.string.alpha({length: {min: 10, max: 20}}), email: faker.internet.email(), name: faker.string.alpha({length: {min: 10, max: 20}}), picture: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}),null,]), timezone: faker.string.alpha({length: {min: 10, max: 20}}), created_at: `${faker.date.past().toISOString().split('.')[0]}Z`, updated_at: `${faker.date.past().toISOString().split('.')[0]}Z`}, ...overrideResponse})
 
-export const getGetCurrentSettingsResponseMock = (overrideResponse: Partial< APIResponseSettingsResponse > = {}): APIResponseSettingsResponse => ({data: {timezone: faker.string.alpha({length: {min: 10, max: 20}}), theme: faker.helpers.arrayElement(['light','dark','system'] as const)}, ...overrideResponse})
+export const getGetCurrentSettingsResponseMock = (overrideResponse: Partial< APIResponseSettingsResponse > = {}): APIResponseSettingsResponse => ({data: {timezone: faker.string.alpha({length: {min: 10, max: 20}}), theme: faker.helpers.arrayElement(Object.values(Theme))}, ...overrideResponse})
 
-export const getUpdateCurrentSettingsResponseMock = (overrideResponse: Partial< APIResponseSettingsResponse > = {}): APIResponseSettingsResponse => ({data: {timezone: faker.string.alpha({length: {min: 10, max: 20}}), theme: faker.helpers.arrayElement(['light','dark','system'] as const)}, ...overrideResponse})
+export const getUpdateCurrentSettingsResponseMock = (overrideResponse: Partial< APIResponseSettingsResponse > = {}): APIResponseSettingsResponse => ({data: {timezone: faker.string.alpha({length: {min: 10, max: 20}}), theme: faker.helpers.arrayElement(Object.values(Theme))}, ...overrideResponse})
 
 export const getGetTasksApiTasksGetResponseMock = (overrideResponse: Partial< APIResponseTaskListResponse > = {}): APIResponseTaskListResponse => ({data: {items: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({id: faker.string.alpha({length: {min: 10, max: 20}}), name: faker.string.alpha({length: {min: 10, max: 20}}), is_archived: faker.datatype.boolean(), consumed_units_last_week: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), consumed_units_total: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), created_at: `${faker.date.past().toISOString().split('.')[0]}Z`, updated_at: `${faker.date.past().toISOString().split('.')[0]}Z`})), total: faker.number.int({min: undefined, max: undefined}), page: faker.number.int({min: undefined, max: undefined}), per_page: faker.number.int({min: undefined, max: undefined})}, ...overrideResponse})
 
@@ -1171,24 +1145,12 @@ export const getGoogleAuthorizeApiAuthGoogleAuthorizeGetMockHandler = (overrideR
   }, options)
 }
 
-export const getGoogleCallbackApiAuthGoogleCallbackPostMockHandler = (overrideResponse?: APIResponseTokenResponse | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<APIResponseTokenResponse> | APIResponseTokenResponse), options?: RequestHandlerOptions) => {
+export const getGoogleCallbackApiAuthGoogleCallbackPostMockHandler = (overrideResponse?: APIResponseUserResponse | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<APIResponseUserResponse> | APIResponseUserResponse), options?: RequestHandlerOptions) => {
   return http.post('*/api/auth/google/callback', async (info) => {await delay(0);
   
     return new HttpResponse(JSON.stringify(overrideResponse !== undefined
     ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
     : getGoogleCallbackApiAuthGoogleCallbackPostResponseMock()),
-      { status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      })
-  }, options)
-}
-
-export const getRefreshApiAuthRefreshPostMockHandler = (overrideResponse?: APIResponseTokenResponse | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<APIResponseTokenResponse> | APIResponseTokenResponse), options?: RequestHandlerOptions) => {
-  return http.post('*/api/auth/refresh', async (info) => {await delay(0);
-  
-    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getRefreshApiAuthRefreshPostResponseMock()),
       { status: 200,
         headers: { 'Content-Type': 'application/json' }
       })
@@ -1207,7 +1169,7 @@ export const getLogoutApiAuthLogoutPostMockHandler = (overrideResponse?: APIResp
   }, options)
 }
 
-export const getStubLoginEndpointApiAuthStubLoginPostMockHandler = (overrideResponse?: APIResponseTokenResponse | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<APIResponseTokenResponse> | APIResponseTokenResponse), options?: RequestHandlerOptions) => {
+export const getStubLoginEndpointApiAuthStubLoginPostMockHandler = (overrideResponse?: APIResponseUserResponse | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<APIResponseUserResponse> | APIResponseUserResponse), options?: RequestHandlerOptions) => {
   return http.post('*/api/auth/stub-login', async (info) => {await delay(0);
   
     return new HttpResponse(JSON.stringify(overrideResponse !== undefined
@@ -1433,7 +1395,6 @@ export const getHealthHealthGetMockHandler = (overrideResponse?: unknown | ((inf
 export const getTascheAPIMock = () => [
   getGoogleAuthorizeApiAuthGoogleAuthorizeGetMockHandler(),
   getGoogleCallbackApiAuthGoogleCallbackPostMockHandler(),
-  getRefreshApiAuthRefreshPostMockHandler(),
   getLogoutApiAuthLogoutPostMockHandler(),
   getStubLoginEndpointApiAuthStubLoginPostMockHandler(),
   getGetCurrentUserInfoApiUsersMeGetMockHandler(),
