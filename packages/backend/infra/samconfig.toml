@@ -15,7 +15,7 @@ region = "ap-southeast-1"
 capabilities = "CAPABILITY_NAMED_IAM"
 confirm_changeset = false
 fail_on_empty_changeset = false
-parameter_overrides = "Env=dev AppEnv=development LogLevel=debug GoogleOAuthRedirectUris=https://dev.tasche.life/auth/callback CloudFrontDistributionId=E364RGE7EU1MJN"
+parameter_overrides = "Env=dev AppEnv=development LogLevel=debug GoogleOAuthRedirectUris=https://dev.tasche.life/auth/callback CloudFrontDistributionId=E364RGE7EU1MJN CorsAllowOrigins=https://dev.tasche.life"
 resolve_image_repos = true
 resolve_s3 = true
 
