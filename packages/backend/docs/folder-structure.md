@@ -297,7 +297,7 @@ docker compose -f packages/backend/compose.yaml exec api uv run pytest -q
 
 ```
 src/tasche/
-├── conftest.py              # 共通 fixture（auth_cookies fixture 等、全テストで使用可能）
+├── conftest.py              # 共通 fixture（test_user / auth_cookies / authenticated_client 等、全テストで使用可能）
 ├── api/v1/tests/            # API 統合テスト
 ├── core/tests/              # core ユニットテスト
 ├── services/tests/          # services 統合テスト

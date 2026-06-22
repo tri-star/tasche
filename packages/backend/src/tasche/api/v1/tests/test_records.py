@@ -8,8 +8,6 @@ from httpx import AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from tasche.api.deps import get_current_user
-from tasche.main import app
 from tasche.models.enums import DayOfWeek
 from tasche.models.record import Record
 from tasche.models.task import Task
@@ -17,32 +15,6 @@ from tasche.models.user import User
 from tasche.models.week import Week
 from tasche.services import record as record_service
 from tasche.services import week as week_service
-
-
-@pytest_asyncio.fixture
-async def test_user(db_session: AsyncSession) -> User:
-    """テスト用ユーザー."""
-    user = User(
-        id="usr_01TEST1234567890ABCDEF",
-        email="records@example.com",
-        name="Records User",
-        timezone="Asia/Tokyo",
-    )
-    db_session.add(user)
-    await db_session.commit()
-    await db_session.refresh(user)
-    return user
-
-
-@pytest_asyncio.fixture
-async def authenticated_client(client: AsyncClient, test_user: User) -> AsyncClient:
-    """認証済みクライアント."""
-
-    async def override_get_current_user():
-        return test_user
-
-    app.dependency_overrides[get_current_user] = override_get_current_user
-    return client
 
 
 @pytest_asyncio.fixture
