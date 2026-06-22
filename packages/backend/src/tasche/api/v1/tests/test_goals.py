@@ -8,39 +8,11 @@ from httpx import AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from tasche.api.deps import get_current_user
-from tasche.main import app
 from tasche.models.goal import Goal
 from tasche.models.task import Task
 from tasche.models.user import User
 from tasche.models.week import Week
 from tasche.services import week as week_service
-
-
-@pytest_asyncio.fixture
-async def test_user(db_session: AsyncSession) -> User:
-    """テスト用ユーザー."""
-    user = User(
-        id="usr_01TEST1234567890ABCDEF",
-        email="goals@example.com",
-        name="Goals User",
-        timezone="Asia/Tokyo",
-    )
-    db_session.add(user)
-    await db_session.commit()
-    await db_session.refresh(user)
-    return user
-
-
-@pytest_asyncio.fixture
-async def authenticated_client(client: AsyncClient, test_user: User) -> AsyncClient:
-    """認証済みクライアント."""
-
-    async def override_get_current_user():
-        return test_user
-
-    app.dependency_overrides[get_current_user] = override_get_current_user
-    return client
 
 
 @pytest_asyncio.fixture
@@ -252,8 +224,6 @@ class TestGetCurrentGoals:
         assert data["previous_goals"] is None
 
         # DB に週レコードが作成されていることを確認
-        from tasche.models.week import Week
-
         result = await db_session.execute(select(Week).where(Week.user_id == test_user.id))
         week = result.scalar_one_or_none()
         assert week is not None
@@ -518,8 +488,6 @@ class TestUpdateCurrentGoals:
         assert data["unit_duration_minutes"] == 60
 
         # DB に週レコードが作成されていることを確認
-        from tasche.models.week import Week
-
         result = await db_session.execute(select(Week).where(Week.user_id == test_user.id))
         week = result.scalar_one_or_none()
         assert week is not None

@@ -1,5 +1,8 @@
 """GET /api/users/me のテスト."""
 
+# このファイルでは認証失敗パス（未認証・不正Cookie）や Cookie の明示的な渡し方の
+# バリエーションを検証するため、authenticated_client ではなく auth_cookies ファクトリを直接使う。
+
 import pytest
 from httpx import AsyncClient
 

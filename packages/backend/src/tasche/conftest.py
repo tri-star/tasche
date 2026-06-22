@@ -152,6 +152,18 @@ async def auth_cookies(db_session: AsyncSession):
     return _auth_cookies
 
 
+@pytest_asyncio.fixture
+async def authenticated_client(client: AsyncClient, test_user: User, auth_cookies) -> AsyncClient:
+    """test_user の実セッション Cookie をプリセットした認証済みクライアント.
+
+    HTTPリクエストの認証状態のみを提供する。テストデータ作成には
+    test_user fixture を別途受け取って使うこと。
+    """
+    cookies = await auth_cookies(test_user)
+    client.cookies.update(cookies)
+    return client
+
+
 # ============================================================
 # Google OAuth テスト用 RSA キーペア・JWKS・ヘルパー
 # ============================================================
