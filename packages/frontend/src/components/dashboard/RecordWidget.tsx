@@ -71,8 +71,9 @@ export function RecordWidget({ currentDay, weekStartDate, tasks, onRecord }: Rec
           <SpinButton
             value={units}
             onChange={setUnits}
-            step={0.1}
+            step={0.5}
             min={0}
+            max={99}
             ariaLabel="実績ユニット"
           />
 
