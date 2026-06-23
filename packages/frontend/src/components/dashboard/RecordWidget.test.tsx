@@ -29,7 +29,7 @@ describe("RecordWidget", () => {
     expect(screen.getByRole("region", { name: "実績を記録" })).not.toHaveClass("overflow-hidden")
   })
 
-  it("SpinButtonで0.1刻みに変更した実績ユニット数を記録できる", async () => {
+  it("SpinButtonで0.5刻みに変更した実績ユニット数を記録できる", async () => {
     const user = userEvent.setup()
     const onRecord = vi.fn()
 
@@ -47,6 +47,32 @@ describe("RecordWidget", () => {
     await user.click(screen.getByRole("button", { name: "実績ユニットを増やす" }))
     await user.click(screen.getByRole("button", { name: "記録する" }))
 
-    expect(onRecord).toHaveBeenCalledWith("thursday", "task-1", 1.6)
+    expect(onRecord).toHaveBeenCalledWith("thursday", "task-1", 2)
+  })
+
+  it("実績ユニット数を手入力して記録できる", async () => {
+    const user = userEvent.setup()
+    const onRecord = vi.fn()
+
+    render(
+      <RecordWidget
+        currentDay="thursday"
+        weekStartDate="2026-04-20"
+        tasks={tasks}
+        onRecord={onRecord}
+      />,
+    )
+
+    await user.click(screen.getByRole("button", { name: "タスクを選択..." }))
+    await user.click(screen.getByRole("option", { name: "試験勉強" }))
+
+    const spinButton = screen.getByRole("spinbutton", { name: "実績ユニット" })
+    await user.clear(spinButton)
+    await user.type(spinButton, "3.5")
+    await user.tab()
+
+    await user.click(screen.getByRole("button", { name: "記録する" }))
+
+    expect(onRecord).toHaveBeenCalledWith("thursday", "task-1", 3.5)
   })
 })
