@@ -73,14 +73,20 @@ export function SpinButton({
   const [draft, setDraft] = useState<string>(formattedValue)
   const [isFocused, setIsFocused] = useState(false)
 
+  const parsedDraft = Number(draft)
+  const currentValue =
+    isFocused && draft.trim() !== "" && !isNaN(parsedDraft) && isFinite(parsedDraft)
+      ? parsedDraft
+      : normalizedValue
+
   const displayValue = isFocused ? draft : formattedValue
 
   function update(nextValue: number) {
     if (disabled) return
     const newValue = normalize(clamp(nextValue, min, max), step)
+    setDraft(newValue.toFixed(getDecimalPlaces(step)))
     if (newValue !== normalizedValue) {
       onChange(newValue)
-      setDraft(newValue.toFixed(getDecimalPlaces(step)))
     }
   }
 
@@ -121,10 +127,10 @@ export function SpinButton({
 
     if (event.key === "ArrowUp") {
       event.preventDefault()
-      update(snapUp(normalizedValue, step))
+      update(snapUp(currentValue, step))
     } else if (event.key === "ArrowDown") {
       event.preventDefault()
-      update(snapDown(normalizedValue, step))
+      update(snapDown(currentValue, step))
     } else if (event.key === "Home") {
       event.preventDefault()
       update(min)

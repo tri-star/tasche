@@ -69,7 +69,7 @@ export function DashboardPage() {
         setDashboard(response.data.data)
       }
     } catch (err) {
-      console.error("記録に失敗しました", err instanceof Error ? err.message : "不明なエラー")
+      console.error("記録に失敗しました", err)
     }
   }
 

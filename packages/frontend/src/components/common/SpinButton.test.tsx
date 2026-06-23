@@ -59,17 +59,28 @@ describe("SpinButton", () => {
     expect(onChange).not.toHaveBeenCalled()
   })
 
-  it("ArrowUpとArrowDownで増減する", async () => {
+  it("ArrowUpで0.5増える", async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
     render(<SpinButton value={1.5} onChange={onChange} ariaLabel="実績ユニット" />)
 
     const spinButton = screen.getByRole("spinbutton", { name: "実績ユニット" })
     spinButton.focus()
-    await user.keyboard("{ArrowUp}{ArrowDown}")
+    await user.keyboard("{ArrowUp}")
 
-    expect(onChange).toHaveBeenNthCalledWith(1, 2)
-    expect(onChange).toHaveBeenNthCalledWith(2, 1)
+    expect(onChange).toHaveBeenCalledWith(2)
+  })
+
+  it("ArrowDownで0.5減る", async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(<SpinButton value={1.5} onChange={onChange} ariaLabel="実績ユニット" />)
+
+    const spinButton = screen.getByRole("spinbutton", { name: "実績ユニット" })
+    spinButton.focus()
+    await user.keyboard("{ArrowDown}")
+
+    expect(onChange).toHaveBeenCalledWith(1)
   })
 
   it("HomeとEndで下限・上限へ移動する", async () => {
@@ -200,6 +211,32 @@ describe("SpinButton", () => {
 
     expect(onChange).not.toHaveBeenCalled()
     expect(spinButton).toHaveValue("1.5")
+  })
+
+  it("手入力中にArrowUpを押すとdraftの値を基準にonChangeが呼ばれる", async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(<SpinButton value={1.5} onChange={onChange} ariaLabel="実績ユニット" />)
+
+    const spinButton = screen.getByRole("spinbutton", { name: "実績ユニット" })
+    await user.clear(spinButton)
+    await user.type(spinButton, "3.5")
+    await user.keyboard("{ArrowUp}")
+
+    expect(onChange).toHaveBeenLastCalledWith(4)
+  })
+
+  it("手入力中にArrowDownを押すとdraftの値を基準にonChangeが呼ばれる", async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(<SpinButton value={1.5} onChange={onChange} ariaLabel="実績ユニット" />)
+
+    const spinButton = screen.getByRole("spinbutton", { name: "実績ユニット" })
+    await user.clear(spinButton)
+    await user.type(spinButton, "3.5")
+    await user.keyboard("{ArrowDown}")
+
+    expect(onChange).toHaveBeenLastCalledWith(3)
   })
 
   it("min/maxを超える手入力はクランプされる", async () => {
