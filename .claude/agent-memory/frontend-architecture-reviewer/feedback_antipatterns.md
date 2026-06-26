@@ -92,6 +92,20 @@ DBに保存済みの設定を上書きしてしまう。
 
 ---
 
+## SpinButton の ArrowKey ハンドラで `onChange` と `setDraft` を両方呼ぶパターン
+
+`handleKeyDown` の ArrowUp/Down 分岐で `onChange(next)` と `setDraft(next.toFixed(...))` を同時に呼ぶと、
+`useEffect`（`formattedValue` 変化で draft を同期）との競合ウィンドウが生じる。
+`isFocused.current === true` の間は useEffect がスキップするため現状は安全だが、
+フォーカス状態の前提が崩れたとき（タッチ・プログラマチックフォーカス）に動作が変わりうる。
+
+**Why:** draft の更新源を1箇所に保つことで追跡しやすくする。ArrowKey 操作中は常にフォーカス中なので setDraft は冗長でもある。
+
+**How to apply:** ArrowKey ハンドラ内の `setDraft` を削除し、draft 更新を `useEffect` に一本化する。
+TCH-xx（SpinButton 手入力対応）で Warning として指摘済み。
+
+---
+
 ## MSW E2E フィクスチャで sessionStorage を手動 setItem する重複書き込み
 
 `e2e/fixtures/auth.ts` の `loginWithMswStub` で stub-login fetch 後に `sessionStorage.setItem` を手動で呼んでいるが、
