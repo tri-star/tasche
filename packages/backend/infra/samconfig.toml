@@ -22,13 +22,16 @@ resolve_s3 = true
 [prod.global.parameters]
 region = "ap-southeast-1"
 
-# prod 環境 (枠のみ; 別タスクで完成させる)
+# prod 環境
+# CloudFrontDistributionId: frontend prod スタックの初回デプロイ後に判明する。
+# 初回は frontend を先にデプロイし、CloudFormation Outputs の DistributionId を取得してここへ設定すること。
+# 設定前は REPLACE_WITH_PROD_CLOUDFRONT_DISTRIBUTION_ID のままにしておく。
 [prod.deploy.parameters]
 stack_name = "prod-tasche-backend"
 region = "ap-southeast-1"
 capabilities = "CAPABILITY_NAMED_IAM"
-confirm_changeset = true
+confirm_changeset = false
 fail_on_empty_changeset = false
-parameter_overrides = "Env=prod AppEnv=production LogLevel=info"
+parameter_overrides = "Env=prod AppEnv=production LogLevel=info GoogleOAuthRedirectUris=https://tasche.life/auth/callback CloudFrontDistributionId=REPLACE_WITH_PROD_CLOUDFRONT_DISTRIBUTION_ID CorsAllowOrigins=https://tasche.life"
 resolve_image_repos = true
 resolve_s3 = true
