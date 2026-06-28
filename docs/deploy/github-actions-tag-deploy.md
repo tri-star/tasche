@@ -1,13 +1,14 @@
 # GitHub Actions タグデプロイ手順
 
-Tasche の通常デプロイは、Git tag を `origin` に push して GitHub Actions を起動する方式で行う。frontend / backend は個別にデプロイでき、現在 Actions として実装済みなのは dev 環境向けの 2 経路である。
+Tasche の通常デプロイは、Git tag を `origin` に push して GitHub Actions を起動する方式で行う。frontend / backend は個別にデプロイでき、dev / prod の 4 経路が実装されている。
 
 関連ドキュメント:
 
 - 手動デプロイ手順: `docs/deploy/manual-deploy.md`
 - SSM / IAM 命名規約: `docs/deploy/ssm-naming.md`
+- 外部リポジトリへの依頼事項: `docs/deploy/external-repo-requirements.md`
 - トリガー戦略: `docs/adr/ADR-006-deploy-trigger-strategy.md`
-- workflow 実装: `.github/workflows/deploy-backend-dev.yml`, `.github/workflows/deploy-frontend-dev.yml`
+- workflow 実装: `.github/workflows/deploy-backend-dev.yml`, `.github/workflows/deploy-frontend-dev.yml`, `.github/workflows/deploy-backend-prod.yml`, `.github/workflows/deploy-frontend-prod.yml`
 
 ## デプロイ経路
 
@@ -15,26 +16,30 @@ Tasche の通常デプロイは、Git tag を `origin` に push して GitHub Ac
 | --- | --- | --- | --- | --- |
 | backend | dev | `release/backend-dev/` | `deploy-backend-dev` | 実装済み |
 | frontend | dev | `release/frontend-dev/` | `deploy-frontend-dev` | 実装済み |
-| backend | prod | `release/backend-prod/` | 未実装 | TCH-48 で実装予定 |
-| frontend | prod | `release/frontend-prod/` | 未実装 | TCH-48 で実装予定 |
+| backend | prod | `release/backend-prod/` | `deploy-backend-prod` | 実装済み |
+| frontend | prod | `release/frontend-prod/` | `deploy-frontend-prod` | 実装済み |
 
 ## 前提
 
 - デプロイ対象のコミットが `origin/main` に入っていること
 - 対象コミットの CI が成功していること
-- GitHub Actions の `dev` environment に必要な Variables / 権限が設定されていること
-  - backend: `vars.AWS_DEPLOY_ROLE_ARN`
-  - frontend: `vars.AWS_DEPLOY_ROLE_ARN_DEV`
+- GitHub Actions の対象 environment に必要な Variables / 権限が設定されていること
+  - dev backend: `vars.AWS_DEPLOY_ROLE_ARN`
+  - dev frontend: `vars.AWS_DEPLOY_ROLE_ARN`
+  - prod backend / frontend: `vars.AWS_DEPLOY_ROLE_ARN_PROD`
 - AWS 側の IAM, SSM Parameter, Secrets Manager, ACM など外部リソースが準備済みであること
+  (`docs/deploy/external-repo-requirements.md` を参照)
 - tag は一度 push したら原則として作り直さないこと
 
 ## tag 命名
 
-dev 環境では、日付と連番を含めた次の形式を使う。
+日付と連番を含めた次の形式を使う。
 
 ```text
 release/backend-dev/YYYY-MM-DD-N
 release/frontend-dev/YYYY-MM-DD-N
+release/backend-prod/YYYY-MM-DD-N
+release/frontend-prod/YYYY-MM-DD-N
 ```
 
 例:
@@ -42,6 +47,8 @@ release/frontend-dev/YYYY-MM-DD-N
 ```text
 release/backend-dev/2026-05-24-1
 release/frontend-dev/2026-05-24-1
+release/backend-prod/2026-05-24-1
+release/frontend-prod/2026-05-24-1
 ```
 
 同じ日に複数回デプロイする場合は末尾の連番を増やす。
@@ -227,27 +234,135 @@ aws cloudformation describe-stack-events \
 - デプロイロールに S3 sync と CloudFront invalidation の権限があるか確認する
 - `packages/frontend/dist` が生成されているか、`Build frontend` step のログを確認する
 
+## Backend を prod にデプロイする
+
+> **初回デプロイ前に** `docs/deploy/external-repo-requirements.md` の prod セクションをすべて完了させること。
+> また、`packages/backend/infra/samconfig.toml` の `CloudFrontDistributionId` が実際の prod Distribution ID に更新済みであることを確認する
+> (初回は frontend prod を先にデプロイして ID を取得 → 後述の「初回 bootstrap」を参照)。
+
+### 1. デプロイ対象を確認する
+
+```bash
+git fetch origin main --tags
+git switch main
+git pull --ff-only origin main
+git log --oneline -5
+```
+
+### 2. tag を作成する
+
+```bash
+TAG=release/backend-prod/2026-05-24-1
+git tag -a "$TAG" -m "Deploy backend prod 2026-05-24-1"
+```
+
+### 3. tag を push する
+
+```bash
+git push origin "$TAG"
+```
+
+push 後、`.github/workflows/deploy-backend-prod.yml` が起動する。GitHub `prod` environment の承認が通ると、
+OIDC で AWS ロールを AssumeRole した後、`packages/backend/infra` で次を実行する。
+
+1. Lambda Extension layer の署名 URL を解決する
+2. `sam build --config-env prod --parameter-overrides ...` で Lambda コンテナイメージをビルドする
+3. `sam deploy --config-env prod` で backend stack を更新する
+
+backend の prod stack 名は `packages/backend/infra/samconfig.toml` の `prod.deploy.parameters.stack_name` に従う。
+
+## Frontend を prod にデプロイする
+
+> **初回デプロイ前に** `docs/deploy/external-repo-requirements.md` の prod セクションをすべて完了させること。
+
+### 1. デプロイ対象を確認する
+
+```bash
+git fetch origin main --tags
+git switch main
+git pull --ff-only origin main
+git log --oneline -5
+```
+
+### 2. tag を作成する
+
+```bash
+TAG=release/frontend-prod/2026-05-24-1
+git tag -a "$TAG" -m "Deploy frontend prod 2026-05-24-1"
+```
+
+### 3. tag を push する
+
+```bash
+git push origin "$TAG"
+```
+
+push 後、`.github/workflows/deploy-frontend-prod.yml` が起動する。GitHub `prod` environment の承認が通ると、
+OIDC で AWS ロールを AssumeRole した後、次を実行する。
+
+1. `pnpm install --frozen-lockfile` で依存関係をインストールする
+2. `packages/frontend` で `pnpm build:prod` を実行する
+3. `packages/frontend/infra` で `sam deploy --config-env prod` を実行する
+4. `packages/frontend/dist` を S3 に同期する
+5. CloudFront の `/index.html` と `/` を invalidation する
+
+## 初回 bootstrap (prod 環境の新規構築)
+
+frontend の SAM テンプレートは SSM パラメータ `/tasche/prod/sam/backend-function-url` を参照するが、
+このパラメータは backend スタックのデプロイ完了後に自動作成される。
+そのため、**backend を先にデプロイ**する必要がある。初回は次の順序で進める。
+
+1. 外部リポで `docs/deploy/external-repo-requirements.md` のリソースをすべて整備する
+2. GitHub `prod` environment を作成し、承認者と `AWS_DEPLOY_ROLE_ARN_PROD` を設定する
+3. **backend prod を先にデプロイする** (`release/backend-prod/YYYY-MM-DD-1`)
+   - この時点では `CloudFrontDistributionId` はプレースホルダーのままで問題ない
+   - デプロイ完了後、SSM `/tasche/prod/sam/backend-function-url` が自動作成される
+4. **frontend prod をデプロイする** (`release/frontend-prod/YYYY-MM-DD-1`)
+5. デプロイ完了後に Distribution ID を取得する:
+   ```bash
+   aws cloudformation describe-stacks \
+     --stack-name prod-tasche-frontend \
+     --region ap-southeast-1 \
+     --query "Stacks[0].Outputs[?OutputKey=='DistributionId'].OutputValue" \
+     --output text
+   ```
+6. `packages/backend/infra/samconfig.toml` の prod セクションの `CloudFrontDistributionId` を取得した ID に差し替えてコミット・push する
+7. **backend prod を再デプロイする** (`release/backend-prod/YYYY-MM-DD-2`)
+   - CloudFront OAC が正しい Distribution ID で設定され、本番環境が完全に機能する状態になる
+
 ## ロールバック
 
 ロールバックは `workflow_dispatch` で過去の tag または commit SHA を指定して再デプロイする。
 
-1. GitHub Actions で `deploy-backend-dev` または `deploy-frontend-dev` を開く
+1. GitHub Actions で対象 workflow を開く
 2. `Run workflow` を選ぶ
 3. `ref` にロールバック先の tag または commit SHA を入力する
 4. 実行後、疎通確認を行う
 
-例:
+例 (dev):
 
 ```text
 release/backend-dev/2026-05-23-1
 release/frontend-dev/2026-05-23-1
 ```
 
+例 (prod):
+
+```text
+release/backend-prod/2026-05-23-1
+release/frontend-prod/2026-05-23-1
+```
+
 CLI で実行する場合:
 
 ```bash
+# dev
 gh workflow run deploy-backend-dev.yml --ref main -f ref=release/backend-dev/2026-05-23-1
 gh workflow run deploy-frontend-dev.yml --ref main -f ref=release/frontend-dev/2026-05-23-1
+
+# prod
+gh workflow run deploy-backend-prod.yml --ref main -f ref=release/backend-prod/2026-05-23-1
+gh workflow run deploy-frontend-prod.yml --ref main -f ref=release/frontend-prod/2026-05-23-1
 ```
 
 `--ref main` は workflow 定義を読み込むブランチであり、実際にデプロイされる ref は input の `ref` である。
