@@ -54,8 +54,8 @@ Parameters:
     Description: Duration p99 閾値 (ms). Timeout(30s)x80% = 24000ms
   LambdaConcurrentExecutionsThreshold:
     Type: Number
-    Default: 700
-    Description: ConcurrentExecutions 閾値. アカウント上限(既定1000)x70% 目安
+    Default: 1
+    Description: ConcurrentExecutions 閾値（アカウント全体）. この値超過で発報. ユーザー数が少ない段階では 1(=2並列以上で検知)を推奨
   CreateApplicationSignalsAlarms:
     Type: String
     Default: "false"
@@ -226,7 +226,7 @@ Resources:
       DatapointsToAlarm: 5
       Threshold: !Ref LambdaDurationP99ThresholdMs
       ComparisonOperator: GreaterThanThreshold
-      TreatMissingData: notBreaching
+      TreatMissingData: ignore
       AlarmActions: [!Ref AlarmTopicArn]
       OKActions: [!Ref AlarmTopicArn]
 
@@ -234,12 +234,11 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Properties:
       AlarmName: !Sub "${Env}-tasche-lambda-concurrent-executions"
-      AlarmDescription: Backend Lambda の同時実行数がスケール上限に接近
+      AlarmDescription: Lambda の同時実行数が急増（アカウント全体）
       Namespace: AWS/Lambda
       MetricName: ConcurrentExecutions
-      Dimensions:
-        - Name: FunctionName
-          Value: !Ref BackendFunction
+      # FunctionName ディメンションなし → アカウント全体で集計
+      # (ReservedConcurrency 未設定の場合、関数単位のメトリクスは発行されない)
       Statistic: Maximum
       Period: 60
       EvaluationPeriods: 3
