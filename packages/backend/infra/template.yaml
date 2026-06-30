@@ -37,6 +37,50 @@ Parameters:
     Type: String
     Default: ""
     Description: ADOT Python Lambda layer の署名付きダウンロード URL
+  AlarmTopicArn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /tasche/dev/monitoring/alarm-topic-arn
+    Description: アラーム通知先 SNS トピック ARN を格納した SSM パラメータのパス. TCH-78 で ap-southeast-1 / us-east-1 両方に作成済み. 本スタックは ap-southeast-1 を参照.
+  LambdaErrorsThreshold:
+    Type: Number
+    Default: 0
+    Description: Lambda Errors アラーム閾値 (この値超過で発報)
+  LambdaThrottlesThreshold:
+    Type: Number
+    Default: 0
+  LambdaDurationP99ThresholdMs:
+    Type: Number
+    Default: 24000
+    Description: Duration p99 閾値 (ms). Timeout(30s)x80% = 24000ms
+  LambdaConcurrentExecutionsThreshold:
+    Type: Number
+    Default: 700
+    Description: ConcurrentExecutions 閾値. アカウント上限(既定1000)x70% 目安
+  CreateApplicationSignalsAlarms:
+    Type: String
+    Default: "false"
+    AllowedValues: ["true", "false"]
+    Description: Application Signals メトリクスが届いていることを確認後 true にする.
+  AppSignalsServiceName:
+    Type: String
+    Default: tasche-backend
+  AppSignalsEnvironment:
+    Type: String
+    Default: dev
+    Description: Application Signals の Environment ディメンション値. deployment.environment 由来. 実際の値は list-metrics で確認して設定すること.
+  AppSignalsFaultRateThreshold:
+    Type: Number
+    Default: 1
+  AppSignalsErrorRateThreshold:
+    Type: Number
+    Default: 5
+  AppSignalsLatencyP99ThresholdMs:
+    Type: Number
+    Default: 3000
+
+Conditions:
+  EnableAppSignals:
+    Fn::Equals: [!Ref CreateApplicationSignalsAlarms, "true"]
 
 Resources:
   # ----------------------------------------------------------------------------
@@ -124,6 +168,202 @@ Resources:
       Value: !Sub
         - "${Host}"
         - Host: !Select [2, !Split ["/", !GetAtt BackendFunctionUrl.FunctionUrl]]
+
+  # ----------------------------------------------------------------------------
+  # CloudWatch Alarms (Lambda メトリクス / ap-southeast-1)
+  # ----------------------------------------------------------------------------
+  LambdaErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Env}-tasche-lambda-errors"
+      AlarmDescription: Backend Lambda の未処理例外 (Errors > 0)
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref BackendFunction
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: !Ref LambdaErrorsThreshold
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopicArn]
+      OKActions: [!Ref AlarmTopicArn]
+
+  LambdaThrottlesAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Env}-tasche-lambda-throttles"
+      AlarmDescription: Backend Lambda のスロットリング (リクエスト取りこぼし)
+      Namespace: AWS/Lambda
+      MetricName: Throttles
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref BackendFunction
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: !Ref LambdaThrottlesThreshold
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopicArn]
+      OKActions: [!Ref AlarmTopicArn]
+
+  LambdaDurationP99Alarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Env}-tasche-lambda-duration-p99"
+      AlarmDescription: Backend Lambda のレイテンシ p99 がタイムアウトに接近
+      Namespace: AWS/Lambda
+      MetricName: Duration
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref BackendFunction
+      ExtendedStatistic: p99
+      Period: 60
+      EvaluationPeriods: 5
+      DatapointsToAlarm: 5
+      Threshold: !Ref LambdaDurationP99ThresholdMs
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopicArn]
+      OKActions: [!Ref AlarmTopicArn]
+
+  LambdaConcurrentExecutionsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Env}-tasche-lambda-concurrent-executions"
+      AlarmDescription: Backend Lambda の同時実行数がスケール上限に接近
+      Namespace: AWS/Lambda
+      MetricName: ConcurrentExecutions
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref BackendFunction
+      Statistic: Maximum
+      Period: 60
+      EvaluationPeriods: 3
+      DatapointsToAlarm: 3
+      Threshold: !Ref LambdaConcurrentExecutionsThreshold
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopicArn]
+      OKActions: [!Ref AlarmTopicArn]
+
+  # ----------------------------------------------------------------------------
+  # CloudWatch Alarms (Application Signals メトリクス)
+  # Application Signals メトリクスの到達確認後、CreateApplicationSignalsAlarms=true
+  # にすることで作成される (Condition: EnableAppSignals)
+  # ----------------------------------------------------------------------------
+  AppSignalsFaultRateAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: EnableAppSignals
+    Properties:
+      AlarmName: !Sub "${Env}-tasche-appsignals-fault-rate"
+      AlarmDescription: Application Signals Fault(5xx)率がしきい値超過
+      EvaluationPeriods: 1
+      Threshold: !Ref AppSignalsFaultRateThreshold
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopicArn]
+      OKActions: [!Ref AlarmTopicArn]
+      Metrics:
+        - Id: faultRate
+          Expression: "100 * (fault / requests)"
+          Label: FaultRatePercent
+          ReturnData: true
+        - Id: fault
+          ReturnData: false
+          MetricStat:
+            Metric:
+              Namespace: AWS/ApplicationSignals
+              MetricName: Fault
+              Dimensions:
+                - Name: Service
+                  Value: !Ref AppSignalsServiceName
+                - Name: Environment
+                  Value: !Ref AppSignalsEnvironment
+            Period: 300
+            Stat: Sum
+        - Id: requests
+          ReturnData: false
+          MetricStat:
+            Metric:
+              Namespace: AWS/ApplicationSignals
+              MetricName: Latency
+              Dimensions:
+                - Name: Service
+                  Value: !Ref AppSignalsServiceName
+                - Name: Environment
+                  Value: !Ref AppSignalsEnvironment
+            Period: 300
+            Stat: SampleCount
+
+  AppSignalsErrorRateAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: EnableAppSignals
+    Properties:
+      AlarmName: !Sub "${Env}-tasche-appsignals-error-rate"
+      AlarmDescription: Application Signals Error(4xx)率がしきい値超過
+      EvaluationPeriods: 1
+      Threshold: !Ref AppSignalsErrorRateThreshold
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopicArn]
+      OKActions: [!Ref AlarmTopicArn]
+      Metrics:
+        - Id: errorRate
+          Expression: "100 * (errors / requests)"
+          Label: ErrorRatePercent
+          ReturnData: true
+        - Id: errors
+          ReturnData: false
+          MetricStat:
+            Metric:
+              Namespace: AWS/ApplicationSignals
+              MetricName: Error
+              Dimensions:
+                - Name: Service
+                  Value: !Ref AppSignalsServiceName
+                - Name: Environment
+                  Value: !Ref AppSignalsEnvironment
+            Period: 300
+            Stat: Sum
+        - Id: requests
+          ReturnData: false
+          MetricStat:
+            Metric:
+              Namespace: AWS/ApplicationSignals
+              MetricName: Latency
+              Dimensions:
+                - Name: Service
+                  Value: !Ref AppSignalsServiceName
+                - Name: Environment
+                  Value: !Ref AppSignalsEnvironment
+            Period: 300
+            Stat: SampleCount
+
+  AppSignalsLatencyP99Alarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: EnableAppSignals
+    Properties:
+      AlarmName: !Sub "${Env}-tasche-appsignals-latency-p99"
+      AlarmDescription: Application Signals レイテンシ p99 がしきい値超過
+      Namespace: AWS/ApplicationSignals
+      MetricName: Latency
+      Dimensions:
+        - Name: Service
+          Value: !Ref AppSignalsServiceName
+        - Name: Environment
+          Value: !Ref AppSignalsEnvironment
+      ExtendedStatistic: p99
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: !Ref AppSignalsLatencyP99ThresholdMs
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopicArn]
+      OKActions: [!Ref AlarmTopicArn]
 
 Outputs:
   BackendFunctionName:

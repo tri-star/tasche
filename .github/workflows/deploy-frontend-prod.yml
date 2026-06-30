@@ -87,6 +87,17 @@ jobs:
             --no-confirm-changeset \
             --no-fail-on-empty-changeset
 
+      - name: Deploy CloudFront alarms (us-east-1)
+        working-directory: packages/frontend/infra
+        run: |
+          sam deploy \
+            --template-file template-cloudfront-alarms.yaml \
+            --config-file samconfig-cloudfront-alarms.toml \
+            --config-env prod \
+            --region us-east-1 \
+            --no-confirm-changeset \
+            --no-fail-on-empty-changeset
+
       - name: Sync assets to S3 & invalidate CloudFront
         run: |
           BUCKET=$(aws cloudformation describe-stacks \
