@@ -1,0 +1,33 @@
+version = 0.1
+
+[default.global.parameters]
+stack_name = "tasche-frontend-cf-alarms"
+region = "us-east-1"
+
+[dev.deploy.parameters]
+stack_name = "dev-tasche-frontend-cf-alarms"
+region = "us-east-1"
+capabilities = "CAPABILITY_NAMED_IAM"
+confirm_changeset = false
+fail_on_empty_changeset = false
+parameter_overrides = [
+    "Env=dev",
+    "DistributionId=E364RGE7EU1MJN",
+    "AlarmTopicArn=/tasche/dev/monitoring/alarm-topic-arn",
+    "CloudFront5xxErrorRateThreshold=1",
+    "CloudFrontTotalErrorRateThreshold=5",
+]
+
+[prod.deploy.parameters]
+stack_name = "prod-tasche-frontend-cf-alarms"
+region = "us-east-1"
+capabilities = "CAPABILITY_NAMED_IAM"
+confirm_changeset = false
+fail_on_empty_changeset = false
+parameter_overrides = [
+    "Env=prod",
+    "DistributionId=E1P5DDXXMRM1IW",
+    "AlarmTopicArn=/tasche/prod/monitoring/alarm-topic-arn",
+    "CloudFront5xxErrorRateThreshold=0.5",
+    "CloudFrontTotalErrorRateThreshold=3",
+]

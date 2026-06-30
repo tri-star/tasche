@@ -15,7 +15,7 @@ region = "ap-southeast-1"
 capabilities = "CAPABILITY_NAMED_IAM"
 confirm_changeset = false
 fail_on_empty_changeset = false
-parameter_overrides = "Env=dev AppEnv=development LogLevel=debug GoogleOAuthRedirectUris=https://dev.tasche.life/auth/callback CloudFrontDistributionId=E364RGE7EU1MJN CorsAllowOrigins=https://dev.tasche.life"
+parameter_overrides = "Env=dev AppEnv=development LogLevel=debug GoogleOAuthRedirectUris=https://dev.tasche.life/auth/callback CloudFrontDistributionId=E364RGE7EU1MJN CorsAllowOrigins=https://dev.tasche.life LambdaErrorsThreshold=0 LambdaThrottlesThreshold=0 LambdaDurationP99ThresholdMs=24000 LambdaConcurrentExecutionsThreshold=1 CreateApplicationSignalsAlarms=false AppSignalsEnvironment=dev AppSignalsFaultRateThreshold=1 AppSignalsErrorRateThreshold=5 AppSignalsLatencyP99ThresholdMs=3000 AlarmTopicArn=/tasche/dev/monitoring/alarm-topic-arn"
 resolve_image_repos = true
 resolve_s3 = true
 
@@ -32,6 +32,6 @@ region = "ap-southeast-1"
 capabilities = "CAPABILITY_NAMED_IAM"
 confirm_changeset = false
 fail_on_empty_changeset = false
-parameter_overrides = "Env=prod AppEnv=production LogLevel=info GoogleOAuthRedirectUris=https://tasche.life/auth/callback CloudFrontDistributionId=E1P5DDXXMRM1IW CorsAllowOrigins=https://tasche.life"
+parameter_overrides = "Env=prod AppEnv=production LogLevel=info GoogleOAuthRedirectUris=https://tasche.life/auth/callback CloudFrontDistributionId=E1P5DDXXMRM1IW CorsAllowOrigins=https://tasche.life LambdaErrorsThreshold=0 LambdaThrottlesThreshold=0 LambdaDurationP99ThresholdMs=24000 LambdaConcurrentExecutionsThreshold=1 CreateApplicationSignalsAlarms=false AppSignalsEnvironment=prod AppSignalsFaultRateThreshold=1 AppSignalsErrorRateThreshold=5 AppSignalsLatencyP99ThresholdMs=2000 AlarmTopicArn=/tasche/prod/monitoring/alarm-topic-arn"
 resolve_image_repos = true
 resolve_s3 = true
