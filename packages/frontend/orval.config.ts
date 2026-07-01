@@ -22,8 +22,12 @@ export default defineConfig({
         },
       },
       mock: {
-        type: "msw",
-        delay: 0,
+        generators: [
+          {
+            type: "msw",
+            delay: 0,
+          },
+        ],
       },
     },
   },
