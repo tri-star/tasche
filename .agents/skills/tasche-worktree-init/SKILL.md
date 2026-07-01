@@ -7,7 +7,7 @@ metadata:
     argument-hint: (任意) プロジェクト名 - 省略時はブランチ名から自動生成
     model: haiku
   codex:
-    model: gpt-5.5
+    model: gpt-5.4
     model_reasoning_effort: low
 ---
 

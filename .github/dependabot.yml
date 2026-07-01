@@ -1,0 +1,59 @@
+version: 2
+
+updates:
+  # frontend + ルート: pnpm workspace全体をひとつのエントリで管理
+  # (サブディレクトリ分割するとルートpnpm-lock.yamlが不整合になる既知問題があるため)
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Tokyo"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "frontend"
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      frontend-minor-patch:
+        applies-to: version-updates
+        update-types: ["minor", "patch"]
+
+  # backend: uv (Python)
+  - package-ecosystem: "uv"
+    directory: "/packages/backend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Tokyo"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "backend"
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      backend-minor-patch:
+        applies-to: version-updates
+        update-types: ["minor", "patch"]
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Tokyo"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "ci"
+    commit-message:
+      prefix: "chore(ci)"
+    groups:
+      github-actions-all:
+        patterns: ["*"]
