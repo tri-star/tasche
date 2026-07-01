@@ -51,7 +51,7 @@ uv run ruff format . --check
 uv run pytest
 ```
 
-- `uv.lock` のみの更新でAlembicマイグレーションに影響しないことが明らかな場合、マイグレーション関連の追加確認は不要です。ただし更新対象がSQLAlchemy/Alembic自体、またはDBドライバ（asyncpg等）である場合は、`alembic upgrade head` がエラーなく通ることも確認してください。
+- `uv.lock` のみの更新でAlembicマイグレーションに影響しないことが明らかな場合、マイグレーション関連の追加確認は不要です。ただし更新対象がSQLAlchemy/Alembic自体、またはDBドライバ（asyncpg等）である場合は、`uv run alembic upgrade head` がエラーなく通ることも確認してください。
 
 **frontend の場合**（リポジトリルートから `pnpm --filter @tasche/frontend <script>` で実行）:
 

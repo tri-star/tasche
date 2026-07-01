@@ -38,16 +38,16 @@ trap 'rm -f "$FULL_BODY_FILE"' EXIT
 
 # Look for an existing issue comment containing the marker.
 EXISTING_ID=$(gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" --paginate \
-  --jq "[.[] | select(.body | startswith(\"${MARKER}\"))][0].id // empty")
+  --jq "[.[] | select(.body | type == \"string\" and startswith(\"${MARKER}\"))][0].id // empty")
 
 if [[ -n "$EXISTING_ID" ]]; then
   RESULT=$(gh api "repos/${REPO}/issues/comments/${EXISTING_ID}" \
     -X PATCH \
-    -f body=@"$FULL_BODY_FILE")
+    -F body=@"$FULL_BODY_FILE")
   jq -n --argjson comment "$RESULT" '{action: "updated", id: $comment.id, url: $comment.html_url}'
 else
   RESULT=$(gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" \
     -X POST \
-    -f body=@"$FULL_BODY_FILE")
+    -F body=@"$FULL_BODY_FILE")
   jq -n --argjson comment "$RESULT" '{action: "created", id: $comment.id, url: $comment.html_url}'
 fi
