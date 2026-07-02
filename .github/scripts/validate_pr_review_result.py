@@ -13,7 +13,23 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--input", required=True)
     parser.add_argument("--output", required=True)
+    parser.add_argument("--rules", default=None)
     return parser.parse_args()
+
+
+def load_known_rule_ids(rules_path: str | None) -> set[str]:
+    if rules_path is None:
+        return set()
+    path = Path(rules_path)
+    if not path.exists():
+        return set()
+    try:
+        rules = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return set()
+    if not isinstance(rules, list):
+        return set()
+    return {r["rule_id"] for r in rules if isinstance(r, dict) and isinstance(r.get("rule_id"), str)}
 
 
 def extract_json_blob(text: str) -> dict | None:
@@ -43,7 +59,16 @@ def extract_json_blob(text: str) -> dict | None:
     return results[-1] if results else None
 
 
-def normalize(data: dict | None) -> dict:
+def filter_rule_ids(raw: object, known_ids: set[str]) -> list[str]:
+    if not isinstance(raw, list):
+        return []
+    return [r for r in raw if isinstance(r, str) and r in known_ids]
+
+
+def normalize(data: dict | None, known_rule_ids: set[str] | None = None) -> dict:
+    if known_rule_ids is None:
+        known_rule_ids = set()
+
     if not isinstance(data, dict):
         return fallback("Copilot output was not valid JSON.")
 
@@ -101,6 +126,7 @@ def normalize(data: dict | None) -> dict:
                 "severity": severity,
                 "category": category,
                 "body": body,
+                "applied_rule_ids": filter_rule_ids(item.get("applied_rule_ids"), known_rule_ids),
             }
         )
 
@@ -122,6 +148,7 @@ def normalize(data: dict | None) -> dict:
                 "severity": severity,
                 "category": category,
                 "body": body,
+                "applied_rule_ids": filter_rule_ids(item.get("applied_rule_ids"), known_rule_ids),
             }
         )
 
@@ -154,7 +181,8 @@ def main() -> None:
     args = parse_args()
     raw = Path(args.input).read_text()
     data = extract_json_blob(raw)
-    normalized = normalize(data)
+    known_rule_ids = load_known_rule_ids(args.rules)
+    normalized = normalize(data, known_rule_ids)
     Path(args.output).write_text(json.dumps(normalized, indent=2, ensure_ascii=False))
 
 

@@ -36,6 +36,10 @@ def main() -> None:
         body = comment.get("body")
         if not isinstance(severity, str) or not isinstance(category, str) or not isinstance(body, str):
             continue
+        applied_rule_ids = comment.get("applied_rule_ids", [])
+        if not isinstance(applied_rule_ids, list):
+            applied_rule_ids = []
+        applied_rule_ids = [r for r in applied_rule_ids if isinstance(r, str)]
 
         metadata = {
             "repo": args.repo,
@@ -50,8 +54,10 @@ def main() -> None:
         lines = [
             MARKER,
             f"<!-- ai-pr-review-summary-metadata {json.dumps(metadata, ensure_ascii=False, sort_keys=True)} -->",
-            f"[{severity}/{category}] {body}",
         ]
+        for rule_id in applied_rule_ids:
+            lines.append(f"<!-- RuleId: {rule_id} -->")
+        lines.append(f"[{severity}/{category}] {body}")
         if severity == "non-blocking":
             lines.append("\n> この指摘は non-blocking です。別 PR での対応も可能です。")
         lines += [
