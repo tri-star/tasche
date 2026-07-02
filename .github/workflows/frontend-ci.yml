@@ -119,7 +119,7 @@ jobs:
           mkdir -p $HOME/.cache/ms-playwright
           docker run --rm \
             -v $HOME/.cache/ms-playwright:/dest \
-            mcr.microsoft.com/playwright:v1.57.0-noble \
+            mcr.microsoft.com/playwright:v1.61.1-noble \
             bash -c "cp -rp /ms-playwright/. /dest/ && chown -R $(id -u):$(id -g) /dest"
 
       - name: Start backend containers
