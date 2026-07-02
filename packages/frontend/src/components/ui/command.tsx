@@ -101,10 +101,10 @@ CommandItem.displayName = CommandPrimitive.Item.displayName
 
 export {
   Command,
-  CommandInput,
-  CommandList,
   CommandEmpty,
   CommandGroup,
+  CommandInput,
   CommandItem,
+  CommandList,
   CommandSeparator,
 }
