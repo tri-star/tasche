@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import subprocess
+import tempfile
 from pathlib import Path
 
 
@@ -27,51 +28,37 @@ def detect_packages(changed_files: list[str]) -> list[str]:
     return sorted(packages) if packages else ["frontend", "backend"]
 
 
-def list_rule_keys(bucket: str, package: str) -> list[str]:
+def fetch_rules_for_package(bucket: str, package: str) -> list[dict]:
     prefix = f"rules/package={package}/"
-    result = subprocess.run(
-        [
-            "aws", "s3api", "list-objects-v2",
-            "--bucket", bucket,
-            "--prefix", prefix,
-            "--query", "Contents[].Key",
-            "--output", "json",
-        ],
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    if result.returncode != 0 or not result.stdout.strip():
-        return []
-    try:
-        keys = json.loads(result.stdout)
-    except json.JSONDecodeError:
-        return []
-    if not isinstance(keys, list):
-        return []
-    return [k for k in keys if isinstance(k, str) and k.endswith(".json")]
-
-
-def fetch_rule(bucket: str, key: str, package: str) -> dict | None:
-    result = subprocess.run(
-        ["aws", "s3", "cp", f"s3://{bucket}/{key}", "-"],
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    if result.returncode != 0:
-        return None
-    try:
-        obj = json.loads(result.stdout)
-    except json.JSONDecodeError:
-        return None
-    if not isinstance(obj, dict):
-        return None
-    if not REQUIRED_KEYS.issubset(obj.keys()):
-        return None
-    if obj.get("package") != package:
-        return None
-    return obj
+    rules: list[dict] = []
+    with tempfile.TemporaryDirectory() as tmpdir:
+        result = subprocess.run(
+            [
+                "aws", "s3", "cp",
+                f"s3://{bucket}/{prefix}",
+                tmpdir,
+                "--recursive",
+                "--exclude", "*",
+                "--include", "*.json",
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if result.returncode != 0:
+            return []
+        for p in Path(tmpdir).glob("**/*.json"):
+            try:
+                obj = json.loads(p.read_text())
+                if (
+                    isinstance(obj, dict)
+                    and REQUIRED_KEYS.issubset(obj.keys())
+                    and obj.get("package") == package
+                ):
+                    rules.append(obj)
+            except (json.JSONDecodeError, OSError):
+                continue
+    return rules
 
 
 def main() -> None:
@@ -84,10 +71,7 @@ def main() -> None:
     seen_ids: set[str] = set()
 
     for package in packages:
-        for key in list_rule_keys(args.bucket, package):
-            rule = fetch_rule(args.bucket, key, package)
-            if rule is None:
-                continue
+        for rule in fetch_rules_for_package(args.bucket, package):
             rule_id = rule.get("rule_id")
             if not isinstance(rule_id, str) or not rule_id:
                 continue
