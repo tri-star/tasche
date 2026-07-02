@@ -2137,7 +2137,7 @@ requires-dist = [
     { name = "joserfc", specifier = ">=1.7.2" },
     { name = "opentelemetry-instrumentation-fastapi", specifier = ">=0.59b0" },
     { name = "opentelemetry-instrumentation-logging", specifier = ">=0.59b0" },
-    { name = "pydantic", extras = ["email"], specifier = ">=2.10.0" },
+    { name = "pydantic", extras = ["email"], specifier = ">=2.13.4" },
     { name = "pydantic-settings", specifier = ">=2.14.2" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=9.1.1" },
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.24.0" },
