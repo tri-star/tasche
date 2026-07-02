@@ -20,6 +20,9 @@ updates:
       frontend-minor-patch:
         applies-to: version-updates
         update-types: ["minor", "patch"]
+    # サプライチェーン攻撃対策として、リリース直後の更新を避けるため2日間の猶予期間を設ける
+    cooldown:
+      default-days: 2
 
   # backend: uv (Python)
   - package-ecosystem: "uv"
@@ -39,6 +42,9 @@ updates:
       backend-minor-patch:
         applies-to: version-updates
         update-types: ["minor", "patch"]
+    # サプライチェーン攻撃対策として、リリース直後の更新を避けるため2日間の猶予期間を設ける
+    cooldown:
+      default-days: 2
 
   # GitHub Actions
   - package-ecosystem: "github-actions"
@@ -57,3 +63,6 @@ updates:
     groups:
       github-actions-all:
         patterns: ["*"]
+    # サプライチェーン攻撃対策として、リリース直後の更新を避けるため2日間の猶予期間を設ける
+    cooldown:
+      default-days: 2
