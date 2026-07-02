@@ -4,6 +4,7 @@
   "extends": ["../../biome.json"],
   "files": {
     "includes": [
+      "!dist",
       "!playwright-report",
       "!test-results",
       "!public/mockServiceWorker.js",
