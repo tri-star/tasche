@@ -6,7 +6,7 @@ metadata:
     user-invokable: true
     model: haiku
   codex:
-    model: gpt-5.5
+    model: gpt-5.4
     model_reasoning_effort: low
 ---
 

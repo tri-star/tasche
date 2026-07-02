@@ -1,0 +1,93 @@
+name: deploy-backend-prod
+
+# Backend (Lambda コンテナイメージ) を prod 環境にデプロイする。
+#
+# トリガー: release/backend-prod/<version> タグの push、または workflow_dispatch (ロールバック用).
+# 流れ:
+#   1) OIDC で AssumeRole (prod environment の承認後に実行)
+#   2) sam build でコンテナイメージをビルド
+#   3) sam deploy で ECR 自動作成 + Lambda 更新
+#
+# 前提:
+#   - GitHub "prod" environment に AWS_DEPLOY_ROLE_ARN_PROD が設定済みであること
+#   - packages/backend/infra/samconfig.toml の prod.deploy.parameters.CloudFrontDistributionId が
+#     実際の prod CloudFront Distribution ID に更新済みであること (初回は frontend を先にデプロイして取得)
+on:
+  push:
+    tags:
+      - "release/backend-prod/**"
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "デプロイするコミット/タグ (空なら main)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: deploy-prod-backend
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: prod
+    defaults:
+      run:
+        working-directory: packages/backend/infra
+    env:
+      AWS_REGION: ap-southeast-1
+      ENV_NAME: prod
+      STACK_NAME: prod-tasche-backend
+      DOCKER_DEFAULT_PLATFORM: linux/amd64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@254c19bd240aabef8777f48595e9d2d7b972184b # v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Set up SAM CLI
+        uses: aws-actions/setup-sam@89ddb14d60e682855e3fea4be85b3c56485de310 # v2
+        with:
+          use-installer: true
+
+      - name: Resolve Lambda Extension layer URLs
+        working-directory: packages/backend
+        run: |
+          eval "$(bash scripts/fetch-lambda-extensions.sh)"
+          {
+            echo "SECRETS_LAYER_URL=${SECRETS_LAYER_URL}"
+            echo "ADOT_LAYER_URL=${ADOT_LAYER_URL}"
+          } >> "$GITHUB_ENV"
+
+      - name: Build backend image
+        run: |
+          sam build \
+            --config-env prod \
+            --parameter-overrides \
+              "SecretsLayerUrl=${SECRETS_LAYER_URL}" \
+              "AdotLayerUrl=${ADOT_LAYER_URL}"
+
+      - name: Deploy backend stack
+        run: |
+          sam deploy \
+            --config-env prod \
+            --no-confirm-changeset \
+            --no-fail-on-empty-changeset
+
+      - name: Show outputs
+        run: |
+          aws cloudformation describe-stacks \
+            --stack-name "$STACK_NAME" \
+            --query "Stacks[0].Outputs" \
+            --output table

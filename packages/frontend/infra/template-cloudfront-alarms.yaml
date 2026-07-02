@@ -1,0 +1,66 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: |
+  Tasche Frontend - CloudFront CloudWatch Alarms (us-east-1 専用).
+  CloudFront メトリクスは us-east-1 のみ発行されるため、本スタックは必ず
+  --region us-east-1 でデプロイする。AlarmActions の SNS も us-east-1 のものを参照する。
+
+Parameters:
+  Env:
+    Type: String
+    AllowedValues: [dev, prod]
+  DistributionId:
+    Type: String
+    Description: CloudFront Distribution ID (frontend スタックの Output DistributionId)
+  AlarmTopicArn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /tasche/dev/monitoring/alarm-topic-arn
+    Description: us-east-1 の SNS トピック ARN を格納した SSM パス. 本スタックは us-east-1 にデプロイされるため us-east-1 パラメータストアを参照する.
+  CloudFront5xxErrorRateThreshold:
+    Type: Number
+    Default: 1
+  CloudFrontTotalErrorRateThreshold:
+    Type: Number
+    Default: 5
+
+Resources:
+  CloudFront5xxErrorRateAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Env}-tasche-cloudfront-5xx-error-rate"
+      AlarmDescription: CloudFront 5xx エラー率がしきい値超過 (サーバーサイドエラー)
+      Namespace: AWS/CloudFront
+      MetricName: 5xxErrorRate
+      Dimensions:
+        - Name: DistributionId
+          Value: !Ref DistributionId
+        - Name: Region
+          Value: Global
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: !Ref CloudFront5xxErrorRateThreshold
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopicArn]
+      OKActions: [!Ref AlarmTopicArn]
+
+  CloudFrontTotalErrorRateAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Env}-tasche-cloudfront-total-error-rate"
+      AlarmDescription: CloudFront 全体エラー率 (4xx+5xx) がしきい値超過
+      Namespace: AWS/CloudFront
+      MetricName: TotalErrorRate
+      Dimensions:
+        - Name: DistributionId
+          Value: !Ref DistributionId
+        - Name: Region
+          Value: Global
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: !Ref CloudFrontTotalErrorRateThreshold
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopicArn]
+      OKActions: [!Ref AlarmTopicArn]

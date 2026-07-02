@@ -1,0 +1,19 @@
+---
+name: orval-upgrade-notes
+description: orval (frontend API client generator) の主要バージョンアップ時に確認すべき既知の破壊的変更
+metadata:
+  type: project
+---
+
+`packages/frontend/orval.config.ts` は fetch client + mode: single + MSW mock生成を使う構成。zodは使用していない(依存にzodなし、`output.override.zod`未使用)ため、orval 8.18/8.19で導入された「Zod v4がデフォルト」という変更はこのリポジトリには影響しない。
+
+orval v7 → v8 (8.19.0時点で確認)で `output.mock` の設定スキーマが破壊的に変更されている。
+- 旧: `mock: { type: "msw", delay: 0 }`
+- 新: `mock: { generators: [{ type: "msw", delay: 0 }] }`
+旧形式のままだと `pnpm run openapi:update` (= `orval --config orval.config.ts`) が `TypeError: mock.generators must be an array of generator entries` で失敗する。
+
+**Why:** orval 8.xでmockジェネレータが複数種類(msw, faker等)を同時出力できるようマルチジェネレータ構成に変更されたため。
+
+**How to apply:** orvalをメジャーアップデートするPRを扱う際は、まず `pnpm --filter @tasche/frontend run openapi:update` を実際に実行してエラーが出ないか確認する。エラーが出たらorval公式ドキュメント(orval.dev/docs/reference/configuration/output)のmock/output設定を確認し、config側を新スキーマに追従させる。生成後は `MockHandler` で終わる関数が `src/api/generated/client.ts` 内に引き続きインライン生成されていること(`src/mocks/handlers/generated.ts` がこれをスキャンして`RequestHandler`を収集する仕組みに依存している)を確認する。
+
+生成後の差分は多くの場合、単純なユニオン型(`number | null`等)を別ファイルに切り出す代わりにインライン化する、JSDocコメントの整形、`value.toString()` → `String(value)` のような軽微な最適化などで、実害のない差分になることが多い(2026-07にorval 7.18.0→8.19.0で確認)。差分を精査する際は `model/index.ts` のexport増減(ファイル削除)がsrcの他の場所から直接import されていないかを必ずgrepで確認すること。

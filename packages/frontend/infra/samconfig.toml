@@ -19,14 +19,17 @@ parameter_overrides = [
     "HostedZoneId=/tasche/dev/frontend/hosted-zone-id",
 ]
 
-# prod 環境 (枠のみ; 別タスクで完成させる)
+# prod 環境
 [prod.deploy.parameters]
 stack_name = "prod-tasche-frontend"
 region = "ap-southeast-1"
 capabilities = "CAPABILITY_NAMED_IAM"
-confirm_changeset = true
+confirm_changeset = false
 fail_on_empty_changeset = false
 parameter_overrides = [
     "Env=prod",
     "BackendFunctionUrl=/tasche/prod/sam/backend-function-url",
+    "Domain=tasche.life",
+    "AcmCertificateArn=/tasche/prod/frontend/acm-certificate-arn",
+    "HostedZoneId=/tasche/prod/frontend/hosted-zone-id",
 ]

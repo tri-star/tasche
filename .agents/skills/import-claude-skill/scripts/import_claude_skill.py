@@ -464,7 +464,7 @@ def toml_string(value: str) -> str:
 
 
 def toml_multiline_string(value: str) -> str:
-    escaped = value.replace('"""', '\\"\\"\\"')
+    escaped = value.replace("\\", "\\\\").replace('"""', '\\"\\"\\"')
     return '"""\n' + escaped + '\n"""'
 
 

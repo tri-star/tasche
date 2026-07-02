@@ -75,7 +75,7 @@ export function SpinButton({
 
   const parsedDraft = Number(draft)
   const currentValue =
-    isFocused && draft.trim() !== "" && !isNaN(parsedDraft) && isFinite(parsedDraft)
+    isFocused && draft.trim() !== "" && !Number.isNaN(parsedDraft) && Number.isFinite(parsedDraft)
       ? parsedDraft
       : normalizedValue
 
@@ -92,7 +92,7 @@ export function SpinButton({
 
   function commit(raw: string) {
     const parsed = Number(raw)
-    if (raw.trim() === "" || isNaN(parsed) || !isFinite(parsed)) {
+    if (raw.trim() === "" || Number.isNaN(parsed) || !Number.isFinite(parsed)) {
       // 無効な入力は現在値に戻す
       setDraft(formattedValue)
       return

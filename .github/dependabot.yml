@@ -1,0 +1,68 @@
+version: 2
+
+updates:
+  # frontend + ルート: pnpm workspace全体をひとつのエントリで管理
+  # (サブディレクトリ分割するとルートpnpm-lock.yamlが不整合になる既知問題があるため)
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Tokyo"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "frontend"
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      frontend-minor-patch:
+        applies-to: version-updates
+        update-types: ["minor", "patch"]
+    # サプライチェーン攻撃対策として、リリース直後の更新を避けるため2日間の猶予期間を設ける
+    cooldown:
+      default-days: 2
+
+  # backend: uv (Python)
+  - package-ecosystem: "uv"
+    directory: "/packages/backend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Tokyo"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "backend"
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      backend-minor-patch:
+        applies-to: version-updates
+        update-types: ["minor", "patch"]
+    # サプライチェーン攻撃対策として、リリース直後の更新を避けるため2日間の猶予期間を設ける
+    cooldown:
+      default-days: 2
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Tokyo"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "ci"
+    commit-message:
+      prefix: "chore(ci)"
+    groups:
+      github-actions-all:
+        patterns: ["*"]
+    # サプライチェーン攻撃対策として、リリース直後の更新を避けるため2日間の猶予期間を設ける
+    cooldown:
+      default-days: 2
