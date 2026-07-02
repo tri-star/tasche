@@ -12,7 +12,7 @@ on:
         description: pnpm version passed to pnpm/action-setup
         required: false
         type: string
-        default: "9"
+        default: "11"
       cache-dependency-path:
         description: Path used for pnpm cache key (usually pnpm-lock.yaml)
         required: false
