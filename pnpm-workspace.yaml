@@ -1,2 +1,10 @@
 packages:
   - "packages/*"
+
+allowBuilds:
+  esbuild: true
+  msw: true
+
+# サプライチェーン攻撃対策として、パッケージ公開から2日(2880分)経過するまで
+# 新バージョンのインストールを保留する
+minimumReleaseAge: 2880

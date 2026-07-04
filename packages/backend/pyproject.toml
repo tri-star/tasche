@@ -40,6 +40,7 @@ build-backend = "hatchling.build"
 packages = ["src/tasche"]
 
 [tool.uv]
+exclude-newer = "2 days"
 dev-dependencies = [
     "ruff>=0.15.20",
     "pytest>=9.1.1",
