@@ -39,7 +39,12 @@ permissions:
 
 jobs:
   pr-ai-review:
-    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.draft == false
+    # workflow_dispatch(手動実行)は常に許可。
+    # pull_request_target 経由の自動実行は draft を除外しつつ、
+    # AIレビューのコスト抑止のため Dependabot が作成したPRはスキップする。
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.draft == false && github.event.pull_request.user.login != 'dependabot[bot]')
     runs-on: ubuntu-latest
     env:
       REPO: ${{ github.repository }}
