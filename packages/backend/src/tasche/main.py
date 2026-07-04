@@ -72,10 +72,34 @@ def _safe_request_url(request: Request) -> str:
     return str(request.url.replace(query=None))
 
 
+def _resolve_full_route_path(app: FastAPI | None, route: object) -> str | None:
+    """マッチした route から prefix を含む完全なパスパターンを解決する.
+
+    FastAPI 0.137 でルーターの内部構造がツリー化され、ネストした
+    include_router() の prefix が `route.path` に反映されなくなった
+    (`scope["route"]` は各ルーターの生の APIRoute を指すため、
+    `/{item_id}` のように末端の断片しか得られない)。
+    そのため `iter_route_contexts()` で全ルートの実効パス
+    (prefix 結合済み) を辿り、一致する route を探して補完する。
+    参照: https://github.com/fastapi/fastapi/releases/tag/0.137.0
+    """
+    if route is None:
+        return None
+
+    if app is not None:
+        from fastapi.routing import iter_route_contexts
+
+        for context in iter_route_contexts(app.routes):
+            if context.original_route is route:
+                return context.path
+
+    return getattr(route, "path", None)
+
+
 def _route_path(request: Request) -> str:
     """FastAPI が解決したルートパターンを取得する."""
     route = request.scope.get("route")
-    path = getattr(route, "path", None)
+    path = _resolve_full_route_path(request.scope.get("app"), route)
     return path or request.url.path
 
 
@@ -121,7 +145,7 @@ def _set_http_span_attributes_from_scope(span, scope) -> None:
 
     path = scope.get("path") or "/"
     route = scope.get("route")
-    route_path = getattr(route, "path", None) or path
+    route_path = _resolve_full_route_path(scope.get("app"), route) or path
     operation = f"{method} {route_path}"
 
     span.update_name(operation)

@@ -157,13 +157,48 @@ jobs:
             --author "${PR_AUTHOR}" \
             --output-dir tmp/review
 
+      - name: Check S3 upload config
+        id: s3-check
+        env:
+          AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+          AI_REVIEW_S3_BUCKET: ${{ secrets.AI_REVIEW_S3_BUCKET }}
+        run: |
+          if [ "${SAME_REPO}" = "true" ] && [ -n "${AWS_ROLE_ARN}" ] && [ -n "${AI_REVIEW_S3_BUCKET}" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Configure AWS credentials
+        if: steps.s3-check.outputs.enabled == 'true'
+        uses: aws-actions/configure-aws-credentials@254c19bd240aabef8777f48595e9d2d7b972184b # v6.2.1
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ap-northeast-1
+
+      - name: Fetch review rules from S3
+        if: steps.s3-check.outputs.enabled == 'true'
+        continue-on-error: true
+        env:
+          AI_REVIEW_S3_BUCKET: ${{ secrets.AI_REVIEW_S3_BUCKET }}
+        run: |
+          python3 .github/scripts/fetch_review_rules.py \
+            --metadata tmp/review/pr-metadata.json \
+            --bucket "${AI_REVIEW_S3_BUCKET}" \
+            --output tmp/review/rules.json
+
       - name: Build Copilot prompt
         if: env.SAME_REPO == 'true'
         run: |
+          RULES_ARG=""
+          if [ -f tmp/review/rules.json ]; then
+            RULES_ARG="--rules tmp/review/rules.json"
+          fi
           python3 .github/scripts/build_pr_review_prompt.py \
             --metadata tmp/review/pr-metadata.json \
             --body-file tmp/review/pr-body.txt \
-            --output tmp/review/prompt.txt
+            --output tmp/review/prompt.txt \
+            ${RULES_ARG}
 
       - name: Run Copilot review
         if: env.SAME_REPO == 'true'
@@ -206,9 +241,14 @@ jobs:
       - name: Normalize review result
         if: env.SAME_REPO == 'true'
         run: |
+          RULES_ARG=""
+          if [ -f tmp/review/rules.json ]; then
+            RULES_ARG="--rules tmp/review/rules.json"
+          fi
           python3 .github/scripts/validate_pr_review_result.py \
             --input tmp/review/result.raw.txt \
-            --output tmp/review/result.json
+            --output tmp/review/result.json \
+            ${RULES_ARG}
 
       - name: Render summary comment
         run: |
@@ -347,7 +387,7 @@ jobs:
             line=$(printf '%s' "${item}" | jq -r '.line')
             severity=$(printf '%s' "${item}" | jq -r '.severity')
             category=$(printf '%s' "${item}" | jq -r '.category')
-            body=$(printf '%s' "${item}" | jq -r '"<!-- ai-pr-review-line -->\n[" + .severity + "/" + .category + "] " + .body')
+            body=$(printf '%s' "${item}" | jq -r '["<!-- ai-pr-review-line -->"] + (.applied_rule_ids // [] | map("<!-- RuleId: " + . + " -->")) + ["[" + .severity + "/" + .category + "] " + .body] | join("\n")')
             gh api --method POST "repos/${REPO}/pulls/${PR_NUMBER}/comments" \
               -f body="${body}" \
               -f commit_id="${HEAD_SHA}" \
@@ -355,25 +395,6 @@ jobs:
               -F line="${line}" \
               -f side="RIGHT" >/dev/null
           done
-
-      - name: Check S3 upload config
-        id: s3-check
-        env:
-          AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
-          AI_REVIEW_S3_BUCKET: ${{ secrets.AI_REVIEW_S3_BUCKET }}
-        run: |
-          if [ "${SAME_REPO}" = "true" ] && [ -n "${AWS_ROLE_ARN}" ] && [ -n "${AI_REVIEW_S3_BUCKET}" ]; then
-            echo "enabled=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "enabled=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Configure AWS credentials
-        if: steps.s3-check.outputs.enabled == 'true'
-        uses: aws-actions/configure-aws-credentials@254c19bd240aabef8777f48595e9d2d7b972184b # v6.2.1
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ap-northeast-1
 
       - name: Upload review result to S3
         if: steps.s3-check.outputs.enabled == 'true'

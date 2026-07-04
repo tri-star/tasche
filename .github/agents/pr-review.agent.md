@@ -114,14 +114,16 @@ CI workflow では review context は事前生成済みであり、changed file 
       "line": 1,
       "severity": "blocking | non-blocking",
       "category": "bug | security | performance | readability | maintainability | test",
-      "body": "string"
+      "body": "string",
+      "applied_rule_ids": ["<uuid>"]
     }
   ],
   "summary_comments": [
     {
       "severity": "blocking | non-blocking",
       "category": "bug | security | performance | readability | maintainability | test",
-      "body": "string"
+      "body": "string",
+      "applied_rule_ids": ["<uuid>"]
     }
   ]
 }
@@ -137,6 +139,9 @@ CI workflow では review context は事前生成済みであり、changed file 
 - `review_comments` は 0 件でもよい
 - `summary_comments` は 0 件でもよい
 - 行番号を特定できないが PR に残すべき指摘は `summary_comments` に含める
+- `applied_rule_ids` は省略可能（省略時は空配列として扱われる）
+- `applied_rule_ids` にはプロンプトで渡された「追加レビュー観点（蓄積済みルール）」のうち、実際にその指摘の根拠として使ったルールの `rule_id` のみを入れる
+- プロンプトに存在しない `rule_id` を捏造・推測しないこと
 
 ## 判定の優先順位
 
