@@ -12,36 +12,43 @@ export interface DailyTargets {
   /**
      * 月曜日の目標ユニット数
      * @minimum 0
+     * @maximum 999.9
      */
   monday: number;
   /**
      * 火曜日の目標ユニット数
      * @minimum 0
+     * @maximum 999.9
      */
   tuesday: number;
   /**
      * 水曜日の目標ユニット数
      * @minimum 0
+     * @maximum 999.9
      */
   wednesday: number;
   /**
      * 木曜日の目標ユニット数
      * @minimum 0
+     * @maximum 999.9
      */
   thursday: number;
   /**
      * 金曜日の目標ユニット数
      * @minimum 0
+     * @maximum 999.9
      */
   friday: number;
   /**
      * 土曜日の目標ユニット数
      * @minimum 0
+     * @maximum 999.9
      */
   saturday: number;
   /**
      * 日曜日の目標ユニット数
      * @minimum 0
+     * @maximum 999.9
      */
   sunday: number;
 }

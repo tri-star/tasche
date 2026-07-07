@@ -15,6 +15,9 @@ export interface GoalsUpdate {
   unit_duration_minutes: number;
   /** 曜日ごとの確保可能ユニット数 */
   daily_available_units?: DailyAvailableUnits;
-  /** 目標一覧 */
+  /**
+     * 目標一覧
+     * @maxItems 50
+     */
   goals: GoalUpdateItem[];
 }
