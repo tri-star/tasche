@@ -798,6 +798,13 @@ Content-Type: application/json
 - `task_id`がnullの場合、`new_task_name`で新規タスクを作成します。
 - リクエストに含まれないタスクは今週の目標から除外されます。
 
+**入力値制約**:
+- `goals`: 最大50件
+- `new_task_name`: 最大100文字
+- `daily_targets` / `daily_available_units` の各曜日の値: `0`以上`999.9`以下
+
+制約違反時は `422 Unprocessable Entity`（FastAPIデフォルトのエラー形式 `{"detail": [...]}`）を返します。他エンドポイントの業務バリデーションエラー（`400` / `{"error": {"code": "VALIDATION_ERROR", ...}}`）とは形式が異なる点に注意してください。
+
 #### レスポンス（200 OK）
 
 ```json
@@ -1208,7 +1215,7 @@ Cookie: session=<opaque-token>
 |------------|------|------|
 | task_id | string | タスクID |
 | task_name | string | タスク名 |
-| daily_targets | object | 曜日ごとの目標ユニット数 |
+| daily_targets | object | 曜日ごとの目標ユニット数（各値は `0`以上`999.9`以下） |
 
 ### 実績 (Record)
 
@@ -1248,6 +1255,8 @@ monday | tuesday | wednesday | thursday | friday | saturday | sunday
 | INVALID_DAY | 400 | 曜日の値が不正です |
 | INVALID_ACTUAL_UNITS | 400 | 実績ユニット数の値が不正です |
 | INTERNAL_ERROR | 500 | サーバー内部エラー |
+
+**注**: 上記は本アプリ独自のエラーハンドラーが返す形式（`{"error": {"code", "message"}}`）です。一部エンドポイントのリクエストスキーマ（例: `PUT /api/weeks/current/goals` の `goals`件数・文字数・数値範囲など）は Pydantic の `Field` 制約のみで検証しており、違反時は FastAPI デフォルトの `422 Unprocessable Entity`（`{"detail": [...]}`形式）を返します。
 
 ---
 

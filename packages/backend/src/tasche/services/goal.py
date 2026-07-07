@@ -46,7 +46,10 @@ def _empty_daily_targets() -> dict[str, float]:
 
 
 def _build_daily_available_units(week: Week) -> DailyAvailableUnits:
-    return DailyAvailableUnits(
+    # DB由来の既存値を返すため model_construct で構築する。
+    # 通常のコンストラクタだと Field(le=999.9) 等の入力用バリデーションが働き、
+    # 制約導入前に保存された値がある場合に GET が 500 になってしまう。
+    return DailyAvailableUnits.model_construct(
         **{
             DAY_OF_WEEK_FIELD_NAMES[day]: float(
                 getattr(week, f"available_units_{DAY_OF_WEEK_FIELD_NAMES[day]}")
@@ -88,7 +91,8 @@ def _build_goal_responses(rows: Iterable[tuple[Goal, Task]]) -> list[GoalRespons
         GoalResponse(
             task_id=task_id,
             task_name=str(payload["task_name"]),
-            daily_targets=DailyTargets(**payload["daily_targets"]),
+            # DB由来の既存値のため model_construct で構築する（理由は _build_daily_available_units を参照）。
+            daily_targets=DailyTargets.model_construct(**payload["daily_targets"]),
         )
         for task_id, payload in grouped.items()
     ]
