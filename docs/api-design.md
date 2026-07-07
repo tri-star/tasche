@@ -1215,7 +1215,7 @@ Cookie: session=<opaque-token>
 |------------|------|------|
 | task_id | string | タスクID |
 | task_name | string | タスク名 |
-| daily_targets | object | 曜日ごとの目標ユニット数（各値は `0`以上`999.9`以下） |
+| daily_targets | object | 曜日ごとの目標ユニット数（`0`以上。更新リクエスト時は`999.9`以下の上限あり） |
 
 ### 実績 (Record)
 

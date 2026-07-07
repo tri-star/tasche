@@ -2,29 +2,63 @@
 
 from pydantic import BaseModel, Field
 
+MAX_DAILY_UNITS = 999.9
+"""曜日ごとのユニット数（確保可能/目標）の上限値.
+
+リクエスト側スキーマ（*Input）にのみ適用する。レスポンス側スキーマにこの上限を
+課すと、制約導入前にDBへ保存された既存値（この上限を超える値）を読み出す際に
+ValidationErrorとなり GET が 500 になってしまうため、レスポンス側は ge=0 のみとする。
+"""
+
 
 class DailyAvailableUnits(BaseModel):
-    """曜日ごとの確保可能ユニット数."""
+    """曜日ごとの確保可能ユニット数（レスポンス用。上限値は課さない）."""
 
-    monday: float = Field(0.0, ge=0, le=999.9, description="月曜日の確保可能ユニット数")
-    tuesday: float = Field(0.0, ge=0, le=999.9, description="火曜日の確保可能ユニット数")
-    wednesday: float = Field(0.0, ge=0, le=999.9, description="水曜日の確保可能ユニット数")
-    thursday: float = Field(0.0, ge=0, le=999.9, description="木曜日の確保可能ユニット数")
-    friday: float = Field(0.0, ge=0, le=999.9, description="金曜日の確保可能ユニット数")
-    saturday: float = Field(0.0, ge=0, le=999.9, description="土曜日の確保可能ユニット数")
-    sunday: float = Field(0.0, ge=0, le=999.9, description="日曜日の確保可能ユニット数")
+    monday: float = Field(0.0, ge=0, description="月曜日の確保可能ユニット数")
+    tuesday: float = Field(0.0, ge=0, description="火曜日の確保可能ユニット数")
+    wednesday: float = Field(0.0, ge=0, description="水曜日の確保可能ユニット数")
+    thursday: float = Field(0.0, ge=0, description="木曜日の確保可能ユニット数")
+    friday: float = Field(0.0, ge=0, description="金曜日の確保可能ユニット数")
+    saturday: float = Field(0.0, ge=0, description="土曜日の確保可能ユニット数")
+    sunday: float = Field(0.0, ge=0, description="日曜日の確保可能ユニット数")
+
+
+class DailyAvailableUnitsInput(DailyAvailableUnits):
+    """曜日ごとの確保可能ユニット数（リクエスト用。上限値 `MAX_DAILY_UNITS` を課す）."""
+
+    monday: float = Field(0.0, ge=0, le=MAX_DAILY_UNITS, description="月曜日の確保可能ユニット数")
+    tuesday: float = Field(0.0, ge=0, le=MAX_DAILY_UNITS, description="火曜日の確保可能ユニット数")
+    wednesday: float = Field(
+        0.0, ge=0, le=MAX_DAILY_UNITS, description="水曜日の確保可能ユニット数"
+    )
+    thursday: float = Field(0.0, ge=0, le=MAX_DAILY_UNITS, description="木曜日の確保可能ユニット数")
+    friday: float = Field(0.0, ge=0, le=MAX_DAILY_UNITS, description="金曜日の確保可能ユニット数")
+    saturday: float = Field(0.0, ge=0, le=MAX_DAILY_UNITS, description="土曜日の確保可能ユニット数")
+    sunday: float = Field(0.0, ge=0, le=MAX_DAILY_UNITS, description="日曜日の確保可能ユニット数")
 
 
 class DailyTargets(BaseModel):
-    """曜日ごとの目標ユニット数."""
+    """曜日ごとの目標ユニット数（レスポンス用。上限値は課さない）."""
 
-    monday: float = Field(..., ge=0, le=999.9, description="月曜日の目標ユニット数")
-    tuesday: float = Field(..., ge=0, le=999.9, description="火曜日の目標ユニット数")
-    wednesday: float = Field(..., ge=0, le=999.9, description="水曜日の目標ユニット数")
-    thursday: float = Field(..., ge=0, le=999.9, description="木曜日の目標ユニット数")
-    friday: float = Field(..., ge=0, le=999.9, description="金曜日の目標ユニット数")
-    saturday: float = Field(..., ge=0, le=999.9, description="土曜日の目標ユニット数")
-    sunday: float = Field(..., ge=0, le=999.9, description="日曜日の目標ユニット数")
+    monday: float = Field(..., ge=0, description="月曜日の目標ユニット数")
+    tuesday: float = Field(..., ge=0, description="火曜日の目標ユニット数")
+    wednesday: float = Field(..., ge=0, description="水曜日の目標ユニット数")
+    thursday: float = Field(..., ge=0, description="木曜日の目標ユニット数")
+    friday: float = Field(..., ge=0, description="金曜日の目標ユニット数")
+    saturday: float = Field(..., ge=0, description="土曜日の目標ユニット数")
+    sunday: float = Field(..., ge=0, description="日曜日の目標ユニット数")
+
+
+class DailyTargetsInput(DailyTargets):
+    """曜日ごとの目標ユニット数（リクエスト用。上限値 `MAX_DAILY_UNITS` を課す）."""
+
+    monday: float = Field(..., ge=0, le=MAX_DAILY_UNITS, description="月曜日の目標ユニット数")
+    tuesday: float = Field(..., ge=0, le=MAX_DAILY_UNITS, description="火曜日の目標ユニット数")
+    wednesday: float = Field(..., ge=0, le=MAX_DAILY_UNITS, description="水曜日の目標ユニット数")
+    thursday: float = Field(..., ge=0, le=MAX_DAILY_UNITS, description="木曜日の目標ユニット数")
+    friday: float = Field(..., ge=0, le=MAX_DAILY_UNITS, description="金曜日の目標ユニット数")
+    saturday: float = Field(..., ge=0, le=MAX_DAILY_UNITS, description="土曜日の目標ユニット数")
+    sunday: float = Field(..., ge=0, le=MAX_DAILY_UNITS, description="日曜日の目標ユニット数")
 
 
 class GoalResponse(BaseModel):
@@ -76,15 +110,15 @@ class GoalUpdateItem(BaseModel):
     new_task_name: str | None = Field(
         None, max_length=100, description="新規タスク名（task_idがnullの場合に必須）"
     )
-    daily_targets: DailyTargets = Field(..., description="曜日ごとの目標ユニット数")
+    daily_targets: DailyTargetsInput = Field(..., description="曜日ごとの目標ユニット数")
 
 
 class GoalsUpdate(BaseModel):
     """目標一括更新リクエスト."""
 
     unit_duration_minutes: int = Field(..., description="1ユニットの時間（分）")
-    daily_available_units: DailyAvailableUnits = Field(
-        default_factory=DailyAvailableUnits, description="曜日ごとの確保可能ユニット数"
+    daily_available_units: DailyAvailableUnitsInput = Field(
+        default_factory=DailyAvailableUnitsInput, description="曜日ごとの確保可能ユニット数"
     )
     goals: list[GoalUpdateItem] = Field(..., max_length=50, description="目標一覧")
 

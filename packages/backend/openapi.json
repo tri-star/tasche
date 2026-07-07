@@ -1483,6 +1483,62 @@
         "properties": {
           "monday": {
             "type": "number",
+            "minimum": 0.0,
+            "title": "Monday",
+            "description": "月曜日の確保可能ユニット数",
+            "default": 0.0
+          },
+          "tuesday": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Tuesday",
+            "description": "火曜日の確保可能ユニット数",
+            "default": 0.0
+          },
+          "wednesday": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Wednesday",
+            "description": "水曜日の確保可能ユニット数",
+            "default": 0.0
+          },
+          "thursday": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Thursday",
+            "description": "木曜日の確保可能ユニット数",
+            "default": 0.0
+          },
+          "friday": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Friday",
+            "description": "金曜日の確保可能ユニット数",
+            "default": 0.0
+          },
+          "saturday": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Saturday",
+            "description": "土曜日の確保可能ユニット数",
+            "default": 0.0
+          },
+          "sunday": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Sunday",
+            "description": "日曜日の確保可能ユニット数",
+            "default": 0.0
+          }
+        },
+        "type": "object",
+        "title": "DailyAvailableUnits",
+        "description": "曜日ごとの確保可能ユニット数（レスポンス用。上限値は課さない）."
+      },
+      "DailyAvailableUnitsInput": {
+        "properties": {
+          "monday": {
+            "type": "number",
             "maximum": 999.9,
             "minimum": 0.0,
             "title": "Monday",
@@ -1539,8 +1595,8 @@
           }
         },
         "type": "object",
-        "title": "DailyAvailableUnits",
-        "description": "曜日ごとの確保可能ユニット数."
+        "title": "DailyAvailableUnitsInput",
+        "description": "曜日ごとの確保可能ユニット数（リクエスト用。上限値 `MAX_DAILY_UNITS` を課す）."
       },
       "DailyData": {
         "properties": {
@@ -1578,6 +1634,64 @@
         "description": "日次データ."
       },
       "DailyTargets": {
+        "properties": {
+          "monday": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Monday",
+            "description": "月曜日の目標ユニット数"
+          },
+          "tuesday": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Tuesday",
+            "description": "火曜日の目標ユニット数"
+          },
+          "wednesday": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Wednesday",
+            "description": "水曜日の目標ユニット数"
+          },
+          "thursday": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Thursday",
+            "description": "木曜日の目標ユニット数"
+          },
+          "friday": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Friday",
+            "description": "金曜日の目標ユニット数"
+          },
+          "saturday": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Saturday",
+            "description": "土曜日の目標ユニット数"
+          },
+          "sunday": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Sunday",
+            "description": "日曜日の目標ユニット数"
+          }
+        },
+        "type": "object",
+        "required": [
+          "monday",
+          "tuesday",
+          "wednesday",
+          "thursday",
+          "friday",
+          "saturday",
+          "sunday"
+        ],
+        "title": "DailyTargets",
+        "description": "曜日ごとの目標ユニット数（レスポンス用。上限値は課さない）."
+      },
+      "DailyTargetsInput": {
         "properties": {
           "monday": {
             "type": "number",
@@ -1639,8 +1753,8 @@
           "saturday",
           "sunday"
         ],
-        "title": "DailyTargets",
-        "description": "曜日ごとの目標ユニット数."
+        "title": "DailyTargetsInput",
+        "description": "曜日ごとの目標ユニット数（リクエスト用。上限値 `MAX_DAILY_UNITS` を課す）."
       },
       "DashboardResponse": {
         "properties": {
@@ -1760,7 +1874,7 @@
             "description": "新規タスク名（task_idがnullの場合に必須）"
           },
           "daily_targets": {
-            "$ref": "#/components/schemas/DailyTargets",
+            "$ref": "#/components/schemas/DailyTargetsInput",
             "description": "曜日ごとの目標ユニット数"
           }
         },
@@ -1837,7 +1951,7 @@
             "description": "1ユニットの時間（分）"
           },
           "daily_available_units": {
-            "$ref": "#/components/schemas/DailyAvailableUnits",
+            "$ref": "#/components/schemas/DailyAvailableUnitsInput",
             "description": "曜日ごとの確保可能ユニット数"
           },
           "goals": {

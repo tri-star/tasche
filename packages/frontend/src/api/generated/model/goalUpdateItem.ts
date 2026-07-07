@@ -4,7 +4,7 @@
  * Tasche API
  * OpenAPI spec version: 0.1.0
  */
-import type { DailyTargets } from './dailyTargets';
+import type { DailyTargetsInput } from './dailyTargetsInput';
 
 /**
  * 目標更新アイテム.
@@ -15,5 +15,5 @@ export interface GoalUpdateItem {
   /** 新規タスク名（task_idがnullの場合に必須） */
   new_task_name?: string | null;
   /** 曜日ごとの目標ユニット数 */
-  daily_targets: DailyTargets;
+  daily_targets: DailyTargetsInput;
 }
