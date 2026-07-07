@@ -11,7 +11,7 @@
           "認証"
         ],
         "summary": "Google Authorize",
-        "description": "Google 認可 URL を組み立てて返す.\n\nArgs:\n    code_challenge: frontend が生成した PKCE challenge（S256）\n    redirect_uri: frontend のコールバック URL（許可リストで検証）\n    code_challenge_method: S256 のみ受理（省略時も S256）\n\nReturns:\n    APIResponse[AuthorizeResponse]: authorization_url と state",
+        "description": "Google 認可 URL を組み立てて返す.\n\nstate はフロントエンドが生成した値を受け取る（RFC 6819 推奨: クライアントが state を生成・保持）。\n\nArgs:\n    code_challenge: frontend が生成した PKCE challenge（S256）\n    redirect_uri: frontend のコールバック URL（許可リストで検証）\n    state: frontend が生成した CSRF 対策用 state（そのまま Google 認可 URL に埋め込む）\n    code_challenge_method: S256 のみ受理（省略時も S256）\n\nReturns:\n    APIResponse[AuthorizeResponse]: authorization_url と state",
         "operationId": "google_authorize_api_auth_google_authorize_get",
         "parameters": [
           {
@@ -30,6 +30,15 @@
             "schema": {
               "type": "string",
               "title": "Redirect Uri"
+            }
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "State"
             }
           },
           {
@@ -1474,6 +1483,7 @@
         "properties": {
           "monday": {
             "type": "number",
+            "maximum": 999.9,
             "minimum": 0.0,
             "title": "Monday",
             "description": "月曜日の確保可能ユニット数",
@@ -1481,6 +1491,7 @@
           },
           "tuesday": {
             "type": "number",
+            "maximum": 999.9,
             "minimum": 0.0,
             "title": "Tuesday",
             "description": "火曜日の確保可能ユニット数",
@@ -1488,6 +1499,7 @@
           },
           "wednesday": {
             "type": "number",
+            "maximum": 999.9,
             "minimum": 0.0,
             "title": "Wednesday",
             "description": "水曜日の確保可能ユニット数",
@@ -1495,6 +1507,7 @@
           },
           "thursday": {
             "type": "number",
+            "maximum": 999.9,
             "minimum": 0.0,
             "title": "Thursday",
             "description": "木曜日の確保可能ユニット数",
@@ -1502,6 +1515,7 @@
           },
           "friday": {
             "type": "number",
+            "maximum": 999.9,
             "minimum": 0.0,
             "title": "Friday",
             "description": "金曜日の確保可能ユニット数",
@@ -1509,6 +1523,7 @@
           },
           "saturday": {
             "type": "number",
+            "maximum": 999.9,
             "minimum": 0.0,
             "title": "Saturday",
             "description": "土曜日の確保可能ユニット数",
@@ -1516,6 +1531,7 @@
           },
           "sunday": {
             "type": "number",
+            "maximum": 999.9,
             "minimum": 0.0,
             "title": "Sunday",
             "description": "日曜日の確保可能ユニット数",
@@ -1565,42 +1581,49 @@
         "properties": {
           "monday": {
             "type": "number",
+            "maximum": 999.9,
             "minimum": 0.0,
             "title": "Monday",
             "description": "月曜日の目標ユニット数"
           },
           "tuesday": {
             "type": "number",
+            "maximum": 999.9,
             "minimum": 0.0,
             "title": "Tuesday",
             "description": "火曜日の目標ユニット数"
           },
           "wednesday": {
             "type": "number",
+            "maximum": 999.9,
             "minimum": 0.0,
             "title": "Wednesday",
             "description": "水曜日の目標ユニット数"
           },
           "thursday": {
             "type": "number",
+            "maximum": 999.9,
             "minimum": 0.0,
             "title": "Thursday",
             "description": "木曜日の目標ユニット数"
           },
           "friday": {
             "type": "number",
+            "maximum": 999.9,
             "minimum": 0.0,
             "title": "Friday",
             "description": "金曜日の目標ユニット数"
           },
           "saturday": {
             "type": "number",
+            "maximum": 999.9,
             "minimum": 0.0,
             "title": "Saturday",
             "description": "土曜日の目標ユニット数"
           },
           "sunday": {
             "type": "number",
+            "maximum": 999.9,
             "minimum": 0.0,
             "title": "Sunday",
             "description": "日曜日の目標ユニット数"
@@ -1726,7 +1749,8 @@
           "new_task_name": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 100
               },
               {
                 "type": "null"
@@ -1821,6 +1845,7 @@
               "$ref": "#/components/schemas/GoalUpdateItem"
             },
             "type": "array",
+            "maxItems": 50,
             "title": "Goals",
             "description": "目標一覧"
           }
@@ -1887,18 +1912,22 @@
         "properties": {
           "code": {
             "type": "string",
+            "maxLength": 512,
             "title": "Code"
           },
           "code_verifier": {
             "type": "string",
+            "maxLength": 512,
             "title": "Code Verifier"
           },
           "redirect_uri": {
             "type": "string",
+            "maxLength": 512,
             "title": "Redirect Uri"
           },
           "state": {
             "type": "string",
+            "maxLength": 512,
             "title": "State"
           }
         },

@@ -6,25 +6,25 @@ from pydantic import BaseModel, Field
 class DailyAvailableUnits(BaseModel):
     """曜日ごとの確保可能ユニット数."""
 
-    monday: float = Field(0.0, ge=0, description="月曜日の確保可能ユニット数")
-    tuesday: float = Field(0.0, ge=0, description="火曜日の確保可能ユニット数")
-    wednesday: float = Field(0.0, ge=0, description="水曜日の確保可能ユニット数")
-    thursday: float = Field(0.0, ge=0, description="木曜日の確保可能ユニット数")
-    friday: float = Field(0.0, ge=0, description="金曜日の確保可能ユニット数")
-    saturday: float = Field(0.0, ge=0, description="土曜日の確保可能ユニット数")
-    sunday: float = Field(0.0, ge=0, description="日曜日の確保可能ユニット数")
+    monday: float = Field(0.0, ge=0, le=999.9, description="月曜日の確保可能ユニット数")
+    tuesday: float = Field(0.0, ge=0, le=999.9, description="火曜日の確保可能ユニット数")
+    wednesday: float = Field(0.0, ge=0, le=999.9, description="水曜日の確保可能ユニット数")
+    thursday: float = Field(0.0, ge=0, le=999.9, description="木曜日の確保可能ユニット数")
+    friday: float = Field(0.0, ge=0, le=999.9, description="金曜日の確保可能ユニット数")
+    saturday: float = Field(0.0, ge=0, le=999.9, description="土曜日の確保可能ユニット数")
+    sunday: float = Field(0.0, ge=0, le=999.9, description="日曜日の確保可能ユニット数")
 
 
 class DailyTargets(BaseModel):
     """曜日ごとの目標ユニット数."""
 
-    monday: float = Field(..., ge=0, description="月曜日の目標ユニット数")
-    tuesday: float = Field(..., ge=0, description="火曜日の目標ユニット数")
-    wednesday: float = Field(..., ge=0, description="水曜日の目標ユニット数")
-    thursday: float = Field(..., ge=0, description="木曜日の目標ユニット数")
-    friday: float = Field(..., ge=0, description="金曜日の目標ユニット数")
-    saturday: float = Field(..., ge=0, description="土曜日の目標ユニット数")
-    sunday: float = Field(..., ge=0, description="日曜日の目標ユニット数")
+    monday: float = Field(..., ge=0, le=999.9, description="月曜日の目標ユニット数")
+    tuesday: float = Field(..., ge=0, le=999.9, description="火曜日の目標ユニット数")
+    wednesday: float = Field(..., ge=0, le=999.9, description="水曜日の目標ユニット数")
+    thursday: float = Field(..., ge=0, le=999.9, description="木曜日の目標ユニット数")
+    friday: float = Field(..., ge=0, le=999.9, description="金曜日の目標ユニット数")
+    saturday: float = Field(..., ge=0, le=999.9, description="土曜日の目標ユニット数")
+    sunday: float = Field(..., ge=0, le=999.9, description="日曜日の目標ユニット数")
 
 
 class GoalResponse(BaseModel):
@@ -73,7 +73,9 @@ class GoalUpdateItem(BaseModel):
     """目標更新アイテム."""
 
     task_id: str | None = Field(None, description="タスクID（nullの場合は新規タスク作成）")
-    new_task_name: str | None = Field(None, description="新規タスク名（task_idがnullの場合に必須）")
+    new_task_name: str | None = Field(
+        None, max_length=100, description="新規タスク名（task_idがnullの場合に必須）"
+    )
     daily_targets: DailyTargets = Field(..., description="曜日ごとの目標ユニット数")
 
 
@@ -84,7 +86,7 @@ class GoalsUpdate(BaseModel):
     daily_available_units: DailyAvailableUnits = Field(
         default_factory=DailyAvailableUnits, description="曜日ごとの確保可能ユニット数"
     )
-    goals: list[GoalUpdateItem] = Field(..., description="目標一覧")
+    goals: list[GoalUpdateItem] = Field(..., max_length=50, description="目標一覧")
 
 
 class CreatedTask(BaseModel):
