@@ -6,42 +6,49 @@
  */
 
 /**
- * 曜日ごとの目標ユニット数（レスポンス用。上限値は課さない）.
+ * 曜日ごとの目標ユニット数（リクエスト用。上限値 `MAX_DAILY_UNITS` を課す）.
  */
-export interface DailyTargets {
+export interface DailyTargetsInput {
   /**
      * 月曜日の目標ユニット数
      * @minimum 0
+     * @maximum 999.9
      */
   monday: number;
   /**
      * 火曜日の目標ユニット数
      * @minimum 0
+     * @maximum 999.9
      */
   tuesday: number;
   /**
      * 水曜日の目標ユニット数
      * @minimum 0
+     * @maximum 999.9
      */
   wednesday: number;
   /**
      * 木曜日の目標ユニット数
      * @minimum 0
+     * @maximum 999.9
      */
   thursday: number;
   /**
      * 金曜日の目標ユニット数
      * @minimum 0
+     * @maximum 999.9
      */
   friday: number;
   /**
      * 土曜日の目標ユニット数
      * @minimum 0
+     * @maximum 999.9
      */
   saturday: number;
   /**
      * 日曜日の目標ユニット数
      * @minimum 0
+     * @maximum 999.9
      */
   sunday: number;
 }
