@@ -5,8 +5,8 @@ type: project
 ---
 
 ## フレームワーク・ライブラリ
-- React 19.2 + TypeScript 5.9
-- Vite 7 + vitest 3
+- React 19.2 + TypeScript 7.0.2（TCH-96でネイティブ〈Go製〉コンパイラの7系へ更新。`typescript` はバージョン完全固定）
+- Vite 8 + vitest 4
 - react-router-dom v7（createBrowserRouter / RouterProvider パターン）
 - Jotai 2（状態管理、atomWithStorage は使わない方針）
 - @tanstack/react-query 5（プロバイダのみセットアップ、クエリは後続タスク）
@@ -14,7 +14,7 @@ type: project
 - Tailwind CSS 3.4 + tailwindcss-animate + shadcn/ui コンポーネント
 - Biome（lint + format）
 - MSW 2（API モック）
-- orval 7（OpenAPI → クライアント生成、mutatorオプションでauthFetch統合）
+- orval 8（OpenAPI → クライアント生成、mutatorオプションでauthFetch統合）
 
 ## 重要ファイルパス
 - `src/auth/` — 認証関連ユーティリティ（atoms, pkce, storage, authClient, authFetch, useAuth, useBootstrapAuth）
@@ -43,3 +43,9 @@ type: project
 ## テスト環境の注意
 - oauth4webapi は `// @vitest-environment node` が必要（jsdomでSubtleCryptoエラー）
 - react-router v7 のリダイレクトテストは `MemoryRouter + Routes + Route` を使う（createMemoryRouterではAbortSignal問題が起きる）
+
+## TypeScript 7 移行の注意（TCH-96）
+- TS7で `tsconfig.*.json` の `baseUrl` オプションが削除された。`baseUrl` なしで `paths` を使う場合、値は相対パス表記（先頭 `./`）が必須になり、`"@/*": ["src/*"]` のような非相対パスは `TS5090: Non-relative paths are not allowed` エラーになる。`"@/*": ["./src/*"]` のように修正する。
+- `pnpm-workspace.yaml` の `minimumReleaseAge`（公開2日保留設定）はTS7.0.2アップデート時には引っかからなかった（公開から2日以上経過していたため）。もし将来別バージョンで引っかかる場合はプランどおり待つか一時回避（レビュー合意必須）。
+- `typedoc`（orvalの間接依存）はTS7.0.2をpeer dependencyとしてまだ許容していないため `pnpm install` 時に警告が出るが、ビルド・型チェック・テストには実害なし。無視してよい。
+- 効果: `tsc -b --force` 単体で約80%以上の高速化を確認（ネイティブGoコンパイラの恩恵）。`vite build` フェーズはTSバージョン非依存のためほぼ不変。
