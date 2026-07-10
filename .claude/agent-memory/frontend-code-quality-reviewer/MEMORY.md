@@ -11,3 +11,4 @@
 - [orval mutator コメント陳腐化](feedback_mutator_comment_stale.md) — TCH-75: authFetch.tsのJSDocが旧認証方式を説明したまま残留。認証方式変更時はmutatorコメントを必ず確認する（Critical）。
 - [E2E README とfixture シグネチャの乖離](feedback_e2e_readme_signature_mismatch.md) — TCH-75: README のサンプルが fixture の実シグネチャと不一致。fixture変更時はREADMEとの整合を確認する。
 - [起動時初期化hook のテストカバレッジ欠落](feedback_bootstrap_hook_test_coverage.md) — TCH-75: useBootstrapAuthにユニットテストなし。非200エラー分岐・StrictMode抑制はユニットテストで明示すべき。
+- [TypeScript 7 コンパイラAPI欠如リスク](feedback_typescript7_compiler_api_risk.md) — TCH-96: TS7.0はプログラマティックAPI非同梱。orvalの実行時depであるtypedocがtypescript 5.0-6.0.xしかpeer許容せず、pnpm-lock上で不整合。TSメジャー更新PRでは必ずCI(frontend-openapi等)のグリーンを確認する。
