@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { getDefaultStore, Provider as JotaiProvider } from "jotai"
 import { StrictMode } from "react"
@@ -6,8 +7,13 @@ import App from "./App"
 import { authStatusAtom, currentUserAtom } from "./auth/atoms"
 import { createAuthClient } from "./auth/authClient"
 import { setAuthClient } from "./auth/authClientSingleton"
+import { AppErrorFallback } from "./components/common/AppErrorFallback"
+import { initSentry } from "./lib/sentry"
 import { ThemeProvider } from "./theme/ThemeProvider"
 import "./index.css"
+
+// Sentryは可能な限り早期に初期化する（DSN未設定時はno-op）
+initSentry()
 
 // orval mutator 用の AuthClient シングルトンを登録
 // Jotai のストアを直接参照するために getDefaultStore を使用
@@ -54,13 +60,15 @@ enableMocking().then(() => {
 
   createRoot(root).render(
     <StrictMode>
-      <JotaiProvider store={jotaiStore}>
-        <QueryClientProvider client={queryClient}>
-          <ThemeProvider>
-            <App />
-          </ThemeProvider>
-        </QueryClientProvider>
-      </JotaiProvider>
+      <Sentry.ErrorBoundary fallback={<AppErrorFallback />}>
+        <JotaiProvider store={jotaiStore}>
+          <QueryClientProvider client={queryClient}>
+            <ThemeProvider>
+              <App />
+            </ThemeProvider>
+          </QueryClientProvider>
+        </JotaiProvider>
+      </Sentry.ErrorBoundary>
     </StrictMode>,
   )
 })

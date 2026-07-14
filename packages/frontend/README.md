@@ -62,3 +62,13 @@ MSW (Mock Service Worker) を有効にするかどうかを設定します。
 - `false` または未設定: スタブログインボタンを非表示
 
 E2E テストやローカル開発時に `true` に設定します。バックエンド側の `AUTH_STUB_ENABLED` と独立して管理され、どちらかが無効の場合はスタブログインは機能しません。
+
+### VITE_SENTRY_DSN / VITE_SENTRY_ENVIRONMENT / VITE_SENTRY_TRACES_SAMPLE_RATE
+
+未捕捉エラーを [Sentry](https://sentry.io/) へ送信するための設定です。
+
+- `VITE_SENTRY_DSN`: SentryのDSN。未設定（空文字）の場合はSentryが初期化されず、ネットワーク送信も一切発生しません。ローカル開発・テストでは通常空のままにしてください。
+- `VITE_SENTRY_ENVIRONMENT`: Sentry上の環境名（例: `production` / `staging`）。未設定時はViteの`MODE`が使われます。
+- `VITE_SENTRY_TRACES_SAMPLE_RATE`: パフォーマンストレースのサンプリング率（0〜1）。未設定・不正値の場合は`0`（トレース無効、エラー捕捉のみ）にフォールバックします。
+
+本番相当環境（`build:dev` / `build:prod`）でSentryを有効化する場合は、`.env.dev` / `.env.prod`またはCI/デプロイ環境変数でDSN等を設定してください。`.env.dev` / `.env.prod`はリポジトリにコミットされるファイルのため、真に秘匿すべき値は書き込まず、DSN等の公開前提の値のみを設定してください。秘密情報が必要な場合はCI/デプロイ環境変数を使用してください。
