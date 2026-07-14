@@ -11,3 +11,5 @@
 - [orval mutator コメント陳腐化](feedback_mutator_comment_stale.md) — TCH-75: authFetch.tsのJSDocが旧認証方式を説明したまま残留。認証方式変更時はmutatorコメントを必ず確認する（Critical）。
 - [E2E README とfixture シグネチャの乖離](feedback_e2e_readme_signature_mismatch.md) — TCH-75: README のサンプルが fixture の実シグネチャと不一致。fixture変更時はREADMEとの整合を確認する。
 - [起動時初期化hook のテストカバレッジ欠落](feedback_bootstrap_hook_test_coverage.md) — TCH-75: useBootstrapAuthにユニットテストなし。非200エラー分岐・StrictMode抑制はユニットテストで明示すべき。
+- [Sentry deprecated API](feedback_sentry_deprecated_apis.md) — TCH-81: @sentry/reactのV7専用API(wrapCreateBrowserRouterV7等)は@deprecated。非バージョンcompat APIを使うべき。
+- [新規コンポーネントのテスト慣習](feedback_new_component_test_convention.md) — 単純な表示コンポーネントでもテストを書く慣習あり(NoGoalsEmptyState等が前例)。新規コンポーネント追加時は確認する。

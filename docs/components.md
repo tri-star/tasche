@@ -24,6 +24,7 @@ src/components/
 │   ├── Header.tsx
 │   ├── ThemeToggle.tsx
 │   ├── DaySelector.tsx
+│   ├── AppErrorFallback.tsx  # 未捕捉エラー時の共通フォールバックUI
 │   └── ...
 ├── login/               # ログイン画面専用コンポーネント
 │   ├── LoginLayout.tsx       # ページ全体レイアウト
@@ -33,7 +34,8 @@ src/components/
 │   ├── StubLoginButton.tsx   # スタブログインボタン（開発/E2E 専用）
 │   └── LoginFooter.tsx       # フッターリンク
 ├── routing/             # ルーティング関連
-│   └── ProtectedRoute.tsx    # 未認証時 /login へリダイレクト
+│   ├── ProtectedRoute.tsx    # 未認証時 /login へリダイレクト
+│   └── RootErrorBoundary.tsx # ルートエラー捕捉 → Sentry送信 + フォールバック描画
 ├── dashboard/           # ダッシュボード用
 │   ├── TodayGoalWidget.tsx
 │   ├── WeeklyMatrix.tsx

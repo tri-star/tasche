@@ -21,7 +21,7 @@
       - `goals/` - 目標設定関連
       - `layout/` - レイアウト
       - `login/` - ログイン画面専用コンポーネント（`LoginLayout`, `LoginBackground`, `TascheLogo`, `GoogleLoginButton`, `StubLoginButton`, `LoginFooter`）
-      - `routing/` - ルーティング関連コンポーネント（`ProtectedRoute` — 未認証時 `/login` へリダイレクト）
+      - `routing/` - ルーティング関連コンポーネント（`ProtectedRoute` — 未認証時 `/login` へリダイレクト、`RootErrorBoundary` — ルートエラー捕捉 → Sentry送信 + フォールバック描画）
     - `pages/` - ページコンポーネント
       - `LoginPage.tsx` - ログイン画面
       - `AuthCallbackPage.tsx` - Google OAuth コールバック処理ページ（`/auth/callback`）
