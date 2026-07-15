@@ -83,6 +83,14 @@ metadata:
 - `users.ts` / `settings.ts` ハンドラ: `getMockAuthUser()` が null なら 401 を返す（Cookie ガードの代用）
 - `authSession.test.ts` で保存・復元・リセット・破損JSON の4パターンを単体テスト
 
+## TypeScript v7 移行（TCH-96）— ビルド設定規約
+
+- `typescript` は `package.json` で唯一 `^` レンジなしの完全固定（`7.0.2`）。他の devDependency は `^` レンジ運用。
+  理由: TS v7 はネイティブ(Go)コンパイラへの大規模書き換えのため、パッチ版でも型チェック挙動が変わるリスクを避ける意図（リポジトリ内に明文化なし、意図はagent memory頼み）。
+- TS v7 で `tsconfig.*.json` の `baseUrl` が廃止された。`baseUrl` なしで `paths` を使う場合、値は相対パス表記（先頭 `./`）が必須（`"@/*": ["./src/*"]`）。非相対パスは `TS5090` エラー。
+- `tsconfig.e2e.json` は `tsconfig.app.json` を `extends` して `paths` を継承している。`extends` 先の相対パスは「`paths` を宣言している側（`tsconfig.app.json`）のディレクトリ」基準で解決される（baseUrl併用時とは解決ルールが異なる）。両ファイルが同じ `packages/frontend/` 直下にあるため現状問題ないが、将来tsconfigをサブディレクトリへ移動するリファクタでは要注意。
+- `vite.config.ts` / `vitest.config.ts` の `resolve.alias["@"]` は tsconfig の `paths` とは独立に、各設定ファイル自身の位置基準（`fileURLToPath(new URL("./src", import.meta.url))`）で解決される。tsconfig 側の `baseUrl` 削除・相対化とは無関係に動くため、今後 `@` エイリアスを変更する際は tsconfig / vite / vitest の3箇所を揃えて更新する必要がある。
+
 ## E2E 認証フィクスチャパターン（TCH-75）
 
 - `e2e/fixtures/auth.ts` が `E2E_USE_MSW` フラグで MSW モード / 実 API モードを分岐

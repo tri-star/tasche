@@ -23,3 +23,7 @@
 ## ツール利用状況メモ
 
 - [MCP ツール制限](feedback-mcp-tools.md) — list_work_items 等が一部セッションで利用不可になる既知問題
+
+## プロジェクト運用の特徴
+
+- [ワークフロー見直し系タスクの正体](project-workflow-meta-tasks.md) — 「task-workflowの見直し」等は`.claude/skills`,`.claude/agents`配下のドキュメント編集タスク（アプリコード実装ではない）
