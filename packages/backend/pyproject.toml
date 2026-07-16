@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Tasche Backend API"
 requires-python = ">=3.12"
 dependencies = [
-    "fastapi>=0.138.2",
+    "fastapi>=0.139.0",
     "uvicorn[standard]>=0.49.0",
     "sqlalchemy[asyncio]>=2.0.51",
     "asyncpg>=0.30.0",
@@ -15,7 +15,7 @@ dependencies = [
     "python-ulid>=2.0.0",
     "httpx>=0.28.0",
     "authlib>=1.3.0",
-    "joserfc>=1.7.2",  # authlib.jose の後継。>=0.11.0 で CVE-2024-37568 修正済み
+    "joserfc>=1.7.3",  # authlib.jose の後継。>=0.11.0 で CVE-2024-37568 修正済み
     "itsdangerous>=2.1.0",
     "aws-opentelemetry-distro>=0.18.0",
     "opentelemetry-instrumentation-fastapi>=0.59b0",
@@ -24,7 +24,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "ruff>=0.15.20",
+    "ruff>=0.15.21",
     "pytest>=9.1.1",
     "pytest-asyncio>=0.24.0",
     "httpx>=0.28.0",
@@ -42,7 +42,7 @@ packages = ["src/tasche"]
 [tool.uv]
 exclude-newer = "2 days"
 dev-dependencies = [
-    "ruff>=0.15.20",
+    "ruff>=0.15.21",
     "pytest>=9.1.1",
     "pytest-asyncio>=0.24.0",
     "httpx>=0.28.0",
