@@ -14,7 +14,7 @@ i The configuration schema version does not match the CLI version <new>
   Run the command biome migrate to migrate the configuration file.
 ```
 
-という info 診断が出る（PR #79で2.5.1→2.5.2の際に確認）。
+という info 診断が出る（PR #79で2.5.1→2.5.2の際に確認、PR #90で2.5.2→2.5.3の際にも再現）。
 
 **Why:** これは `Found 1 info.` として表示されるだけで `pnpm --filter @tasche/frontend lint` の終了コードは0のまま（テスト・CIは落ちない）。ただし放置すると新しいCLIバージョンのスキーマ機能を認識できない・診断が汚れる、という理由でbiome公式は`biome migrate`での追従を推奨している。
 
