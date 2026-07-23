@@ -9,3 +9,4 @@
 - [tailwindcss v3→v4のPostCSS移行手順](tailwindcss_v4_postcss_migration.md) — @tailwindcss/postcss分離、@import順序でユーティリティが空になる罠に注意(PR #86で確認)
 - [actions/setup-node v6→v7の互換性調査](actions_setup_node_v7_upgrade.md) — 入出力破壊なし、node24ランタイム要求だがGitHub-hosted runnerなら影響なし(PR #91)
 - [@types/nodeメジャー更新は低リスク](types_node_major_bump_low_risk.md) — build toolingでしか使わない限り型が実行環境より新しくても実害なし(PR #88で確認)
+- [PR#92 fastapi/python-ulid/ruffのpatch/minor更新は修正不要](pr92_backend_minor_patch_no_fix_needed.md) — 破壊的変更なしと確認、161 test/ruff全通過(PR #92)
