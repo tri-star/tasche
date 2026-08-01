@@ -10,3 +10,5 @@
 - [actions/setup-node v6→v7の互換性調査](actions_setup_node_v7_upgrade.md) — 入出力破壊なし、node24ランタイム要求だがGitHub-hosted runnerなら影響なし(PR #91)
 - [@types/nodeメジャー更新は低リスク](types_node_major_bump_low_risk.md) — build toolingでしか使わない限り型が実行環境より新しくても実害なし(PR #88で確認)
 - [PR#92 fastapi/python-ulid/ruffのpatch/minor更新は修正不要](pr92_backend_minor_patch_no_fix_needed.md) — 破壊的変更なしと確認、161 test/ruff全通過(PR #92)
+- [@playwright/test更新時はCIのDockerイメージタグも追従が必要](playwright_version_docker_image_pin.md) — frontend-ci.ymlのmcr.microsoft.com/playwright:vX.Y.Z-nobleをpackage.jsonと一致させないとE2E全滅(PR #99で再発)
+- [サンドボックスでのE2Eローカル再現手順](e2e_local_repro_under_sandbox.md) — docker compose up/playwright installはpermission denied等で不可、execベースの代替手順(PR #99)
