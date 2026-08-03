@@ -13,3 +13,4 @@
 - [backend devコンテナはpyproject.toml/uv.lockをマウントしないため要リビルド](backend_dev_container_needs_rebuild_after_pyproject_change.md) — 依存更新PR検証時は`docker compose build api`必須、CIも`uv lock --check`していない(PR #93)
 - [Playwrightバージョン更新はCIのDockerイメージタグ追従が必須](playwright_version_docker_image_pin.md) — package.jsonの@playwright/testとfrontend-ci.ymlのDockerタグがズレるとE2Eが全滅(PR #99, #100で再発)
 - [サンドボックスでのE2Eローカル再現手順](e2e_local_repro_under_sandbox.md) — docker compose up/playwright installは権限・ネットワーク制限で不可、exec経由+playwright test直接実行で代替
+- [ruff 0.16.0でMarkdown内コードブロックもformat対象に](ruff_0160_markdown_formatting_breaking_change.md) — docs/*.mdのPythonサンプルでbackend-lint失敗(PR #97)。ホストでのruff format実行はuv.lock巻き添え変更に注意、--frozen必須

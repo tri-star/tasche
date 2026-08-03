@@ -45,3 +45,10 @@ type: feedback
 - backlog → `state_groups: ["backlog"]`
 - Todo → `state_groups: ["unstarted"]`
 - In Progress / Review → `state_groups: ["started"]`
+
+## work item の「関連リンク」機能がプラン制限で不可（2026-07-07 確認）
+
+- `list_work_item_relation_definitions` が `HTTP 402: Payment Required` を返す（カスタムリレース定義機能が現ワークスペースのプランで無効）。
+- `create_work_item_relation` に組み込み `relation_type` を渡す場合は `blocking` / `blocked_by` / `start_before` / `start_after` / `finish_before` / `finish_after` のみ許可。「関連する（relates_to）」に該当する種別は存在しない。
+
+**How to apply:** 単なる「関連タスク」として結び付けたいだけの場合（依存関係ではない）、リレーション機能は使わず、タスクの説明文（description_html）中に対象チケット番号（例: TCH-35, TCH-75）を明記する形で代替する。
