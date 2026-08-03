@@ -11,3 +11,4 @@
 - [@types/nodeメジャー更新は低リスク](types_node_major_bump_low_risk.md) — build toolingでしか使わない限り型が実行環境より新しくても実害なし(PR #88で確認)
 - [PR#92 fastapi/python-ulid/ruffのpatch/minor更新は修正不要](pr92_backend_minor_patch_no_fix_needed.md) — 破壊的変更なしと確認、161 test/ruff全通過(PR #92)
 - [backend devコンテナはpyproject.toml/uv.lockをマウントしないため要リビルド](backend_dev_container_needs_rebuild_after_pyproject_change.md) — 依存更新PR検証時は`docker compose build api`必須、CIも`uv lock --check`していない(PR #93)
+- [ruff 0.16.0でMarkdown内コードブロックもformat対象に](ruff_0160_markdown_formatting_breaking_change.md) — docs/*.mdのPythonサンプルでbackend-lint失敗(PR #97)。ホストでのruff format実行はuv.lock巻き添え変更に注意、--frozen必須
