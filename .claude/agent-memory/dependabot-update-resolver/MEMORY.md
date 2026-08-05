@@ -11,3 +11,5 @@
 - [@types/nodeメジャー更新は低リスク](types_node_major_bump_low_risk.md) — build toolingでしか使わない限り型が実行環境より新しくても実害なし(PR #88で確認)
 - [PR#92 fastapi/python-ulid/ruffのpatch/minor更新は修正不要](pr92_backend_minor_patch_no_fix_needed.md) — 破壊的変更なしと確認、161 test/ruff全通過(PR #92)
 - [backend devコンテナはpyproject.toml/uv.lockをマウントしないため要リビルド](backend_dev_container_needs_rebuild_after_pyproject_change.md) — 依存更新PR検証時は`docker compose build api`必須、CIも`uv lock --check`していない(PR #93)
+- [GitHub ActionsのSHA固定コメントはメジャー更新で追従せずズレることがある](github_actions_sha_pin_comment_drift.md) — setup-uvやconfigure-aws-credentialsで実タグと乖離、Tags APIで逆引き検証要(PR #96)
+- [setup-uv v9でprune-cache既定値がtrue→falseに変更](setup_uv_v9_prune_cache_default_change.md) — enable-cache:trueなジョブはキャッシュ肥大化の恐れ、prune-cache:trueを明示して従来挙動を維持(PR #96)
