@@ -20,6 +20,7 @@ argument-hint: "[plane-issue-id] [今回の作業範囲: plan|implementation|pla
   - 2-2. この時点でユーザーにプランの確認を求め、必要に応じ修正を行います。
   - 2-3. ユーザーからのOKが出たら次の作業に進みます。
 - 3. 今回の作業範囲が"implementation"の場合は、次の作業を行います。
+  - 3-0. `task-status-sync` skill を `plane-issue-id` `start` で呼び出し、タスクを進行中の状態に更新します。
   - 3-1. `<task-root>/frontend-plan.md` の内容を元に、 `frontend-developer` エージェントを起動させ、実装タスクを実行します。
   - 3-2. `frontend-developer` が正常にタスクを完了できなかった場合、起きている問題をユーザーに伝えます。
   - 3-3. `doc-maintainer` エージェントを起動させ、既存ドキュメントとの乖離を確認します。
