@@ -14,4 +14,6 @@
 - [Playwrightバージョン更新はCIのDockerイメージタグ追従が必須](playwright_version_docker_image_pin.md) — package.jsonの@playwright/testとfrontend-ci.ymlのDockerタグがズレるとE2Eが全滅(PR #99, #100で再発)
 - [サンドボックスでのE2Eローカル再現手順](e2e_local_repro_under_sandbox.md) — docker compose up/playwright installは権限・ネットワーク制限で不可、exec経由+playwright test直接実行で代替
 - [ruff 0.16.0でMarkdown内コードブロックもformat対象に](ruff_0160_markdown_formatting_breaking_change.md) — docs/*.mdのPythonサンプルでbackend-lint失敗(PR #97)。ホストでのruff format実行はuv.lock巻き添え変更に注意、--frozen必須
+- [GitHub ActionsのSHA固定コメントはメジャー更新で追従せずズレることがある](github_actions_sha_pin_comment_drift.md) — setup-uvやconfigure-aws-credentialsで実タグと乖離、Tags APIで逆引き検証要(PR #96)
+- [setup-uv v9でprune-cache既定値がtrue→falseに変更](setup_uv_v9_prune_cache_default_change.md) — enable-cache:trueなジョブはキャッシュ肥大化の恐れ、prune-cache:trueを明示して従来挙動を維持(PR #96)
 - [python-ulid 3.2.0→4.0.1は修正不要](python_ulid_v4_no_impact.md) — 利用箇所は全てULID()コンストラクタのみ、provider/from_uuidv7等の削除API未使用と確認(PR #98)、161 test/ruff全通過
