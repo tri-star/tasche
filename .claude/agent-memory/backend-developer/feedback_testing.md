@@ -1,6 +1,6 @@
 ---
 name: テスト実装のパターンと注意事項
-description: pytest + PostgreSQL + respx + httpx テストの実装パターンと注意点
+description: pytest + PostgreSQL + respx + httpx テストの実装パターンと注意点、Docker環境でのテスト実行前セットアップ手順
 metadata:
   type: feedback
 ---
@@ -93,3 +93,15 @@ TCH-75 以降、JWT + TestTokenService 方式は廃止。テスト認証は `cre
 **Why:** pytest のファイル名ベース収集と命名規則の衝突。
 
 **How to apply:** 実装クラスを `test_*.py` ファイルに置くのは避ける。やむを得ない場合はクラス名が `Test` で始まらないようにする（例: `TestAuthDisabledError` → `SessionAuthDisabledError`）。テストには実害なし。
+
+## ローカル Docker 環境でのテスト実行前セットアップ（TCH-62 で判明）
+
+`packages/backend` に `.env` が存在しない状態で `docker compose up -d` すると、`api` サービスは `DATABASE_URL` 未設定で `Settings()` 初期化に失敗する（`TEST_DATABASE_URL` は compose.yaml にハードコードされているが `DATABASE_URL` は `.env` 経由必須）。また `Dockerfile.dev` は `uv pip install --system -e ".[dev]"` でシステム Python に依存関係を入れる方式のため、コンテナ内で素朴に `uv run pytest` すると uv が独自に `.venv` を作ってしまい、システムインストール済みパッケージ（authlib, joserfc, aws-opentelemetry-distro 等）が `.venv` に反映されず `ModuleNotFoundError` になることがある。
+
+**Why:** `.env` は gitignore 対象で環境依存のため常には存在しない。`Dockerfile.dev` のインストール方式（system installs）と `uv run` の venv 自動作成方式が噛み合っていない。
+
+**How to apply:**
+1. `packages/backend/.env.example` を元に `.env` を作成する。
+2. `.env` 作成/変更後は `docker compose restart api` では反映されない。`docker compose up -d --force-recreate api` で作り直す必要がある。
+3. `uv run pytest` 実行時に `ModuleNotFoundError` が出たら `uv sync --extra dev` に加え、不足パッケージ（authlib / joserfc / itsdangerous / aws-opentelemetry-distro / opentelemetry-instrumentation-fastapi / opentelemetry-instrumentation-logging / respx 等）を `uv pip install <パッケージ名...>` で個別に `.venv` へ追加する。
+4. `scripts/generate-openapi.sh` は内部で旧 `docker-compose` CLI を呼んでおり `~/.docker/config.json` の権限問題で失敗することがある。その場合は `docker compose exec -T api-e2e python scripts/generate_openapi.py` を直接実行する（`api-e2e` サービスは `DATABASE_URL` が compose.yaml にハードコードされているため `.env` 不備の影響を受けない）。

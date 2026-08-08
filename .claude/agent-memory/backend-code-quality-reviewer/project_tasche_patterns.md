@@ -169,3 +169,18 @@ type: project
 
 **Why:** TCH-26 の Google OAuth 実装時に発見。今後のレビューでも同様のトランザクション管理・ログ欠落パターンを注意して見るべき。
 **How to apply:** services 層の新しい関数をレビューするときはコミット境界を必ず確認。セキュリティ関連の分岐には INFO/WARNING ログが入っているか確認する。セキュリティ拒否分岐には必ず WARNING ログ（user_id, email, 試行元情報）を追加するよう指摘する。プライベート関数 (`_` 接頭辞) の API 層からの直接呼び出しパターンはレビュー時に毎回指摘する。新しい services 関数には必ず `logger = logging.getLogger(__name__)` と DEBUG ログ（更新成功時）があるか確認する。goal.py はロガーが欠落している既知の状態（TCH-9 時点未修正）なので、goal.py を触る実装では毎回ロガー追加を促す。`core/oauth.py` にもロガーが欠落しているため、この周辺を触る実装ではロガー追加を促す。新しい middleware（`core/` 配下）にはロガーを追加するよう確認する（csrf.py でも欠落していた）。
+
+## Pydantic スキーマがリクエスト/レスポンス双方に共用される設計（TCH-62 で確認）
+
+- `schemas/goal.py` の `DailyTargets` / `DailyAvailableUnits` は `GoalsUpdate`（リクエスト）と `GoalResponse` / `GoalsResponse` / `PreviousGoalsResponse`（レスポンス）の両方で共用されている。
+- `services/goal.py` の `_build_goal_responses()` / `_build_daily_available_units()` は DB の既存値から直接これらのモデルを構築するため、リクエスト側だけを意図して `Field(le=...)` 等の上限を追加すると、DB に既に上限超過データが存在する場合に GET 側の応答構築が `pydantic.ValidationError` で 500 になるリスクがある（`core/exceptions.py` は自前例外と `RequestValidationError` のみカバーしており、内部モデル構築時の pydantic 例外はカバーしていない）。
+- `models/goal.py` (`Goal.target_units`) と `models/week.py` (`Week.available_units_*`) はいずれも `Numeric(6, 1, asdecimal=False)`（最大 99999.9）で、DB 側の CHECK 制約は `>= 0` のみ（上限 CHECK なし）。TCH-62 でスキーマ側に `le=999.9` を追加したが、DB 側には対応する上限 CHECK 制約が追加されていない。
+- **Why:** リクエスト/レスポンスでスキーマを共用する設計は DRY だが、新しい制約を追加する際に「既存データへの遡及適用」を見落としやすい既知の落とし穴。
+- **How to apply:** `schemas/*.py` に新しい `Field(ge=..., le=..., max_length=...)` 制約を追加するレビューでは、そのモデルがレスポンス構築（DBの既存値からの直接構築）にも使われていないか確認し、使われている場合は「既存データが新しい制約を満たすか」「入出力スキーマを分離すべきか」「DB側にも対応するCHECK制約を追加すべきか」を指摘する。
+
+## `le`/`max_length` 系の境界値追加時のテスト設計上の注意（TCH-62 で確認）
+
+- 同一の数値上限（例: `le=999.9`）が複数の曜日フィールド等、多数箇所に重複定義されている場合、テストは1フィールド（例: `monday`）のみを検証しがちで、他フィールドへの適用漏れ・typo を検知できない。
+- また、上限値はしばしばマジックナンバーとして重複定義されており（`schemas/goal.py` に14箇所）、モジュールレベル定数への集約が望ましいが未実施。
+- **Why:** TCH-62（`DailyAvailableUnits`/`DailyTargets` 全7曜日への `le=999.9` 追加）でこのパターンを確認。実装自体は `openapi.json` で全7曜日への反映を確認できたが、テストは `monday` のみだった。
+- **How to apply:** 「全フィールドに同じ制約を追加した」という変更をレビューする際は、テストが代表1フィールドのみを検証していないか確認し、`parametrize` 化や複数フィールド確認を提案する。マジックナンバーの重複定義も併せて指摘する。
