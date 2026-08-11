@@ -4,13 +4,13 @@ version = "0.1.0"
 description = "Tasche Backend API"
 requires-python = ">=3.12"
 dependencies = [
-    "fastapi>=0.140.0",
+    "fastapi>=0.141.1",
     "uvicorn[standard]>=0.51.0",
     "sqlalchemy[asyncio]>=2.0.51",
     "asyncpg>=0.30.0",
-    "alembic>=1.18.5",
+    "alembic>=1.19.1",
     "pydantic[email]>=2.13.4",
-    "pydantic-settings>=2.14.2",
+    "pydantic-settings>=2.15.0",
     "python-multipart>=0.0.20",
     "python-ulid>=4.0.1",
     "httpx>=0.28.0",
@@ -24,7 +24,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "ruff>=0.16.0",
+    "ruff>=0.16.2",
     "pytest>=9.1.1",
     "pytest-asyncio>=0.24.0",
     "httpx>=0.28.0",
@@ -42,7 +42,7 @@ packages = ["src/tasche"]
 [tool.uv]
 exclude-newer = "2 days"
 dev-dependencies = [
-    "ruff>=0.16.0",
+    "ruff>=0.16.2",
     "pytest>=9.1.1",
     "pytest-asyncio>=0.24.0",
     "httpx>=0.28.0",
