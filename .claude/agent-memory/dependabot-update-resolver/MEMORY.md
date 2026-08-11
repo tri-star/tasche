@@ -17,3 +17,4 @@
 - [GitHub ActionsのSHA固定コメントはメジャー更新で追従せずズレることがある](github_actions_sha_pin_comment_drift.md) — setup-uvやconfigure-aws-credentialsで実タグと乖離、Tags APIで逆引き検証要(PR #96)
 - [setup-uv v9でprune-cache既定値がtrue→falseに変更](setup_uv_v9_prune_cache_default_change.md) — enable-cache:trueなジョブはキャッシュ肥大化の恐れ、prune-cache:trueを明示して従来挙動を維持(PR #96)
 - [python-ulid 3.2.0→4.0.1は修正不要](python_ulid_v4_no_impact.md) — 利用箇所は全てULID()コンストラクタのみ、provider/from_uuidv7等の削除API未使用と確認(PR #98)、161 test/ruff全通過
+- [pnpm/action-setup 6.0.9→6.0.10は修正不要](pnpm_action_setup_v6010_no_impact.md) — SHA固定コメントは実タグと一致確認済み、cache関連changelogはaction自身のcache機能未使用のため無関係(PR #102)
