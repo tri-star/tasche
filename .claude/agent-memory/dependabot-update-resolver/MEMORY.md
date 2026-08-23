@@ -18,3 +18,4 @@
 - [setup-uv v9でprune-cache既定値がtrue→falseに変更](setup_uv_v9_prune_cache_default_change.md) — enable-cache:trueなジョブはキャッシュ肥大化の恐れ、prune-cache:trueを明示して従来挙動を維持(PR #96)
 - [python-ulid 3.2.0→4.0.1は修正不要](python_ulid_v4_no_impact.md) — 利用箇所は全てULID()コンストラクタのみ、provider/from_uuidv7等の削除API未使用と確認(PR #98)、161 test/ruff全通過
 - [@testing-library/jest-dom 6→7は修正不要](jest_dom_v7_no_impact.md) — Node>=22要件・@testing-library/dom必須peer化とも既存環境で満たす、entry point変更なし(PR #108)、246 test全通過
+- [setup-uv v9→v10は修正不要](setup_uv_v10_no_impact.md) — enable-cache:true明示済み・pull_request_targetでないため新既定値の影響なし(PR #110)、SHAコメントもズレなしと確認
