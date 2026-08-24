@@ -21,3 +21,4 @@
 - [jsdom 29→30は修正不要](jsdom_v30_no_impact.md) — 唯一の破壊的変更はNode要件引き上げ(^24.15.0)、CIのnode-version:24.xなら満たす。API削除なし、CVEなし(PR #107)、246 test/lint/build全通過
 - [PR#111 frontend-minor-patchグループ10件の調査結果](pr111_frontend_group_10_updates.md) — biome/lucide-react/orval/vite等いずれも破壊的変更なし、openapi再生成+$schema追従のみ実施
 - [orval 8.24.0で生成ヘッダーからバージョン番号が削除](orval_upgrade_notes.md) — 今後のorval patch更新ではバージョンコメントのみの差分パターンが起きなくなる見込み(PR #111)
+- [PR#112 frontend-minor-patchグループ7件の調査結果](pr112_frontend_group_7_updates.md) — biome/lucide-react/vitejs-plugin-react/orval/vite/vitest等いずれも破壊的変更なし。orval 8.25.0でHeaders結合ロジック改善によりclient.tsに実質差分
