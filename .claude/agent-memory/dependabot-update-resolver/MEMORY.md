@@ -21,3 +21,6 @@
 - [jsdom 29→30は修正不要](jsdom_v30_no_impact.md) — 唯一の破壊的変更はNode要件引き上げ(^24.15.0)、CIのnode-version:24.xなら満たす。API削除なし、CVEなし(PR #107)、246 test/lint/build全通過
 - [PR#111 frontend-minor-patchグループ10件の調査結果](pr111_frontend_group_10_updates.md) — biome/lucide-react/orval/vite等いずれも破壊的変更なし、openapi再生成+$schema追従のみ実施
 - [orval 8.24.0で生成ヘッダーからバージョン番号が削除](orval_upgrade_notes.md) — 今後のorval patch更新ではバージョンコメントのみの差分パターンが起きなくなる見込み(PR #111)
+- [uvicorn 0.51→0.52.1は修正不要](uvicorn_v0521_no_impact.md) — WebSocketクローズ周りのバグ修正のみ、破壊的変更・CVE記載なし(PR #104)、161 test/ruff全通過
+- [dependabot差分をcheckout FETCH_HEADで適用すると別PRの更新が巻き戻る](stale_dependabot_branch_diff_apply_pitfall.md) — PR #104でcryptography>=50.0.0が>=49.0.0に巻き戻った(検証環境のみの疑似事故)。解消はuv lock再生成でなくPRブランチへの`git merge origin/main`
+- [uv.lock再生成はホストuvでなくコンテナのuvを使う](uv_lock_regeneration_needs_container_uv_not_host_uv.md) — ホストuv(0.7.13)はexclude-newer="2 days"を解釈できず全パッケージ最新化事故。そもそも依存更新PRの検証でuv.lockを再生成するとexclude-newer行が書き換わるため極力避ける(PR #104)
