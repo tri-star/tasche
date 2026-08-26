@@ -25,3 +25,5 @@
 - [dependabot差分をcheckout FETCH_HEADで適用すると別PRの更新が巻き戻る](stale_dependabot_branch_diff_apply_pitfall.md) — PR #104でcryptography>=50.0.0が>=49.0.0に巻き戻った(検証環境のみの疑似事故)。解消はuv lock再生成でなくPRブランチへの`git merge origin/main`
 - [uv.lock再生成はホストuvでなくコンテナのuvを使う](uv_lock_regeneration_needs_container_uv_not_host_uv.md) — ホストuv(0.7.13)はexclude-newer="2 days"を解釈できず全パッケージ最新化事故。そもそも依存更新PRの検証でuv.lockを再生成するとexclude-newer行が書き換わるため極力避ける(PR #104)
 - [PR#103 fastapi/alembic/pydantic-settings/ruffのminor/patch更新は修正不要](pr103_backend_minor_patch_no_fix_needed.md) — pydantic-settings 2.15.0のcase_sensitive挙動変更もconfig.pyの既存設定と無関係と確認、161 test/ruff/alembic全通過(PR #103)
+- [PR#103をPR#104マージ後に再検証、追加修正不要](pr103_post_merge_fastapi_uvicorn_combo_verified.md) — fastapi 0.141.1+uvicorn 0.52.1の組み合わせでlint/test/alembic/iter_route_contexts実機確認済み(PR #103, 2026-08-27)
+- [新規orca worktreeはpackages/backend/.envを自作する必要あり](backend_fresh_worktree_needs_own_env_file.md) — .env.exampleはプレースホルダのまま、他worktreeとポート/COMPOSE_PROJECT_NAME重複を避けて新規作成。コンテナ内alembic単発実行時はDATABASE_URLをdb:5432に上書き必須
