@@ -39,4 +39,13 @@ metadata:
   当たらない)。ただし他のaction(pnpm/action-setup等、今回のPRで
   触っていない行)のズレは対象PRのスコープ外として放置する。
 
-関連: [[setup_uv_v9_prune_cache_default_change]]
+## PR #110 での確認結果(ズレなし)
+`astral-sh/setup-uv` v9.0.0→v10.0.1 と `pnpm/action-setup`
+v6.0.9→v6.0.10 の両方について、GitHub Tags API
+(`GET /repos/{owner}/{repo}/tags`) でSHAとコメントのタグ名を照合したが、
+今回は両方とも一致しており修正不要だった。つまりDependabotの
+コメント追従は毎回ズレるわけではなく、action・タイミングによってブレる
+ことが改めて確認できた。「ズレていないか毎回機械的に検証する」姿勢は
+継続する。
+
+関連: [[setup_uv_v9_prune_cache_default_change]], [[setup_uv_v10_no_impact]]
