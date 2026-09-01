@@ -159,11 +159,17 @@ export const getGoogleCallbackApiAuthGoogleCallbackPostUrl = () => {
  */
 export const googleCallbackApiAuthGoogleCallbackPost = async (googleCallbackRequest: GoogleCallbackRequest, options?: Parameters<typeof authFetch>[1]): Promise<googleCallbackApiAuthGoogleCallbackPostResponse> => {
 
-  return authFetch<googleCallbackApiAuthGoogleCallbackPostResponse>(getGoogleCallbackApiAuthGoogleCallbackPostUrl(),
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return authFetch<googleCallbackApiAuthGoogleCallbackPostResponse>(getGoogleCallbackApiAuthGoogleCallbackPostUrl(),
   {
     ...options,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
     body: JSON.stringify(googleCallbackRequest)
   }
 );}
@@ -267,11 +273,17 @@ export const getStubLoginEndpointApiAuthStubLoginPostUrl = () => {
  */
 export const stubLoginEndpointApiAuthStubLoginPost = async (stubLoginRequest: StubLoginRequest, options?: Parameters<typeof authFetch>[1]): Promise<stubLoginEndpointApiAuthStubLoginPostResponse> => {
 
-  return authFetch<stubLoginEndpointApiAuthStubLoginPostResponse>(getStubLoginEndpointApiAuthStubLoginPostUrl(),
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return authFetch<stubLoginEndpointApiAuthStubLoginPostResponse>(getStubLoginEndpointApiAuthStubLoginPostUrl(),
   {
     ...options,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
     body: JSON.stringify(stubLoginRequest)
   }
 );}
@@ -399,11 +411,17 @@ export const getUpdateCurrentSettingsUrl = () => {
  */
 export const updateCurrentSettings = async (settingsUpdateRequest: SettingsUpdateRequest, options?: Parameters<typeof authFetch>[1]): Promise<updateCurrentSettingsResponse> => {
 
-  return authFetch<updateCurrentSettingsResponse>(getUpdateCurrentSettingsUrl(),
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return authFetch<updateCurrentSettingsResponse>(getUpdateCurrentSettingsUrl(),
   {
     ...options,
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
     body: JSON.stringify(settingsUpdateRequest)
   }
 );}
@@ -494,11 +512,17 @@ export const getBulkArchiveTasksApiTasksDeleteUrl = () => {
  */
 export const bulkArchiveTasksApiTasksDelete = async (taskBulkArchiveRequest: TaskBulkArchiveRequest, options?: Parameters<typeof authFetch>[1]): Promise<bulkArchiveTasksApiTasksDeleteResponse> => {
 
-  return authFetch<bulkArchiveTasksApiTasksDeleteResponse>(getBulkArchiveTasksApiTasksDeleteUrl(),
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return authFetch<bulkArchiveTasksApiTasksDeleteResponse>(getBulkArchiveTasksApiTasksDeleteUrl(),
   {
     ...options,
     method: 'DELETE',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
     body: JSON.stringify(taskBulkArchiveRequest)
   }
 );}
@@ -538,11 +562,17 @@ export const getCreateTaskApiTasksPostUrl = () => {
  */
 export const createTaskApiTasksPost = async (taskCreate: TaskCreate, options?: Parameters<typeof authFetch>[1]): Promise<createTaskApiTasksPostResponse> => {
 
-  return authFetch<createTaskApiTasksPostResponse>(getCreateTaskApiTasksPostUrl(),
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return authFetch<createTaskApiTasksPostResponse>(getCreateTaskApiTasksPostUrl(),
   {
     ...options,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
     body: JSON.stringify(taskCreate)
   }
 );}
@@ -583,11 +613,17 @@ export const getUpdateTaskApiTasksTaskIdPutUrl = (taskId: string,) => {
 export const updateTaskApiTasksTaskIdPut = async (taskId: string,
     taskUpdate: TaskUpdate, options?: Parameters<typeof authFetch>[1]): Promise<updateTaskApiTasksTaskIdPutResponse> => {
 
-  return authFetch<updateTaskApiTasksTaskIdPutResponse>(getUpdateTaskApiTasksTaskIdPutUrl(taskId),
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return authFetch<updateTaskApiTasksTaskIdPutResponse>(getUpdateTaskApiTasksTaskIdPutUrl(taskId),
   {
     ...options,
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
     body: JSON.stringify(taskUpdate)
   }
 );}
@@ -722,11 +758,17 @@ export const getUpdateCurrentWeekApiWeeksCurrentPutUrl = () => {
  */
 export const updateCurrentWeekApiWeeksCurrentPut = async (weekUpdate: WeekUpdate, options?: Parameters<typeof authFetch>[1]): Promise<updateCurrentWeekApiWeeksCurrentPutResponse> => {
 
-  return authFetch<updateCurrentWeekApiWeeksCurrentPutResponse>(getUpdateCurrentWeekApiWeeksCurrentPutUrl(),
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return authFetch<updateCurrentWeekApiWeeksCurrentPutResponse>(getUpdateCurrentWeekApiWeeksCurrentPutUrl(),
   {
     ...options,
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
     body: JSON.stringify(weekUpdate)
   }
 );}
@@ -810,11 +852,17 @@ export const getUpdateCurrentGoalsApiWeeksCurrentGoalsPutUrl = () => {
  */
 export const updateCurrentGoalsApiWeeksCurrentGoalsPut = async (goalsUpdate: GoalsUpdate, options?: Parameters<typeof authFetch>[1]): Promise<updateCurrentGoalsApiWeeksCurrentGoalsPutResponse> => {
 
-  return authFetch<updateCurrentGoalsApiWeeksCurrentGoalsPutResponse>(getUpdateCurrentGoalsApiWeeksCurrentGoalsPutUrl(),
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return authFetch<updateCurrentGoalsApiWeeksCurrentGoalsPutResponse>(getUpdateCurrentGoalsApiWeeksCurrentGoalsPutUrl(),
   {
     ...options,
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
     body: JSON.stringify(goalsUpdate)
   }
 );}
@@ -898,11 +946,17 @@ export const getCreateRecordApiWeeksCurrentRecordsPostUrl = () => {
  */
 export const createRecordApiWeeksCurrentRecordsPost = async (recordCreate: RecordCreate, options?: Parameters<typeof authFetch>[1]): Promise<createRecordApiWeeksCurrentRecordsPostResponse> => {
 
-  return authFetch<createRecordApiWeeksCurrentRecordsPostResponse>(getCreateRecordApiWeeksCurrentRecordsPostUrl(),
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return authFetch<createRecordApiWeeksCurrentRecordsPostResponse>(getCreateRecordApiWeeksCurrentRecordsPostUrl(),
   {
     ...options,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
     body: JSON.stringify(recordCreate)
   }
 );}
@@ -945,11 +999,17 @@ export const upsertRecordApiWeeksCurrentRecordsDayOfWeekTaskIdPut = async (dayOf
     taskId: string,
     recordUpdate: RecordUpdate, options?: Parameters<typeof authFetch>[1]): Promise<upsertRecordApiWeeksCurrentRecordsDayOfWeekTaskIdPutResponse> => {
 
-  return authFetch<upsertRecordApiWeeksCurrentRecordsDayOfWeekTaskIdPutResponse>(getUpsertRecordApiWeeksCurrentRecordsDayOfWeekTaskIdPutUrl(dayOfWeek,taskId),
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return authFetch<upsertRecordApiWeeksCurrentRecordsDayOfWeekTaskIdPutResponse>(getUpsertRecordApiWeeksCurrentRecordsDayOfWeekTaskIdPutUrl(dayOfWeek,taskId),
   {
     ...options,
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
     body: JSON.stringify(recordUpdate)
   }
 );}
