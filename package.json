@@ -2,7 +2,7 @@
   "name": "tasche",
   "private": true,
   "devDependencies": {
-    "@biomejs/biome": "^2.5.8"
+    "@biomejs/biome": "^2.5.11"
   },
   "scripts": {
     "dev": "pnpm --filter @tasche/frontend dev",
