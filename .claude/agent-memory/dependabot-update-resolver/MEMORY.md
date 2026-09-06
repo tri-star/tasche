@@ -25,7 +25,7 @@
 - [dependabot差分をcheckout FETCH_HEADで適用すると別PRの更新が巻き戻る](stale_dependabot_branch_diff_apply_pitfall.md) — PR #104でcryptography>=50.0.0が>=49.0.0に巻き戻った(検証環境のみの疑似事故)。解消はuv lock再生成でなくPRブランチへの`git merge origin/main`
 - [uv.lock再生成はホストuvでなくコンテナのuvを使う](uv_lock_regeneration_needs_container_uv_not_host_uv.md) — ホストuv(0.7.13)はexclude-newer="2 days"を解釈できず全パッケージ最新化事故。そもそも依存更新PRの検証でuv.lockを再生成するとexclude-newer行が書き換わるため極力避ける(PR #104)
 - [setup-uv v9→v10は修正不要](setup_uv_v10_no_impact.md) — enable-cache:true明示済み・pull_request_targetでないため新既定値の影響なし(PR #110)、SHAコメントもズレなしと確認
-- [worktree未初期化時はbackendのdocker検証ができない場合がある](backend_env_not_initialized_blocks_docker_verification.md) — PR#110は権限拒否、PR#113はtasche-worktree-init配下のスクリプトで自力初期化に成功
+- [worktree未初期化時はbackendのdocker検証ができない場合がある](backend_env_not_initialized_blocks_docker_verification.md) — PR#110は権限拒否、PR#113はtasche-worktree-init配下のスクリプトで自力初期化に成功。Dockerfileはuv pip installでuv.lockを厳密ピンしない点に注意
 - [PR#114 frontend-minor-patchグループ13件の調査結果](pr114_frontend_group_13_updates.md) — biome/react-query/jotai/lucide-react/vitejs-plugin-react/orval等いずれも破壊的変更なし、openapi再生成+$schema追従のみ実施
 - [orval 8.26.0でHeadersインスタンスのマージ不具合が修正](orval_upgrade_notes.md) — patch更新でもclient.tsに実質的な差分(バージョンコメント以外)が出る2例目(PR #114)
 - [PR#113 fastapi/alembic/pydantic-settings/ruff/cryptographyのpatch/minor更新は修正不要](pr113_backend_minor_patch_no_fix_needed.md) — pydantic-settings 2.15.0の3つの挙動変更含め全て無関係と確認、161 test/ruff/alembic全通過

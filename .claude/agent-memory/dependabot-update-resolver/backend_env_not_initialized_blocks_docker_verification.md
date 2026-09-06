@@ -64,4 +64,16 @@ worktree初期化(`scripts/initialize-dotenv.sh` や
   `.env` あり)なので、途中で作った半端な `.env` は `rm` で片付けてから
   終了する(次回セッションに混乱を残さない)。
 
+## 追記 (PR #113, mainマージ後の再検証, 2026-09-07)
+main(PR #114マージ)を取り込んだ後の再検証でも、上記手順(.env生成→
+`docker compose build api && docker compose up -d db api`)がそのまま
+再現できた。ただし `docker compose exec api uv run ...` はDockerfileが
+`uv sync`ではなく`uv pip install --system -e ".[dev]"`でパッケージを
+インストールしているため、コンテナ内の実バージョンは`uv.lock`の
+厳密なピン(例: alembic 1.19.1)より新しいpatch(例: 1.19.2)になることが
+ある。今回のような「uv.lockのみの更新・破壊的変更なし」判定においては
+実害はなかった(alembic upgrade head成功、pytest 161 passed維持)が、
+`uv.lock`と完全一致するバージョンでの検証が必要な場面では
+`uv sync --frozen`相当の起動に変更する必要がある点に注意。
+
 関連: [[e2e_local_repro_under_sandbox]], [[backend_python_commands_use_docker_compose_exec]]
