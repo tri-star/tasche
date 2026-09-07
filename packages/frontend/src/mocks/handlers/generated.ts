@@ -1,6 +1,7 @@
 import type { RequestHandler } from "msw"
 
-import * as generatedClient from "@/api/generated/client"
+// orval 8.28.x から MSW モックの生成先が client.ts から client.msw.ts に分離された
+import * as generatedClient from "@/api/generated/client.msw"
 
 export function getOrvalHandlers(): RequestHandler[] {
   const handlers: RequestHandler[] = []
