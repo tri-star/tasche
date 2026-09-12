@@ -28,3 +28,4 @@
 - [worktree未初期化時はbackendのdocker検証ができない](backend_env_not_initialized_blocks_docker_verification.md) — .envプレースホルダ未置換、書き込みも権限拒否(PR #110)
 - [PR#114 frontend-minor-patchグループ13件の調査結果](pr114_frontend_group_13_updates.md) — biome/react-query/jotai/lucide-react/vitejs-plugin-react/orval等いずれも破壊的変更なし、openapi再生成+$schema追従のみ実施
 - [orval 8.26.0でHeadersインスタンスのマージ不具合が修正](orval_upgrade_notes.md) — patch更新でもclient.tsに実質的な差分(バージョンコメント以外)が出る2例目(PR #114)
+- [PR#115 configure-aws-credentials/pnpm-action-setupのpatch/minor更新は修正不要](pr115_github_actions_patch_no_fix_needed.md) — バグ修正のみ・入力パラメータ変更なし・SHAとタグ一致確認済み
