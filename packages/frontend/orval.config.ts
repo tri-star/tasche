@@ -22,6 +22,11 @@ export default defineConfig({
         },
       },
       mock: {
+        // orval 8.28.1 で single モードのモック出力が既定で client.msw.ts に
+        // 分離されるようになった(mock.inline の既定値が false に変更)。
+        // src/mocks/handlers/generated.ts は client.ts から MockHandler を
+        // スキャンする実装のため、従来通り client.ts にインライン生成する。
+        inline: true,
         generators: [
           {
             type: "msw",
