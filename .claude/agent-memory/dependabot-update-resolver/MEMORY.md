@@ -28,3 +28,5 @@
 - [worktree未初期化時はbackendのdocker検証ができない](backend_env_not_initialized_blocks_docker_verification.md) — .envプレースホルダ未置換、書き込みも権限拒否(PR #110)
 - [PR#114 frontend-minor-patchグループ13件の調査結果](pr114_frontend_group_13_updates.md) — biome/react-query/jotai/lucide-react/vitejs-plugin-react/orval等いずれも破壊的変更なし、openapi再生成+$schema追従のみ実施
 - [orval 8.26.0でHeadersインスタンスのマージ不具合が修正](orval_upgrade_notes.md) — patch更新でもclient.tsに実質的な差分(バージョンコメント以外)が出る2例目(PR #114)
+- [orval 8.28.1でsingleモードのモックが既定でclient.msw.tsに分離される破壊的変更](orval_upgrade_notes.md) — generated.tsのMockHandler走査が壊れる、output.mock.inline:trueで従来挙動を維持(PR #120)
+- [PR#120 frontend-minor-patchグループ13件の調査結果](pr120_frontend_group_13_updates.md) — orval mock分離とPlaywright Dockerタグ追従のみ修正、他は破壊的変更なし
