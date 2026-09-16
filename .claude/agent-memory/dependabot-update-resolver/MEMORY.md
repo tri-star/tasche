@@ -30,3 +30,4 @@
 - [orval 8.26.0でHeadersインスタンスのマージ不具合が修正](orval_upgrade_notes.md) — patch更新でもclient.tsに実質的な差分(バージョンコメント以外)が出る2例目(PR #114)
 - [PR#116 backend-minor-patchグループ7件の調査結果](pr116_backend_group_7_updates.md) — alembic/authlib/cryptography/fastapi/joserfc/pydantic-settings/ruffいずれも破壊的変更なし、修正不要。161 test/ruff/alembic全通過
 - [authlib 1.8.0でhttpx_clientがhttpx2優先化](authlib_18_httpx2_deprecation.md) — 未導入時はhttpxにフォールバック+非推奨警告のみ、機能差分なし。httpx2移行はスコープ外として先送り(PR #116)
+- [PR#119 setup-uv/configure-aws-credentials/pnpm-action-setupのminor/patch更新は修正不要](pr119_github_actions_group_3_updates.md) — 破壊的変更なし・SHAとタグ一致確認済み。PR#115(未マージでclose)の調査内容を引き継ぎ再検証
