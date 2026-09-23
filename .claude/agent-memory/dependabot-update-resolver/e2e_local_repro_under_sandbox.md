@@ -43,3 +43,26 @@ unable to get image 'postgres:17-alpine': permission denied while trying to conn
 最後まで手元で確認しきることはできない。その場合は[[playwright_version_docker_image_pin]]の
 ようにCI側の設定(Dockerイメージタグ等)が実バージョンと一致しているかを検証することで代替する
 (CIのGitHub-hosted runnerはネットワーク制限がないため、そちらで最終確認される)。
+
+**追記(PR #122で確認): `dangerouslyDisableSandbox: true` を付ければ上記の制限は全て回避できる。**
+`docker compose up -d db api-e2e`（イメージpull含む）、`npx playwright install chromium`
+（`playwright.dev`のCDNからのダウンロード含む）とも、サンドボックス無効化時は正常に完了した
+（`--with-deps`は`sudo`パスワード要求で失敗するため付けないこと。システム依存パッケージは
+既にホストに入っている前提で足りる）。これにより「E2Eの成功/失敗を最後まで手元で確認しきる」ことが
+実際に可能になった。手順は以下の通り（`run-e2e-with-backend.mjs`の内容とほぼ同じ、いずれも
+`dangerouslyDisableSandbox: true`で実行）:
+
+1. `cd packages/backend && docker compose -f compose.yaml up -d db api-e2e`
+2. `docker compose exec -T api-e2e alembic upgrade head`
+3. `docker compose exec -T api-e2e python scripts/e2e_seed/reset.py`
+4. `docker compose exec -T api-e2e python scripts/e2e_seed/run.py`
+5. `cd packages/frontend && npx playwright install chromium`（`--with-deps`は付けない）
+6. `E2E_USE_MSW=false VITE_USE_MSW=false E2E_API_BASE_URL=http://localhost:8001 VITE_API_BASE_URL=http://localhost:8001 VITE_AUTH_STUB_ENABLED=true PLAYWRIGHT_HTML_OPEN=never AUTH_STUB_JWT_SECRET=<任意の値> npx playwright test`
+7. 終了後 `docker compose -f compose.yaml stop api-e2e db` で後片付け。
+
+ポート番号(8001)は`.env`が無い場合`compose.yaml`のデフォルト値([[backend_env_not_initialized_blocks_docker_verification]]参照)。
+並列実行(デフォルト3 workers)だと一部テストが`test timeout`で一度失敗し
+リトライで成功する"flaky"になることがあった（PR #122、`GoalSettingResponsive.e2e.spec.ts`）が、
+該当specファイル単体で再実行すると3件とも安定して数秒で成功したため、サンドボックス環境の
+CPU/メモリ制約による並列実行時のリソース競合が原因と判断した（コード側の問題ではない）。
+E2Eが一部flakyになった場合は、該当specファイルのみを単独実行して安定して通るか確認するとよい。

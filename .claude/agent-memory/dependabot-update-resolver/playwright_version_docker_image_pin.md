@@ -21,6 +21,10 @@ Error: browserType.launch: Executable doesn't exist at /home/.../chromium_headle
 - コミット `3b7c337ba99baca55bd6c727bca0c23dce718fa8`（1.61.1→1.62.0、PR #99）
 - コミット `33c98d9`（1.61.1→1.62.1、PR #100。PR #99のブランチが分岐後にmainへ
   取り込まれる前だったため、PR #100では再度v1.61.1-nobleのままズレていた）
+- コミット `cc97a56`（1.62.1→1.63.0、PR #122）。今回は[[e2e_local_repro_under_sandbox]]の
+  追記手順（`dangerouslyDisableSandbox`使用）で実際にE2E一式をローカル実行し、
+  20 passed / 2 flaky（単体再実行で安定）/ 7 skippedと機能面の問題なしまで確認できた
+  （初めてこのタグ変更をE2E実行込みで検証できたケース）。
 
 **Why:** Playwrightは「テストランナーのバージョン」と「ダウンロードするブラウザバイナリのビルド番号」が
 密結合しており、ズレがあると起動時にバイナリが見つからずクラッシュする。Dockerイメージからのコピー方式は
