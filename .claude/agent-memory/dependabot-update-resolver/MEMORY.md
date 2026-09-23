@@ -30,3 +30,6 @@
 - [orval 8.26.0でHeadersインスタンスのマージ不具合が修正](orval_upgrade_notes.md) — patch更新でもclient.tsに実質的な差分(バージョンコメント以外)が出る2例目(PR #114)
 - [PR#116 backend-minor-patchグループ7件の調査結果](pr116_backend_group_7_updates.md) — alembic/authlib/cryptography/fastapi/joserfc/pydantic-settings/ruffいずれも破壊的変更なし、修正不要。161 test/ruff/alembic全通過
 - [authlib 1.8.0でhttpx_clientがhttpx2優先化](authlib_18_httpx2_deprecation.md) — 未導入時はhttpxにフォールバック+非推奨警告のみ、機能差分なし。httpx2移行はスコープ外として先送り(PR #116)
+- [orval 8.28.1でsingle/tagsモードのモック出力が既定でclient.msw.tsに分離](orval_upgrade_notes.md) — このリポジトリのgenerated.tsはclient.tsのexportをscanする実装のため機能が壊れる。mock.inline:trueで旧挙動に復帰(PR #122)
+- [PR#122 frontend-minor-patchグループ17件の調査結果](pr122_frontend_group_17_updates.md) — orval mock分離対応+biome $schema+playwrightタグ追従の3点修正、破壊的変更なしを確認
+- [サンドボックスでもdangerouslyDisableSandboxでE2Eをフル実行できる](e2e_local_repro_under_sandbox.md) — docker compose up/playwright installとも正常動作、実際にPlaywright実行までローカル検証可能(PR #122で確認)
