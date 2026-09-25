@@ -4,7 +4,7 @@
 - [biomeバージョン更新時の$schema不一致](biome_schema_version_mismatch.md) — biome.jsonの$schemaバージョンをCLIに合わせないとinfo診断が出る(lintは失敗しない、PR #79)
 - [@vitejs/plugin-react v6はvite8必須](vitejs_plugin_react_v6_vite8_requirement.md) — v6系はpeerDepsでvite^8.0.0要求、vite7だとbuild実行時エラーになる(PR #70で確認)
 - [backend Python系コマンドはdocker compose exec経由](backend_python_commands_use_docker_compose_exec.md) — ホスト直接のuv run pytestはDB接続が不安定(PR #66で確認)、api コンテナ内実行を優先する
-- [FastAPI 0.137+のルーターツリー化でroute.pathからprefixが消える](fastapi_0137_router_tree_regression.md) — main.pyのOTelトレース属性生成に影響、iter_route_contexts()で修正済み(PR #64)。aws-opentelemetry-distro側の同種バグは0.18.0時点で未修正
+- [FastAPI 0.137+のルーターツリー化でroute.pathからprefixが消える](fastapi_0137_router_tree_regression.md) — main.pyのOTelトレース属性生成に影響、iter_route_contexts()で修正済み(PR #64)。aws-opentelemetry-distro側の同種バグはaws-otel-distro 0.19.0時点で解消済みと確認(PR #121)
 - [backendのcryptography dev extraは実は本番ランタイムにも影響](backend_cryptography_dev_extra_is_actually_runtime_dep.md) — authlib/joserfc経由でGoogle OAuth検証にも使われる、uv.lockは単一バージョン解決(PR #78で確認)
 - [tailwindcss v3→v4のPostCSS移行手順](tailwindcss_v4_postcss_migration.md) — @tailwindcss/postcss分離、@import順序でユーティリティが空になる罠に注意(PR #86で確認)
 - [actions/setup-node v6→v7の互換性調査](actions_setup_node_v7_upgrade.md) — 入出力破壊なし、node24ランタイム要求だがGitHub-hosted runnerなら影響なし(PR #91)
@@ -30,3 +30,4 @@
 - [orval 8.26.0でHeadersインスタンスのマージ不具合が修正](orval_upgrade_notes.md) — patch更新でもclient.tsに実質的な差分(バージョンコメント以外)が出る2例目(PR #114)
 - [PR#116 backend-minor-patchグループ7件の調査結果](pr116_backend_group_7_updates.md) — alembic/authlib/cryptography/fastapi/joserfc/pydantic-settings/ruffいずれも破壊的変更なし、修正不要。161 test/ruff/alembic全通過
 - [authlib 1.8.0でhttpx_clientがhttpx2優先化](authlib_18_httpx2_deprecation.md) — 未導入時はhttpxにフォールバック+非推奨警告のみ、機能差分なし。httpx2移行はスコープ外として先送り(PR #116)
+- [PR#121 backend-minor-patchグループ3件の調査結果](pr121_backend_group_3_updates.md) — alembic/aws-opentelemetry-distro/ruffいずれも破壊的変更なし、修正不要。aws-otel-distroのopenai-agents-v2依存除去(未使用のため無関係)を確認。161 test/ruff/alembic全通過
