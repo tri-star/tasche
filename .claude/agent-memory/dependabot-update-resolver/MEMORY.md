@@ -33,3 +33,4 @@
 - [orval 8.28.1でsingle/tagsモードのモック出力が既定でclient.msw.tsに分離](orval_upgrade_notes.md) — このリポジトリのgenerated.tsはclient.tsのexportをscanする実装のため機能が壊れる。mock.inline:trueで旧挙動に復帰(PR #122)
 - [PR#122 frontend-minor-patchグループ17件の調査結果](pr122_frontend_group_17_updates.md) — orval mock分離対応+biome $schema+playwrightタグ追従の3点修正、破壊的変更なしを確認
 - [サンドボックスでもdangerouslyDisableSandboxでE2Eをフル実行できる](e2e_local_repro_under_sandbox.md) — docker compose up/playwright installとも正常動作、実際にPlaywright実行までローカル検証可能(PR #122で確認)
+- [pnpm 11.27.1でPlaywright webServerが終了時ハング](pnpm_11_27_1_playwright_webserver_hang.md) — E2E全通過後にcancelledなら依存でなくpnpm起因、webServer.gracefulShutdown SIGTERMで回避(PR #122)

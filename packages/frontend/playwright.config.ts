@@ -58,5 +58,10 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     stdout: "ignore",
     stderr: "pipe",
+    // pnpm 11.27.1 以降は非TTY実行時にスクリプトを独立したプロセスグループで起動するため、
+    // Playwright既定のSIGKILL(プロセスグループ宛)がvite本体に届かず、pipeが閉じずにハングする。
+    // SIGTERMはpnpmが子プロセスへ中継するため、明示的にSIGTERMで停止させる。
+    // https://github.com/joshuafolkken/kit/issues/2386
+    gracefulShutdown: { signal: "SIGTERM", timeout: 10_000 },
   },
 })
