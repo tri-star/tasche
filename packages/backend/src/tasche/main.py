@@ -64,6 +64,10 @@ app = FastAPI(
     version="0.1.0",
     docs_url="/docs",
     redoc_url="/redoc",
+    # FastAPI 0.142 以降のネイティブOTel自動設定は、OTLP環境変数があると既存プロバイダへ
+    # 追加のOTLPエクスポータを登録する。トレース/メトリクス/ログのプロバイダは
+    # aws-opentelemetry-distro (opentelemetry-instrument) が管理しているため、二重送信を避ける。
+    telemetry={"auto_configure": False},
 )
 
 
