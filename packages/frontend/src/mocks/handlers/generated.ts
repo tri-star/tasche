@@ -1,6 +1,6 @@
 import type { RequestHandler } from "msw"
 
-import * as generatedClient from "@/api/generated/client"
+import * as generatedClient from "@/api/generated/client.msw"
 
 export function getOrvalHandlers(): RequestHandler[] {
   const handlers: RequestHandler[] = []
