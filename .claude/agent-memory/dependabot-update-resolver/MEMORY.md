@@ -31,3 +31,4 @@
 - [PR#116 backend-minor-patchグループ7件の調査結果](pr116_backend_group_7_updates.md) — alembic/authlib/cryptography/fastapi/joserfc/pydantic-settings/ruffいずれも破壊的変更なし、修正不要。161 test/ruff/alembic全通過
 - [authlib 1.8.0でhttpx_clientがhttpx2優先化](authlib_18_httpx2_deprecation.md) — 未導入時はhttpxにフォールバック+非推奨警告のみ、機能差分なし。httpx2移行はスコープ外として先送り(PR #116)
 - [vitest 4→5メジャー更新は修正不要](vitest_v5_no_impact.md) — clearMocksデフォルト化等の破壊的変更はいずれも該当なしと確認、246 test/lint/build全通過(PR #118)
+- [PR#129 github-actions-allグループ7件は修正不要](pr129_github_actions_group_7_updates.md) — setup-sam SHA更新含め破壊的変更なし、CI全通過
