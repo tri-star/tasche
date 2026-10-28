@@ -19,6 +19,7 @@ function createWrapper() {
       },
     },
   })
+  // biome-ignore lint/correctness/noComponentHookFactories: renderHook の wrapper 用テストユーティリティであり、呼び出しごとに生成して問題ない
   return function Wrapper({ children }: { children: React.ReactNode }) {
     return React.createElement(QueryClientProvider, { client: queryClient }, children)
   }

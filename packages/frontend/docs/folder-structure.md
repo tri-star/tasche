@@ -13,22 +13,17 @@
       - `authClientSingleton.ts` - orval mutator 用シングルトン
       - `authFetch.ts` - orval mutator 関数（全 API コールが authFetch 経由になる）
       - `useAuth.ts` - ログイン / ログアウト / コールバック処理フック
-      - `useBootstrapAuth.ts` - 起動時に `/api/users/me` を叩いてセッション有無で認証状態を復元するフック（StrictMode 対応）
-    - `components/` - UIコンポーネント
+      - `useBootstrapAuth.ts` - 起動時に `/api/users/me` を叩いてセッション有無で認証状態を復元するフック（StrictMode 対応） - `components/` - UIコンポーネント
       - `ui/` - shadcn/uiベースコンポーネント
       - `common/` - アプリ共通コンポーネント
       - `dashboard/` - ダッシュボード関連
       - `goals/` - 目標設定関連
       - `layout/` - レイアウト
       - `login/` - ログイン画面専用コンポーネント（`LoginLayout`, `LoginBackground`, `TascheLogo`, `GoogleLoginButton`, `StubLoginButton`, `LoginFooter`）
-      - `routing/` - ルーティング関連コンポーネント（`ProtectedRoute` — 未認証時 `/login` へリダイレクト）
-    - `pages/` - ページコンポーネント
+      - `routing/` - ルーティング関連コンポーネント（`ProtectedRoute` — 未認証時 `/login` へリダイレクト） - `pages/` - ページコンポーネント
       - `LoginPage.tsx` - ログイン画面
       - `AuthCallbackPage.tsx` - Google OAuth コールバック処理ページ（`/auth/callback`）
       - `DashboardPage.tsx` - ダッシュボード
-      - その他各ページ
-    - `router.tsx` - react-router のルート定義（`createBrowserRouter`）
-    - `api/generated/` - OpenAPI自動生成APIクライアント（orval、mutator: `authFetch`）
-    - `mocks/` - MSWハンドラー
+      - その他各ページ - `router.tsx` - react-router のルート定義（`createBrowserRouter`） - `api/generated/` - OpenAPI自動生成APIクライアント（orval、mutator: `authFetch`） - `mocks/` - MSWハンドラー
       - `handlers/auth.ts` - `/api/auth/*` のモックハンドラ
       - `handlers/users.ts` - `/api/users/me` のモックハンドラ

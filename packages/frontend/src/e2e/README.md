@@ -116,7 +116,6 @@ console.log(testTaskIds.task1) // tsk_01HXYZ1234567890ABCDEF
 ## CI/CD
 
 GitHub Actionsで自動的にE2Eテストが実行されます。
-
 - **テストモード**: MSWモード
 - **失敗時**: Playwrightレポートがアーティファクトとして保存されます
 

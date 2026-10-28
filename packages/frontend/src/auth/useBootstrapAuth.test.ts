@@ -13,6 +13,7 @@ import { useBootstrapAuth } from "./useBootstrapAuth"
 
 // jotai の store を参照できるラッパー生成ユーティリティ
 function createWrapper(store: ReturnType<typeof createStore>) {
+  // biome-ignore lint/correctness/noComponentHookFactories: renderHook の wrapper 用テストユーティリティであり、呼び出しごとに生成して問題ない
   return function Wrapper({ children }: { children: ReactNode }) {
     return JotaiProvider({ store, children })
   }
