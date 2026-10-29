@@ -11,7 +11,8 @@
       "!public/**/*.svg",
       "!node_modules",
       "!coverage",
-      "!src/api/generated"
+      "!src/api/generated",
+      "!docs/folder-structure.md"
     ]
   }
 }
