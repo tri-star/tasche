@@ -46,7 +46,6 @@ pnpm --filter frontend dev
 ### VITE_USE_MSW
 
 MSW (Mock Service Worker) を有効にするかどうかを設定します。
-
 - `true`: MSWを有効にして、モックAPIを使用
 - `false`: 実際のバックエンドAPIを使用
 
@@ -57,7 +56,6 @@ MSW (Mock Service Worker) を有効にするかどうかを設定します。
 ### VITE_AUTH_STUB_ENABLED
 
 スタブログイン機能を有効にするかどうかを設定します。
-
 - `true`: ログイン画面にスタブログインボタンを表示（ワンクリックでログイン可能）
 - `false` または未設定: スタブログインボタンを非表示
 
