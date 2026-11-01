@@ -765,3 +765,185 @@ class TestUpdateCurrentGoals:
 
         assert response.status_code == 400
         assert response.json()["error"]["code"] == "VALIDATION_ERROR"
+
+    async def test_put_rejects_too_many_goals(
+        self,
+        authenticated_client: AsyncClient,
+        current_week: Week,
+        fixed_now: datetime,
+    ):
+        """goals が上限（50件）を超える場合は 422 を返す."""
+        goals = [
+            {
+                "task_id": None,
+                "new_task_name": f"task{i}",
+                "daily_targets": _daily_targets(0.0),
+            }
+            for i in range(51)
+        ]
+
+        response = await authenticated_client.put(
+            "/api/weeks/current/goals",
+            json={
+                "unit_duration_minutes": 30,
+                "goals": goals,
+            },
+        )
+
+        assert response.status_code == 422
+
+    async def test_put_rejects_too_long_new_task_name(
+        self,
+        authenticated_client: AsyncClient,
+        current_week: Week,
+        fixed_now: datetime,
+    ):
+        """new_task_name が上限（100文字）を超える場合は 422 を返す."""
+        response = await authenticated_client.put(
+            "/api/weeks/current/goals",
+            json={
+                "unit_duration_minutes": 30,
+                "goals": [
+                    {
+                        "task_id": None,
+                        "new_task_name": "a" * 101,
+                        "daily_targets": _daily_targets(0.0),
+                    }
+                ],
+            },
+        )
+
+        assert response.status_code == 422
+
+    async def test_put_rejects_daily_target_exceeding_max(
+        self,
+        authenticated_client: AsyncClient,
+        current_week: Week,
+        test_tasks: tuple[Task, Task, Task],
+        fixed_now: datetime,
+    ):
+        """daily_targets が上限（999.9）を超える場合は 422 を返す."""
+        english, _, _ = test_tasks
+
+        response = await authenticated_client.put(
+            "/api/weeks/current/goals",
+            json={
+                "unit_duration_minutes": 30,
+                "goals": [
+                    {
+                        "task_id": english.id,
+                        "daily_targets": {
+                            **_daily_targets(0.0),
+                            "monday": 1000.0,
+                        },
+                    }
+                ],
+            },
+        )
+
+        assert response.status_code == 422
+
+    async def test_put_rejects_daily_available_units_exceeding_max(
+        self,
+        authenticated_client: AsyncClient,
+        current_week: Week,
+        fixed_now: datetime,
+    ):
+        """daily_available_units が上限（999.9）を超える場合は 422 を返す."""
+        response = await authenticated_client.put(
+            "/api/weeks/current/goals",
+            json={
+                "unit_duration_minutes": 30,
+                "daily_available_units": {
+                    **_daily_available_units(0.0),
+                    "monday": 1000.0,
+                },
+                "goals": [],
+            },
+        )
+
+        assert response.status_code == 422
+
+    async def test_put_accepts_goals_at_limit(
+        self,
+        authenticated_client: AsyncClient,
+        current_week: Week,
+        fixed_now: datetime,
+    ):
+        """goals がちょうど上限（50件）の場合は受理される."""
+        goals = [
+            {
+                "task_id": None,
+                "new_task_name": f"task{i}",
+                "daily_targets": _daily_targets(0.0),
+            }
+            for i in range(50)
+        ]
+
+        response = await authenticated_client.put(
+            "/api/weeks/current/goals",
+            json={
+                "unit_duration_minutes": 30,
+                "goals": goals,
+            },
+        )
+
+        assert response.status_code == 200
+        assert len(response.json()["data"]["goals"]) == 50
+
+    async def test_put_accepts_new_task_name_at_limit(
+        self,
+        authenticated_client: AsyncClient,
+        current_week: Week,
+        fixed_now: datetime,
+    ):
+        """new_task_name がちょうど上限（100文字）の場合は受理される."""
+        response = await authenticated_client.put(
+            "/api/weeks/current/goals",
+            json={
+                "unit_duration_minutes": 30,
+                "goals": [
+                    {
+                        "task_id": None,
+                        "new_task_name": "a" * 100,
+                        "daily_targets": _daily_targets(0.0),
+                    }
+                ],
+            },
+        )
+
+        assert response.status_code == 200
+        assert response.json()["data"]["created_tasks"][0]["name"] == "a" * 100
+
+    async def test_put_accepts_daily_value_at_max(
+        self,
+        authenticated_client: AsyncClient,
+        current_week: Week,
+        test_tasks: tuple[Task, Task, Task],
+        fixed_now: datetime,
+    ):
+        """daily_available_units / daily_targets がちょうど上限（999.9）の場合は受理される."""
+        english, _, _ = test_tasks
+
+        response = await authenticated_client.put(
+            "/api/weeks/current/goals",
+            json={
+                "unit_duration_minutes": 30,
+                "daily_available_units": {
+                    **_daily_available_units(0.0),
+                    "monday": 999.9,
+                },
+                "goals": [
+                    {
+                        "task_id": english.id,
+                        "daily_targets": {
+                            **_daily_targets(0.0),
+                            "monday": 999.9,
+                        },
+                    }
+                ],
+            },
+        )
+
+        assert response.status_code == 200
+        assert response.json()["data"]["daily_available_units"]["monday"] == 999.9

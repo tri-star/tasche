@@ -6,7 +6,7 @@
  */
 
 /**
- * 曜日ごとの確保可能ユニット数.
+ * 曜日ごとの確保可能ユニット数（レスポンス用。上限値は課さない）.
  */
 export interface DailyAvailableUnits {
   /**

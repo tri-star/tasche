@@ -8,5 +8,6 @@
 export type GoogleAuthorizeApiAuthGoogleAuthorizeGetParams = {
 code_challenge: string;
 redirect_uri: string;
+state: string;
 code_challenge_method?: string;
 };

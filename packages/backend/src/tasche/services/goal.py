@@ -16,7 +16,9 @@ from tasche.models.week import Week
 from tasche.schemas.goal import (
     CreatedTask,
     DailyAvailableUnits,
+    DailyAvailableUnitsInput,
     DailyTargets,
+    DailyTargetsInput,
     GoalResponse,
     GoalsResponse,
     GoalsUpdate,
@@ -46,6 +48,8 @@ def _empty_daily_targets() -> dict[str, float]:
 
 
 def _build_daily_available_units(week: Week) -> DailyAvailableUnits:
+    # レスポンス用の DailyAvailableUnits は上限値を課さないため、
+    # 制約導入前にDBへ保存された既存値があっても素通しできる。
     return DailyAvailableUnits(
         **{
             DAY_OF_WEEK_FIELD_NAMES[day]: float(
@@ -56,13 +60,15 @@ def _build_daily_available_units(week: Week) -> DailyAvailableUnits:
     )
 
 
-def _apply_daily_available_units(week: Week, daily_available_units: DailyAvailableUnits) -> None:
+def _apply_daily_available_units(
+    week: Week, daily_available_units: DailyAvailableUnitsInput
+) -> None:
     for day in DAY_OF_WEEK_ORDER:
         field_name = DAY_OF_WEEK_FIELD_NAMES[day]
         setattr(week, f"available_units_{field_name}", getattr(daily_available_units, field_name))
 
 
-def _daily_targets_to_rows(daily_targets: DailyTargets) -> Iterable[tuple[DayOfWeek, float]]:
+def _daily_targets_to_rows(daily_targets: DailyTargetsInput) -> Iterable[tuple[DayOfWeek, float]]:
     for day in DAY_OF_WEEK_ORDER:
         field_name = DAY_OF_WEEK_FIELD_NAMES[day]
         yield day, float(getattr(daily_targets, field_name))
@@ -88,6 +94,8 @@ def _build_goal_responses(rows: Iterable[tuple[Goal, Task]]) -> list[GoalRespons
         GoalResponse(
             task_id=task_id,
             task_name=str(payload["task_name"]),
+            # レスポンス用の DailyTargets は上限値を課さないため、
+            # 制約導入前にDBへ保存された既存値があっても素通しできる。
             daily_targets=DailyTargets(**payload["daily_targets"]),
         )
         for task_id, payload in grouped.items()

@@ -9,8 +9,12 @@
  * Googleコールバックリクエスト.
  */
 export interface GoogleCallbackRequest {
+  /** @maxLength 512 */
   code: string;
+  /** @maxLength 512 */
   code_verifier: string;
+  /** @maxLength 512 */
   redirect_uri: string;
+  /** @maxLength 512 */
   state: string;
 }
